@@ -103,10 +103,25 @@ assign enable_chain = config_mem[19];
 
 assign gclk = clk & (tile_en==1'b1);
 
+
 assign data_in_int = (enable_chain==1'b1)?chain_in:data_in;
 assign wen_in_int = (enable_chain==1'b1)?chain_wen_in:wen_in;
 assign chain_out = data_out;
 assign chain_valid_out = valid_out;
+
+
+// WENHACK code, please do not remove w/o checking with steveri@stanford.edu!
+// At the last minute, run.csh can modify wen_int assignment above
+// to read "assign  wen_in_int = WENHACK" instead
+reg WENHACK;
+always @(posedge clk or posedge reset) begin
+   if (reset==1'b1) begin
+     WENHACK = 1'b0;
+   end else if (data_in != 16'b0) begin
+     WENHACK = 1'b1;
+   end
+end
+
 
 always @(posedge clk or posedge reset) begin
   if (reset==1'b1) begin
