@@ -38,7 +38,13 @@
 //; my $use_lut  = ($lut_inps > 1);
 //;
 //; my $use_c_input = ($use_add > 1) or ($mult_mode > 1) or ($lut_inps > 3);
-
+//;
+//; my $reg_cnt  = parameter(Name=>'reg_cnt',
+//;                               Val=> 4, Min=>1, Step=>1, Max=>16,
+//;                               Doc=>"Total number of registers");
+//;
+//; my $use_reg_file = ($reg_cnt > 1);
+//;
 //; my $filename = "PE".$self->mname();
 //; open(PEINFO, ">$filename") or die "Couldn't open file $filename, $!";
 //; my $pe_info_hash;
@@ -196,7 +202,7 @@ assign nc_op_code = op_code;
 //;   bith => 15,
 //; };
 
-//; my $op_b_r = clone($op_a_r, 'test_opt_reg_b');
+//; my $op_b_r = generate_base('test_opt_reg_file', 'test_opt_reg_file');
 
 logic                 op_b_ld;
 logic [DataWidth-1:0] op_b_val;
@@ -251,7 +257,12 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
   .rst_n      (rst_n),
   .load       (op_b_ld),
   .val        (op_b_val),
-  .mode       (inp_code[3:2]),
+//; if($use_reg_file) {
+  .cfg_d        (cfg_d[DataWidth-1:0]),
+  .cfg_a        (cfg_a[3:0]),
+  .cfg_en       (cfg_en),
+//; }
+  .mode       (inp_code[4:2]),
   .data_in    (data1),//op_b_in),
   .res        (op_b)
 );
@@ -260,9 +271,12 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
 //;   address => '0xff',
 //;   out => 'b',
 //;   bitl => 18,
-//;   bith => 19,
+//;   bith => 20,
 //;   mname => $op_b_r->mname()
 //; };
+
+//; #TODO Change initialization address for register file
+//; #TODO I just removed initialization part of cgra_info.txt
 //; $pe_info_hash->{ '4_init_b' } = {
 //;   address => '0xf1',
 //;   out => 'b',
@@ -280,15 +294,15 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
   .rst_n      (rst_n),
   .load       (cfg_en && (cfg_a == 8'hF2)),
   .val        (cfg_d[DataWidth-1:0]),
-  .mode       (inp_code[5:4]),
+  .mode       (inp_code[6:5]),
   .data_in    (data2),//op_c_in),
   .res        (op_c)
 );
 //; $pe_info_hash->{ '3_reg_c' } = {
 //;   address => '0xff',
 //;   out => 'c',
-//;   bitl => 20,
-//;   bith => 21,
+//;   bitl => 21,
+//;   bith => 22,
 //;   mname => $op_c_r->mname()
 //; };
 //; $pe_info_hash->{ '4_init_c' } = {
@@ -865,11 +879,25 @@ end
 //;      print PEINFO $line;
 //;    }
 //;    close INP;
-//;    print PEINFO "        </mux>\n"
+//;    print PEINFO "        </mux>\n";
+//;  
+//;    my $filename = "REGFILE".$value->{'mname'};
+//;    if (open (INP, "<$filename")) { # or die "Couldn't open file $filename, $!";
+//;    while (<INP>) {
+//;      my $line = $_;
+//;      $line=~s/OUTNAME/$value->{'out'}/g;
+//;      while ( my ($find, $replace) = each($rename_hash) ) {
+//;         $line=~s/>$find</>$replace</g;
+//;         $line=~s/'$find'/'$replace'/g;
+//;      }
+//;      print PEINFO $line;
+//;    }
+//;    }
+//;    close INP;
 //;  }
-//;  if ($feature=~m/4_init/) {
-//;    print PEINFO "        <reg reg_address='$value->{'address'}' bith='$value->{'bith'}' bitl='$value->{'bitl'}'>reg_$value->{'out'}</reg>\n";
-//;  }
+//;# if ($feature=~m/4_init/) {
+//;#   print PEINFO "        <reg reg_address='$value->{'address'}' bith='$value->{'bith'}' bitl='$value->{'bitl'}'>reg_$value->{'out'}</reg>\n";
+//;# }
 //;################### Read Data 
 //;  if ($feature=~m/5_rea/) {
 //;    print PEINFO "        <mux snk='$value->{'out'}'>\n";
