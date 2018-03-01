@@ -23,7 +23,7 @@
 //;
 //; my $use_flip  = $self->parameter(name=>'use_flip', val=> 0, List=>[1, 0], doc=>'Add option to flip inputs?');
 //;
-//; my $use_acc  = $self->parameter(name=>'use_acc', val=> 0, List=>[1, 0], doc=>'Enable accumulation?');
+//; my $use_acc  = $self->parameter(name=>'use_acc', val=> 1, List=>[1, 0], doc=>'Enable accumulation?');
 //;
 //; my $en_ovfl = parameter(Name=>'en_ovfl', val=> 1, List=>[1, 0], doc=>'Enable overflow signals?');
 //;
