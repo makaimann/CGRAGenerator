@@ -15,6 +15,7 @@ config_addr_out,
 config_data_out,
 clk_out,
 reset_out,
+cgra_stalled,
 tdi,
 tdo,
 tms,
@@ -34,6 +35,7 @@ trst_n
   output reg [`$cfg_bus_width-1`:0] config_data_out;
   output reg clk_out;
   output reg reset_out;
+  output reg cgra_stalled;
   output tdo;
 
   wire [`$addr_width-1`:0] config_addr_jtag_out;
@@ -74,18 +76,19 @@ trst_n
   //parameter set_base_reg = `$cfg_op_width`'d3;
   //parameter set_rw_and_count = `$cfg_op_width`'d4;
   //parameter burst_start = `$cfg_op_width`'d5;
-  parameter read_data = 5'd6;
-  parameter write_A050 = 5'd7;
-  parameter write_TST = 5'd8;
-  parameter read_TST = 5'd9;
-  parameter global_reset = 5'd10;
-  parameter reset_tile = 5'd11; 
-  parameter stall = 5'd12;
-  parameter advance_clk = 5'd13;
-  parameter resume_clk = 5'd14;
-  parameter sys_clk_on = 5'd15;
-  parameter wr_rd_delay_reg = 5'd16;
-  parameter rd_rd_delay_reg = 5'd17;
+  parameter write_data = `$cfg_op_width`'d5;
+  parameter read_data = `$cfg_op_width`'d6;
+  parameter write_A050 = `$cfg_op_width`'d7;
+  parameter write_TST = `$cfg_op_width`'d8;
+  parameter read_TST = `$cfg_op_width`'d9;
+  parameter global_reset = `$cfg_op_width`'d10;
+  parameter reset_tile = `$cfg_op_width`'d11; 
+  parameter stall = `$cfg_op_width`'d12;
+  parameter advance_clk = `$cfg_op_width`'d13;
+  parameter resume_clk = `$cfg_op_width`'d14;
+  parameter sys_clk_on = `$cfg_op_width`'d15;
+  parameter wr_rd_delay_reg = `$cfg_op_width`'d16;
+  parameter rd_rd_delay_reg = `$cfg_op_width`'d17;
 
   //STATES FOR IGNORING INCOMING INSTRUCTIONS
   parameter ready = 2'd0;
@@ -97,7 +100,6 @@ trst_n
  
   reg all_stalled_tck;
   reg all_stalled_sys;
-  reg cgra_stalled;
   reg pulsing;
   reg clk_switch_request;
   reg [`$cfg_bus_width-1`:0] TST;
@@ -108,7 +110,8 @@ trst_n
   always_comb begin
     	clk_domain = (sys_clk_activated) ? clk_in : tck;//Are we running the GC/CGRA on sys clk or test clk?
 	clk = ((all_stalled_tck & !sys_clk_activated) | (all_stalled_sys & sys_clk_activated )) ? 0 : clk_domain; //Are we stalling both GC and CGRA during clk domain switch?
-    	clk_out = (cgra_stalled & (state != advancing_clk)) ? 0 : clk; //Are we stalling CGRA and not GC?
+    	//clk_out = (cgra_stalled & (state != advancing_clk)) ? 0 : clk; //Are we stalling CGRA and not GC?
+	clk_out = clk;
    	reset_out = (state==resetting) ? 1 : reset_in;
   end
   reg [2:0] sync_counter;
@@ -127,10 +130,11 @@ trst_n
 		sys_clk_activated <= 1;
 	end	
   end
+  
   always @ (negedge clk_in or posedge reset_in) begin //NEGEDGE TO PREVENT SHORT CLK CYCLE (TIME BETWEEN RISING EDGES)
 	if (reset_in==1) begin
 		all_stalled_sys <= 1;
-		sync_counter <= 3'd7;
+		sync_counter <= 3'd4;
 	end
 	else if (sys_clk_activated && sync_counter > 0)
 		sync_counter <= sync_counter - 1;
@@ -167,6 +171,10 @@ trst_n
 				config_data_out <= config_data_jtag_out; 
 				counter <= rd_delay_reg-1;
 				state <= reading;
+			end
+			write_data: begin
+				config_addr_out <= config_addr_jtag_out;
+				config_data_out <= config_data_jtag_out; 
 			end
 			read_data: begin
 				config_addr_out <= config_addr_jtag_out;
