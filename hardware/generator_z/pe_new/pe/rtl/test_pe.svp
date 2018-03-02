@@ -259,7 +259,7 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
   .val        (op_b_val),
 //; if($use_reg_file) {
   .cfg_d        (cfg_d[DataWidth-1:0]),
-  .cfg_a        (cfg_a[3:0]),
+  .cfg_a        (cfg_a[7:0]),
   .cfg_en       (cfg_en),
 //; }
   .mode       (inp_code[4:2]),

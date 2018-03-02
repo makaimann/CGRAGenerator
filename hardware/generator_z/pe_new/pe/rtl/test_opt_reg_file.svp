@@ -26,7 +26,7 @@ module  `mname`  #(
 
 //; if($use_reg_file) {
   input  [DataWidth-1:0] cfg_d,
-  input  [3:0]           cfg_a,
+  input  [7:0]           cfg_a,
   input                  cfg_en,
 //; }
 
@@ -49,7 +49,7 @@ localparam REG_FILE   = 3'h4;
 
 //; if($use_reg_file) {
 always_comb begin
-  if (cfg_en && (cfg_a == 4'h1)) begin
+  if (cfg_en && (cfg_a == 8'hF1)) begin
     data_in_reg_next = cfg_d;
   end else if (load) begin
     data_in_reg_next = val;
@@ -59,8 +59,7 @@ always_comb begin
 end
 
 assign data_in_le = load                           |
-                    (cfg_en & (cfg_a == 4'h1))     |
-//                    (cfg_en & (mode == REG_CONST)) |
+                    (cfg_en & (cfg_a == 8'hF1))     |
                     (mode == REG_DELAY)            |
                     ((mode == REG_VALID) & clk_en);
 
@@ -80,7 +79,7 @@ generate
     always_ff @(posedge clk or negedge rst_n) begin
       if(~rst_n) begin
         data_in_reg[g_i] <= 'h0;
-      end else if(cfg_en & (g_i[3:0] == cfg_a + 1)) begin
+      end else if(cfg_en && (cfg_a[7:4] == 4'hD) && (g_i[3:0] == cfg_a[3:0] + 1)) begin
         data_in_reg[g_i] <= cfg_d;
       end
     end
