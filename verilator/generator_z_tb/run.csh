@@ -280,6 +280,16 @@ if (! -e $config) then
   exit 13
 endif
 
+if (`expr "$config" : ".*lbuf.*"`) then
+  if (! $?HACKMEM) then
+    echo
+    echo "run.csh: ERROR '$config' looks like an lbuf config file"
+    echo "run.csh: ERROR should be using hackmem flag, yes?"
+    exit 13
+  endif
+endif
+
+
 unset io_hack
 grep -i ffffffff $config > /tmp/tmp && set io_hack
 if ($?io_hack) then

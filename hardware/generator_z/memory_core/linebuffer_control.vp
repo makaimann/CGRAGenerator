@@ -246,7 +246,8 @@ assign data_out = (delay_outputs==1'b1)?data_out_d1:data_out_d0;
 assign valid = (delay_outputs==1'b1)?valid_d1:valid_d0;
 
 always @(*) begin
-  if (phase==1'b1) begin
+  //if (phase==1'b1) begin  // ?? ??? dunno why FIXME
+  if (phase==1'b0) begin
     addr_to_mem = read_addr;
   end else begin
     addr_to_mem = write_addr;
