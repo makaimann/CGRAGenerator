@@ -37,7 +37,7 @@ $use_add  = `$use_add `
 module   `mname`  #(
   parameter DataWidth = 16
 ) (
-  input [8:0]                    op_code,
+  input [7:0]                    op_code,
 
   input  [DataWidth-1:0]         op_a,
 //; if($en_double & $use_shift) {
@@ -222,7 +222,7 @@ localparam PE_DIV_OP     = 6'h19;
 logic [2*DataWidth-1:0] mult_res;
 //;}
 
-logic [8:0]        nc_op_code;
+logic [7:0]        nc_op_code;
 assign             nc_op_code = op_code;
 
 

@@ -135,13 +135,19 @@ module   `mname`  #(
 );
 
 logic  [DataWidth-1:0]        op_a;
+logic  [DataWidth-1:0]        op_a_reg;
 logic  [DataWidth-1:0]        op_b;
+logic  [DataWidth-1:0]        op_b_reg;
 //; if($use_c_input) {
 logic  [DataWidth-1:0]        op_c;
+logic  [DataWidth-1:0]        op_c_reg;
 //; }
 logic                         op_d_p;
+logic                         op_d_p_reg;
 logic                         op_e_p;
+logic                         op_e_p_reg;
 logic                         op_f_p;
+logic                         op_f_p_reg;
 
 logic [DataWidth-1:0] comp_res;
 logic                 comp_res_p;
@@ -184,7 +190,8 @@ assign nc_op_code = op_code;
   .val        (cfg_d[DataWidth-1:0]),
   .mode       (inp_code[1:0]),
   .data_in    (data0),//op_a_in),
-  .res        (op_a)
+  .res        (op_a),
+  .reg_data   (op_a_reg)
 );
 
 //; $pe_info_hash->{ '3_reg_a' } = {
@@ -264,7 +271,8 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
 //; }
   .mode       (inp_code[4:2]),
   .data_in    (data1),//op_b_in),
-  .res        (op_b)
+  .res        (op_b),
+  .reg_data   (op_b_reg)
 );
 
 //; $pe_info_hash->{ '3_reg_b' } = {
@@ -296,7 +304,8 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
   .val        (cfg_d[DataWidth-1:0]),
   .mode       (inp_code[6:5]),
   .data_in    (data2),//op_c_in),
-  .res        (op_c)
+  .res        (op_c),
+  .reg_data        (op_c_reg)
 );
 //; $pe_info_hash->{ '3_reg_c' } = {
 //;   address => '0xff',
@@ -324,7 +333,8 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
   .val        (cfg_d[0]),
   .mode       (inp_code[9:8]),
   .data_in    (bit0),//op_d_p_in),
-  .res        (op_d_p)
+  .res        (op_d_p),
+  .reg_data        (op_d_p_reg)
 );
 
 //; $pe_info_hash->{ '3_reg_d' } = {
@@ -352,7 +362,9 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
   .val        (cfg_d[0]),
   .mode       (inp_code[11:10]),
   .data_in    (bit1),//op_e_p_in),
-  .res        (op_e_p)
+  .res        (op_e_p),
+  .reg_data        (op_e_p_reg)
+
 );
 
 //; $pe_info_hash->{ '3_reg_e' } = {
@@ -379,7 +391,9 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
   .val        (cfg_d[0]),
   .mode       (inp_code[13:12]),
   .data_in    (bit2),//op_f_p_in),
-  .res        (op_f_p)
+  .res        (op_f_p),
+  .reg_data        (op_f_p_reg)
+
 );
 
 //; $pe_info_hash->{ '3_reg_f' } = {
@@ -734,7 +748,7 @@ logic irq_bit;
 (
   .cfg_clk   (clk),
   .cfg_rst_n (rst_n),
-  .cfg_d     (cfg_d),
+  .cfg_d     (cfg_d[DataWidth-1:0]),
   .cfg_en    (cfg_en && (cfg_a == 8'hE0)),
 
   .data_in   (res),
@@ -747,7 +761,7 @@ logic irq_bit;
 (
   .cfg_clk   (clk),
   .cfg_rst_n (rst_n),
-  .cfg_d     (cfg_d),
+  .cfg_d     (cfg_d[0]),
   .cfg_en    (cfg_en && (cfg_a == 8'hE1)),
 
   .data_in   (res_p),
@@ -783,38 +797,55 @@ assign irq = |({irq_data,irq_bit} & irq_en);
 //; if($reg_inputs) {
 //; $read_data_hash->{'op_code'} = {
 //;   src => 'FF',
-//;   data => 'op_code'
+//;   data => 'op_code',
+//;   name => 'op_code'
 //; };
 //; $read_data_hash->{'inp_code'} = {
 //;   src => 'FE',
-//;   data => 'inp_code'
+//;   data => 'inp_code',
+//;   name => 'inp_code'
 //; };
 //; $read_data_hash->{'op_a'} = {
 //;   src => 'F0',
-//;   data => 'op_a'
+//;   data => 'op_a_reg',
+//;   name => 'reg_a'
 //; };
 //; $read_data_hash->{'op_b'} = {
 //;   src => 'F1',
-//;   data => 'op_b'
+//;   data => 'op_b_reg',
+//;   name => 'reg_b'
 //; };
+//; if($use_reg_file) {
+//; for (my $i = 1, my $j=0; $i < $reg_cnt; $i++, $j++) {
+//; $read_data_hash->{"op_regfile${i}"} = {
+//;   src => "D${j}",
+//;   data => 'op_b_reg',
+//;   name => "regfile[${i}]"
+//; };
+//; }
+//; }
 //; if($use_c_input) {
 //; $read_data_hash->{'op_c'} = {
 //;   src => 'F2',
-//;   data => 'op_c'
+//;   data => 'op_c_reg',
+//;   name => 'reg_c'
 //; };
 //; }
 //; $read_data_hash->{'op_d'} = {
-//;   src => 'E0',
-//;   data => 'op_d_p'
+//;   src => 'F3',
+//;   data => 'op_d_p_reg',
+//;   name => 'reg_d'
 //; };
 //; if($use_lut && ($lut_inps == 3)) {
 //; $read_data_hash->{'op_e'} = {
-//;   src => 'E1',
-//;   data => 'op_e_p'
+//;   src => 'F4',
+//;   data => 'op_e_p_reg',
+//;   name => 'reg_e'
 //; };
 //; $read_data_hash->{'op_f'} = {
-//;   src => 'E2',
-//;   data => 'op_f_p'
+//;   src => 'F5',
+//;   data => 'op_f_p_reg',
+//;   name => 'reg_f'
 //; };
 //; }
 //; }
@@ -902,7 +933,7 @@ end
 //;  if ($feature=~m/5_rea/) {
 //;    print PEINFO "        <mux snk='$value->{'out'}'>\n";
 //;    foreach my $key (sort { $read_data_hash->{$a}{'src'} cmp $read_data_hash->{$b}{'src'} } keys(%$read_data_hash))  {
-//;       print PEINFO "            <src sel='$read_data_hash->{$key}->{'src'}'>$read_data_hash->{$key}->{'data'}</src>\n";
+//;       print PEINFO "            <src sel='$read_data_hash->{$key}->{'src'}'>$read_data_hash->{$key}->{'name'}</src>\n";
 //;    }
 //;    print PEINFO "        </mux>\n"
 //;  }
