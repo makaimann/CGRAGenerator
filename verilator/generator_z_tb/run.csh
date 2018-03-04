@@ -368,19 +368,16 @@ echo ''
 echo '------------------------------------------------------------------------'
 echo "Building the verilator simulator executable..."
 
-  # (Temporary (I hope)) SRAM hack(s)
 
+
+  # (Temporary (I hope)) SRAM hack(s)
   echo
   echo '  SRAM hack'
   echo '  SRAM hack'
   echo '  SRAM hack'
-  if ($?CGRA_GEN_USE_MEM) then
-     cp ./sram_stub.v $vdir/sram_512w_16b.v
-     ls -l $vdir/sram*
-#  else
-#     echo "NOT USING MEMORY.  TURNING OFF HACKMEM.  It causes trouble."
-#     unset HACKMEM
-  endif
+  if ($?CGRA_GEN_USE_MEM) cp ./sram_stub.v $vdir/sram_512w_16b.v
+
+
 
   # Temporary wen/ren hacks.  
   if ($?HACKMEM) then
@@ -395,11 +392,6 @@ echo "Building the verilator simulator executable..."
       | sed 's/^assign wen = .*/assign wen = WENHACK;/' \
       > $vdir/memory_core_unq1.v
 
-    # No longer doing:
-    #  | sed 's/assign int_ren = .*/assign int_ren = 1;/' \
-    #  | sed 's/assign int_wen = .*/assign int_wen = 1;/' \
-    #  | sed 's/assign wen = .*/assign wen = 1;/' \
-
     echo
     echo '------------------------------------------------------------------------'
     echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
@@ -410,8 +402,28 @@ echo "Building the verilator simulator executable..."
     echo '------------------------------------------------------------------------'
     echo
     echo
-
   endif
+
+
+
+  # Temporary side-2 input fix
+  echo
+  echo '  run.csh: SIDE2 INPUT hack'
+  echo '  run.csh: SIDE2 INPUT hack'
+  echo '  run.csh: SIDE2 INPUT hack'
+  echo
+  mv $vdir/top.v $tmpdir/top.v.orig
+  cat $tmpdir/top.v.orig \
+      | sed 's/\(in.*wire_[0-9]*\)_1_BUS1_S0/\1_0_BUS1_S0/' \
+      > $vdir/top.v
+  echo diff $tmpdir/top.v.orig $vdir/top.v
+  echo
+  diff $tmpdir/top.v.orig $vdir/top.v | head
+  echo ...
+  diff $tmpdir/top.v.orig $vdir/top.v | tail
+
+
+
 
 echo ''
 echo '------------------------------------------------------------------------'
