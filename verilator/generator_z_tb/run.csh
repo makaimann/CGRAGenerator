@@ -1,6 +1,7 @@
 #!/bin/csh -f
 
 # Can use this to extend time on travis
+# E.g. "./my_travis_wait.csh 60" goes for 60 minutes
 # ./my_travis_wait.csh 60 &
 
 set VERBOSE
