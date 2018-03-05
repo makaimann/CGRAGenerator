@@ -851,11 +851,11 @@ assign irq = |({irq_data,irq_bit} & irq_en);
 //; }
 //; if($reg_out) {
 //; $read_data_hash->{'res'} = {
-//;   src => 'D0',
+//;   src => 'C0',
 //;   data => 'res'
 //; };
 //; $read_data_hash->{'res_p'} = {
-//;   src => 'D1',
+//;   src => 'C1',
 //;   data => 'res_p'
 //; };
 //; }        
