@@ -51,6 +51,8 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../memory_core/linebuffer_control.vp \
   ../memory_core/fifo_control.vp \
   ../memory_core/mem.vp \
+  ../memory_core/memory_core.vp \
+  \
   ../global_controller/global_controller.svp \
   \
   ../jtag/jtag.svp \
