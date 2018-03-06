@@ -27,7 +27,7 @@ def bodysource(tests):
         top->op_b = test[1];
         top->eval();
         std::cout << test[0] << ", " << test[1] << ", " << test[2] << ", " << top->res << "\\n";
-        //assert(top->res == test[2]);
+        assert(top->res == test[2]);
     }}
 '''.format(ntests=len(tests))
 
