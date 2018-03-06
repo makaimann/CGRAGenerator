@@ -280,6 +280,16 @@ if (! -e $config) then
   exit 13
 endif
 
+if (`expr "$config" : ".*lbuf.*"`) then
+  if (! $?HACKMEM) then
+    echo
+    echo "run.csh: ERROR '$config' looks like an lbuf config file"
+    echo "run.csh: ERROR should be using hackmem flag, yes?"
+    exit 13
+  endif
+endif
+
+
 unset io_hack
 grep -i ffffffff $config > /tmp/tmp && set io_hack
 if ($?io_hack) then
@@ -389,11 +399,24 @@ echo "Building the verilator simulator executable..."
     # To:
     #   assign wen = WENHACK
 
+    unset ERR
+    egrep '^assign wen_in_int = .*' $vdir/memory_core_unq1.v || set ERR
+    if ($?ERR) then
+      echo
+      echo "run.csh: ERROR looks like WENHACK would FAIL"
+      exit 13
+    endif
+
     # ls -l $vdir
     mv $vdir/memory_core_unq1.v $tmpdir/memory_core_unq1.v.orig
     cat $tmpdir/memory_core_unq1.v.orig \
-      | sed 's/^assign wen = .*/assign wen = WENHACK;/' \
+      | sed 's/^assign wen_in_int = .*/assign wen_in_int = WENHACK;/' \
       > $vdir/memory_core_unq1.v
+
+    # old
+    #  | sed 's/^assign wen = .*/assign wen = WENHACK;/' \
+
+
 
     # No longer doing:
     #  | sed 's/assign int_ren = .*/assign int_ren = 1;/' \

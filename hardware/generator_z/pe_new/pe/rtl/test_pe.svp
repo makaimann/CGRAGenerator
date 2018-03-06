@@ -692,10 +692,14 @@ logic res_lut;
 //;    sel => "0x1",
 //;    equ => 'res_lut'
 //; };
+//; #if(op_code[12]==1) {$pe_info_hash->{'2_predicate'}{'value'} = 'res_lut';}
 //;	 }
 
 
-//;} 
+//;} else {
+  assign res_p_w = result_flag;//comp_res_p;
+//;}
+
 //; my $res_w = 'comp_res';
 //;
 //; if($use_cntr & $use_acc) {
