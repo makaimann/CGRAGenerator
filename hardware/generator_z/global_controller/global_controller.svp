@@ -131,7 +131,7 @@ trst_n
 	end	
   end
   
-  always @ (negedge clk_in or posedge reset_in) begin //NEGEDGE TO PREVENT SHORT CLK CYCLE (TIME BETWEEN RISING EDGES)
+  always @ (posedge clk_in or posedge reset_in) begin //NEGEDGE TO PREVENT SHORT CLK CYCLE (TIME BETWEEN RISING EDGES)
 	if (reset_in==1) begin
 		all_stalled_sys <= 1;
 		sync_counter <= 3'd4;
@@ -206,6 +206,7 @@ trst_n
 				if (cgra_stalled) begin
 					counter <= config_data_jtag_out-1;
 					state <= advancing_clk;	
+					cgra_stalled <= 0;
 				end
 			end
 			resume_clk: begin
@@ -237,6 +238,8 @@ trst_n
 				state <= ready;
 				if (state == reading) 
 					config_data_jtag_in <= config_data_in;
+				if (state == advancing_clk)
+					cgra_stalled <= 1;
 			end
 		end    	
   	end
