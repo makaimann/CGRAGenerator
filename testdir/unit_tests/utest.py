@@ -57,7 +57,7 @@ import pe
 # exit()
 
 BINARY_OPS=[
-    'abs', # FIXME abs seems to be incorrect in the verilog!
+    'abs', # Lenny fixed it!
     'add',
     'sub',
     'gte',
@@ -75,7 +75,6 @@ BINARY_OPS=[
 # # Silly rabbit...there's no unary ops
 # # UNARY_OPS=[     'abs', ]
 # UNARY_OPS=[]
-# 
 
 LBUF_LIST=[
     'lbuf09',
@@ -94,7 +93,6 @@ CAVEATS: BROKEN/DISABLED/HACKED (see FIXME in utest.py, isa.py)
   'rshft/lshft' model wrong in 'isa.py'; wrote my own instead (utest.py/FIXME)
   'gte/lte' model broken(?) in 'isa.py'; wrote my own instead (utest.py/FIXME)
   'sel' - no test yet b/c needs 'd' input
-  'abs' is wonky; passes seq but not rand tests :o
 '''
 def main():
     caveats()
@@ -588,9 +586,10 @@ Examples:
 
     if (len(OPTIONS['tests']) == 0) or (OPTIONS['tests'] == ['all']):
         OPTIONS['tests'] = LBUF_LIST + BINARY_OPS
-        # FIXME FIXME FIXME
-        print "WARNING utest.py skipping 'abs' test b/c verilog broken maybe\n"
-        OPTIONS['tests'].remove('abs')
+
+        # Lenny fixed it!
+        # print "WARNING utest.py skipping 'abs' test b/c verilog broken maybe\n"
+        # OPTIONS['tests'].remove('abs')
 
     if VERBOSE: print OPTIONS
 
