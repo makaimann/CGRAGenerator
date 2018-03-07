@@ -382,6 +382,7 @@ wire [31:0] config_addr;
 wire [31:0] config_data;
 wire clk;
 wire reset;
+wire stall;
 //CONFIG_HACK. ONCE GC IS DONE SEND ADDR AND DATA IN THROUGH JTAG
 assign config_addr = config_addr_in;
 assign config_data = config_data_in;
@@ -399,7 +400,8 @@ assign config_data = config_data_in;
       .tdo(tdo),
       .tms(tms),
       .tck(tck),
-      .trst_n(trst_n)
+      .trst_n(trst_n),
+      .cgra_stalled(stall)
     );
     //UNTIL WE FIX TESTS TO INPUT CFG ADDR AND DATA THROUGH JTAG, DON'T RUN CLK SIGNALS THROUGH GC
     assign clk = clk_in;

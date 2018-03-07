@@ -169,6 +169,15 @@ program automatic `mname`(interface ifc);
 	 jdrv.Send(jtag_ofst_trans);
 	 $fdisplay(fd,"%t: %m: Trans 15 (reset_tile):  Address to GC=%d, Data to GC=%d",  
 		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);	 
+	 
+	 @(posedge ifc.Clk);
+	 jtag_ofst_trans.op = write_data;
+	 jtag_ofst_trans.data_in = 16'd5678;
+	 jtag_ofst_trans.addr = 31'd1234;
+	 jtag_ofst_trans.done = 0;
+	 jdrv.Send(jtag_ofst_trans);
+	 $fdisplay(fd,"%t: %m: Trans 15 (write_data):  Address to GC=%d, Data to GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);	 
       end
    endtask // run_test
 
