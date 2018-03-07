@@ -518,6 +518,7 @@ always_comb begin : proc_alu
         res_p_w     = diff_sign;
 //;   } else {
         add_a[0]    = ~op_a;
+        add_b[0]    = 0;
 //;     if($en_double & $is_msb) {
         add_c_in[0] = double_mode ? carry_in[0] : 1'b1;
         res_p_w     = op_a[DATA_MSB];
