@@ -247,7 +247,7 @@ assign en_acc = op_code[`$opcode_acc_en_bith`:`$opcode_acc_en_bitl`];
 
 //; if($use_cntr | $use_acc) {
   assign op_b_ld  = (cfg_en && (cfg_a == 8'hF1)) | (clk_en & (`$b_en_acc`));
-  assign op_b_val = cfg_en ?
+  assign op_b_val = (cfg_en && (cfg_a == 8'hF1)) ?
                     cfg_d[DataWidth-1:0] :
                     (`$b_acc_rst` ? {DataWidth{1'b0}}: comp_res);
 
@@ -692,14 +692,10 @@ logic res_lut;
 //;    sel => "0x1",
 //;    equ => 'res_lut'
 //; };
-//; #if(op_code[12]==1) {$pe_info_hash->{'2_predicate'}{'value'} = 'res_lut';}
 //;	 }
 
 
-//;} else {
-  assign res_p_w = result_flag;//comp_res_p;
 //;}
-
 //; my $res_w = 'comp_res';
 //;
 //; if($use_cntr & $use_acc) {
@@ -856,15 +852,17 @@ assign irq = |({irq_data,irq_bit} & irq_en);
 //; if($reg_out) {
 //; $read_data_hash->{'res'} = {
 //;   src => 'C0',
-//;   data => 'res'
+//;   data => 'res',
+//;   name => 'pe_out_res'
 //; };
 //; $read_data_hash->{'res_p'} = {
 //;   src => 'C1',
-//;   data => 'res_p'
+//;   data => 'res_p',
+//;   name => 'pe_out_res_p'
 //; };
-//; }        
-always_comb begin 
-    case (cfg_a) 
+//; }
+always_comb begin
+    case (cfg_a)
 //; foreach my $key (sort { $read_data_hash->{$a}{'src'} cmp $read_data_hash->{$b}{'src'} } keys(%$read_data_hash))  {
         8'h`$read_data_hash->{$key}->{'src'}` : read_data = `$read_data_hash->{$key}->{'data'}`;
 //; }
@@ -915,7 +913,7 @@ end
 //;    }
 //;    close INP;
 //;    print PEINFO "        </mux>\n";
-//;  
+//;
 //;    my $filename = "REGFILE".$value->{'mname'};
 //;    if (open (INP, "<$filename")) { # or die "Couldn't open file $filename, $!";
 //;    while (<INP>) {
@@ -933,7 +931,7 @@ end
 //;# if ($feature=~m/4_init/) {
 //;#   print PEINFO "        <reg reg_address='$value->{'address'}' bith='$value->{'bith'}' bitl='$value->{'bitl'}'>reg_$value->{'out'}</reg>\n";
 //;# }
-//;################### Read Data 
+//;################### Read Data
 //;  if ($feature=~m/5_rea/) {
 //;    print PEINFO "        <mux snk='$value->{'out'}'>\n";
 //;    foreach my $key (sort { $read_data_hash->{$a}{'src'} cmp $read_data_hash->{$b}{'src'} } keys(%$read_data_hash))  {
