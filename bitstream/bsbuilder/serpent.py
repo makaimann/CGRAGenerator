@@ -55,14 +55,53 @@ GRID_HEIGHT = GRID_WIDTH
 # INPUT_WIRE   = 'in_s2t0'
 # INPUT_WIRE_T = 'T0_in_s2t0'
 
-# New regime, input is T11_in_s2t0
-#FIXME should maybe search for first PE and make that the input tile
-INPUT_TILENO = 11
-INPUT_TILE   = INPUT_TILENO
-INPUT_WIRE   = 'in_s2t0'
-INPUT_WIRE_T = 'T11_in_s2t0'
+
+# These all get rewritten by find_input_tile, below.
+INPUT_TILENO =      26 # Actually I think it's 21 :o
+INPUT_TILE   =      INPUT_TILENO
+INPUT_WIRE   =      'in_s2t0'
+INPUT_WIRE_T =      'T%d_in_s2t0' % INPUT_TILENO
 INPUT_TILE_PE_OUT = "T%d_pe_out" % INPUT_TILENO
 
+# Find the input tile
+def find_input_tile():
+    # Assumes first pe tile found is the input tile (how terrible is that!?
+    for i in range(1000):
+        t = cgra_info.tiletype(i)
+        if t[0:2] == "pe":
+
+            global INPUT_TILENO
+            global INPUT_TILE
+            global INPUT_WIRE
+            global INPUT_WIRE_T
+            global INPUT_TILE_PE_OUT
+
+            INPUT_TILENO = i
+            INPUT_TILE   = INPUT_TILENO
+            INPUT_WIRE   = 'in_s2t0'
+            INPUT_WIRE_T = 'T%d_%s' % (INPUT_TILENO, INPUT_WIRE)
+            INPUT_TILE_PE_OUT = "T%d_pe_out" % INPUT_TILENO
+            
+            print "I think  input tile is T%d" % INPUT_TILENO
+            print "I think  input wire is %s" % INPUT_WIRE_T
+            print "I think output wire is %s" % INPUT_TILE_PE_OUT
+            return i
+
+
+OUTPUT_TILENO = 0x24
+# Find the output tile = last pe or mem in row 2
+def find_output_tile():
+    global OUTPUT_TILENO
+    for i in range(1000):
+        t = cgra_info.tiletype(i)
+        if (t[0:2] == "pe") or (t[0:3] == "mem"):
+            (r,c) = cgra_info.tileno2rc(i)
+            if r == 2:
+                OUTPUT_TILENO = i
+            elif r > 2:
+                print "I think output tile is T%d" % OUTPUT_TILENO
+                # Early out
+                return
 
 # Set this to True if a PE has been placed in the INPUT tile
 # FIXME is this the best way to do this!!?
@@ -273,6 +312,10 @@ def main(DBG=1):
     print '######################################################'
     print '# serpent.py: Read cgra info'
     cgra_info.read_cgra_info(cgra_filename, verbose=True)
+
+    # Find INPUT and OUTPUT tiles heuristically
+    find_input_tile()
+    find_output_tile()
 
     print '######################################################'
     print '# serpent.py: Initialize the packer'
@@ -1476,7 +1519,7 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
     if DBG: print indent+"PNR '%s' -> '%s'" % (sname,dname)
 
-    # Source should alreay be placed, yes?
+    # Source should already be placed, yes?
     if not is_placed(sname):
         print "ERROR '%s' has not been placed yet?" % sname
     assert is_placed(sname)
@@ -1514,27 +1557,41 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         # print indent+"No home for '%s'"
         if DBG: print indent+"No home for '%s'" % dname
 
-        if dname=='OUTPUT':
-            process_output(sname,dname)
-            return True
+
+
+        # Removed 3/2018
+        # if dname=='OUTPUT':
+        #     process_output(sname,dname)
+        #     return True
+
+
 
         # Get nearest tile compatible with target node 'dname'
         # "Nearest" means closest to input tile (NW corner)
         # dtileno = get_nearest_tile(sname, dname)
-        if not is_placed(dname):
+
+        if dname == "OUTPUT":
+            dtileno = OUTPUT_TILENO
+        elif not is_placed(dname):
             dtileno = get_nearest_tile(sname, dname)
         else:
             dtileno = nodes[dname].tileno
-            print "Acutally it does have a home already, in tile %d" % dtileno
+            print "Actually it does have a home already, in tile %d" % dtileno
 
         # FIXME will need an 'undo' for order[] list if dtileno ends up not used
 
         # print 'dtileno/nearest is %d' % dtileno
-        if DBG: pwhere(1114, 'Nearest available tile is %d\n' % dtileno)
-
+        if DBG:
+            if dname == "OUTPUT":
+                pwhere(1567, 'Connecting to OUTPUT tile %d\n' % dtileno)
+            else:
+                pwhere(1114, 'Nearest available tile is %d\n' % dtileno)
+                
         # If node is pe or mem, can try multiple tracks
 
-        if is_mem(sname): trackrange = range(5)
+        # (For now at least) output must be track 0
+        if dname == "OUTPUT": trackrange = [0]
+        elif is_mem(sname): trackrange = range(5)
         elif is_pe(sname): trackrange = range(5)
         else: trackrange = [0]
 
@@ -1545,6 +1602,9 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
                 print "could not find path on track %d, try next track" % track
 
         if not path:
+            if dname == "OUTPUT":
+                print "Cannot find our way to OUTPUT, looks like we're screwed :("
+                assert False, "Cannot find our way to OUTPUT, looks like we're screwed :("
             if DBG:
                 pwhere(1489,
                        'Tile %d no good; undo and try again:' % dtileno)
@@ -1570,8 +1630,18 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         print "# 1. place dname in dtileno"
         d_in = CT.allports(path)[-1]
 
-        if   is_pe(dname):  d_out = addT(dtileno,'pe_out')
+        if   is_pe(dname):
+            # Connect endpoint to pe_out
+            d_out = addT(dtileno,'pe_out')
+
         elif is_mem(dname): d_out = addT(dtileno, 'mem_out')
+
+        elif dname == "OUTPUT":
+            # (For now at least) output must be track 0, see above
+            # FIXME later could have an option to hop tracks maybe
+            trackno = 0
+            d_out = addT(dtileno,'_out_s0t%d' % trackno)
+
         elif is_regsolo(dname):
             print '# 1a. If regsolo, add name to REGISTERS for later'
             d_out = CT.find_neighbor(d_in, DBG=9)
@@ -1680,56 +1750,56 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 # END def place_and_route()
 ########################################################################
 
-def process_output(sname,dname, DBG=1):
-    snode = nodes[sname]
-    dnode = nodes[dname]
-    src = snode.output
-
-    if DBG>1:
-        snode.show()
-        dnode.show()
-
-    if DBG:
-        print ''
-        print "1. Route from '%s' output '%s' to any avail outport in tile %d"\
-              % (sname, src, snode.tileno)
-
-    t = snode.tileno
-    if DBG>1: print "\n# Tile %d free list: %s" % (t, resources[t])
-
-    # if 'src' is an outport, just use that
-    if re.search('T\d+_out_', src): outwire = src
-
-    # else choose first avail outwire
-    else:
-        for w in resources[t]:
-            if re.search('T\d+_out_', w):
-                if DBG: print "#  - Found candidate '%s'.  Will it connect?" % w
-                if cgra_info.connect_within_tile(t, src, w, DBG=0):
-                    if DBG: print '#  - YES'
-                    outwire = w
-                    break
-                else:
-                    if DBG: print "#  - NO, keep looking."
-
-    if DBG: print ''
-
-    snode.route['OUTPUT'] = ['%s -> %s' % (src,outwire)]
-    snode.net.append(outwire)
-    if DBG: snode.show()
-
-    dnode.type = 'OUTPUT'
-    dnode.tileno = snode.tileno
-    dnode.input0 = outwire
-    dnode.input1 = False
-    dnode.output = outwire
-    dnode.placed = True
-    dnode.net = [src,outwire]
-    if DBG: dnode.show()
-
-    return
+# Removed 3/2018
+# def process_output(sname,dname, DBG=1):
+#     snode = nodes[sname]
+#     dnode = nodes[dname]
+#     src = snode.output
+# 
+#     if DBG>1:
+#         snode.show()
+#         dnode.show()
+# 
+#     if DBG:
+#         print ''
+#         print "1. Route from '%s' output '%s' to any avail outport in tile %d"\
+#               % (sname, src, snode.tileno)
+# 
+#     t = snode.tileno
+#     if DBG>1: print "\n# Tile %d free list: %s" % (t, resources[t])
+# 
+#     # if 'src' is an outport, just use that
+#     if re.search('T\d+_out_', src): outwire = src
+# 
+#     # else choose first avail outwire
+#     else:
+#         for w in resources[t]:
+#             if re.search('T\d+_out_', w):
+#                 if DBG: print "#  - Found candidate '%s'.  Will it connect?" % w
+#                 if cgra_info.connect_within_tile(t, src, w, DBG=0):
+#                     if DBG: print '#  - YES'
+#                     outwire = w
+#                     break
+#                 else:
+#                     if DBG: print "#  - NO, keep looking."
+# 
+#     if DBG: print ''
+# 
+#     snode.route['OUTPUT'] = ['%s -> %s' % (src,outwire)]
+#     snode.net.append(outwire)
+#     if DBG: snode.show()
+# 
+#     dnode.type = 'OUTPUT'
+#     dnode.tileno = snode.tileno
+#     dnode.input0 = outwire
+#     dnode.input1 = False
+#     dnode.output = outwire
+#     dnode.placed = True
+#     dnode.net = [src,outwire]
+#     if DBG: dnode.show()
+# 
+#     return
     
-
 def squote(txt, f=''):
     fmt = '%'+str(f)+'s'  # E.g. '%-13s' when f=-13
     return fmt % ("'" + txt + "'")

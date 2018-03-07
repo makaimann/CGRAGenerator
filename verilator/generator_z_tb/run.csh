@@ -436,6 +436,12 @@ echo "Building the verilator simulator executable..."
 
   endif
 
+echo 'Note: No more IO hacks;'
+echo 'pixels must arrive via pad_S2_T[8:15] aka wire_2_1_BUS16_S0_T0'
+echo 'and           exit via pad_S0_T[7:0] aka wire_2_17_BUS16_S0_T0'
+
+
+
 echo ''
 echo '------------------------------------------------------------------------'
 echo "run.csh: Build the simulator..."

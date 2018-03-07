@@ -418,6 +418,16 @@ def ntiles():
     load_check()
     return len(CGRA.findall('tile')) # length = number of items in list
 
+def grid_dimensions():
+    '''Return grid (nrows,ncols) e.g. (16,16)'''
+    (maxrow,maxcol) = (0,0)
+    for i in range(ntiles()):
+        if tiletype(i) != 'io1bit': continue # Quelle hackrreur!
+        (r,c) = tileno2rc(i)
+        if r > maxrow: maxrow = r
+        if c > maxcol: maxcol = c
+    return (maxrow+1,maxcol+1)
+
 def getnum(s, base=10):
     '''s="14" => result=14; s="0x14" => result=20'''
     if base==16:         return int(s,16)

@@ -1,5 +1,12 @@
 #!/bin/csh -f
 
+if ("$1" == "--help") then
+  echo 'test_bitstreams.csh tmpdir'
+  echo 'test_bitstreams.csh tmpdir pointwise'
+  echo 'test_bitstreams.csh tmpdir pointwise conv_1_2 conv_2_1 conv_3_1 conv_bw'
+  exit
+endif
+
 if (! -d $1) then
   echo 'Where are the test.bsa input files?'
   echo "Example: $0:t /tmp/build42/"
@@ -10,6 +17,16 @@ set tmpdir = $1
 # Oops maybe tmpdir must be a full path
 set tmpdir = `(cd $tmpdir; pwd)`
 
+# Any remaining arguments constitute the list of benchmarks to run
+shift
+if ($#argv) then
+  set bmarks = ($*)
+else 
+  # Do them in order
+  set bmarks = (pointwise conv_2_1 conv_3_1 conv_bw)
+  set bmarks = (pointwise conv_1_2 conv_2_1 conv_3_1 conv_bw)
+endif
+
 set scriptpath = `readlink -f $0`
 set scriptpath = $scriptpath:h
 cd $scriptpath
@@ -18,10 +35,6 @@ cd $scriptpath
 set gen = `(cd ../../..; pwd)`
 set v =  $gen/verilator/generator_z_tb
 
-
-# Do them in order
-set bmarks = (pointwise conv_2_1 conv_3_1 conv_bw)
-set bmarks = (pointwise conv_1_2 conv_2_1 conv_3_1 conv_bw)
 
 # DB for delay, extracted below
 #   - make build/pointwise.correct.txt DELAY=0,0   
