@@ -203,7 +203,7 @@ def test_manhattan_distance_rc():
     print ''
 
 def test_fan_out():
-    # S0 only connecst to four sides
+    # S0 only connects to four sides
     cgra_info.fan_out('in_BUS16_S0_T0', 0, DBG=1)
     
     # S2 can also connect to op1
@@ -807,10 +807,14 @@ class Node:
 
         # print "       Ask cgra: can '%s' connect to '%s'? (%s)" % (a,b,where(457))
 
-        if cgra_info.connect_within_tile(T, a, b, DBG-1):
+        # if cgra_info.connect_within_tile(T, a, b, DBG-1):
+        # FIXME is this bad?  connect_within_tile() used to
+        # return False if no connect, now it dies.
+        try:
+            cgra_info.connect_within_tile(T, a, b, DBG-1)
             if DBG: print '     YES'
             return ['%s -> %s' % (a,b)]
-        else:
+        except:
             if DBG: print "     NO"
         
         print "Cannot connect '%s' to '%s' directly.  BUT" % (a,b)
@@ -1577,6 +1581,10 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         else:
             dtileno = nodes[dname].tileno
             print "Actually it does have a home already, in tile %d" % dtileno
+            if dtileno in packer.EXCEPTIONS:
+                print "exceptions = ", packer.EXCEPTIONS
+                pwhere(1586, "OOPS Already tried and failed to reach T%d oh nooooo" % dtileno)
+                assert False, "Out of options"
 
         # FIXME will need an 'undo' for order[] list if dtileno ends up not used
 
@@ -1599,16 +1607,22 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             path = find_best_path(sname, dname, dtileno, track, DBG=1)
             if path: break
             if track != trackrange[-1]:
-                print "could not find path on track %d, try next track" % track
+                pwhere(1607, "could not find path on track %d, try track %d" % (track, track+1))
+                pwhere(1608, "trackrange = %s" % trackrange)
 
         if not path:
             if dname == "OUTPUT":
                 print "Cannot find our way to OUTPUT, looks like we're screwed :("
                 assert False, "Cannot find our way to OUTPUT, looks like we're screwed :("
-            if DBG:
-                pwhere(1489,
-                       'Tile %d no good; undo and try again:' % dtileno)
+
+            pwhere(1489, 'Tile %d no good; undo and try again:' % dtileno)
             packer.unallocate(dtileno, DBG=0)
+
+            if dtileno in packer.EXCEPTIONS:
+                print "exceptions = ", packer.EXCEPTIONS
+                pwhere(1614, "OOPS Already tried and failed oh nooooo")
+                assert False, "Out of options"
+
             packer.EXCEPTIONS.append(dtileno)
             rval = place_and_route(sname,dname,indent='# ',DBG=0)
 
@@ -2116,8 +2130,9 @@ def eval_path(path, snode, dname, dtileno, DBG=0):
     # part 2 verify begin and end points
     final_path = can_connect_ends(path, snode, dname, dtileno, DBG)
     if not final_path:
-        print "  Cannot connect '%s' to endpoint blah '%s'?" % (p, path[0])
-        assert False, 'disaster could not find a path (and/or could try again with a different tile?'
+        pwhere(2133, "  Cannot connect dst '%s' to endpoint '%s'?" % (dname, path[0]))
+        # assert False, 'disaster could not find a path (and/or could try again with a different tile?'
+        # Dude no need to die, it'll try again...right?
         return False
 
     return final_path
@@ -2149,14 +2164,15 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
 
     cend = connect_endpoint(snode, path[-1], dname, dtileno, DBG)
     if not cend:
-        print "  Cannot connect '%s' to endpoint blah '%s'?" % (p, path[0])
-        assert False, 'disaster could not find a path'
+        pwhere(2169, "  Cannot connect src '%s' to endpoint '%s'?" % (sname, path[0]))
+        # assert False, 'disaster could not find a path'
+        # Dude no need to die, it'll try again...right?
         return False
 
     # print 'ready to connect endpoint! %s' % cend
 
     # For now, return first path found
-    # FIXME for future, keep findin paths and return them all
+    # FIXME for future, keep finding paths and return them all
     final_path = cbegin + path[1:-1] + cend
     print "SUCCESS! Final path from '%s' to '%s' is: %s\n" \
           % (sname,dname,final_path)
@@ -2241,6 +2257,18 @@ def connect_endpoint(snode, endpoint, dname, dtileno,DBG):
             continue
 
         cend = can_connect_end(snode, endpoint, dstport,DBG)
+# 
+# I think this is fixed 3/2018
+#         try:
+#             cend = can_connect_end(snode, endpoint, dstport,DBG)
+#         except:
+#             print "     Hm apparently not."
+#             cend = False
+#             assert not re.search('op', dstport), "TRY HARDER"
+#             # FIXME e.g. instead of
+#             # "Cannot connect path endpoint 'T40_in_s3t0' to dest port 'T40_op1'"
+#             # should try s3t0 -> s2t0, out_s2t0 -> op1
+# 
         if cend: return cend
         else:
             print "  Cannot connect path endpoint '%s' to dest port '%s'" \
@@ -2297,6 +2325,14 @@ def can_connect(snode, p1, p2, DBG=0):
     c = snode.connect(p1,p2,DBG=DBG)
     if not c:
         if DBG>1: print 'oops no route from p1 to p2'
+# 
+# Pretty sure we don't need this no mo
+# 
+#         # FIXME e.g. instead of
+#         # "Cannot connect path endpoint 'T40_in_s3t0' to dest port 'T40_op1'"
+#         # should try s3t0 -> s2t0, out_s2t0 -> op1
+#         assert not re.search('op', p2, "TRY HARDER 0")
+# 
         return False
     return c
 
