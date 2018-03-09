@@ -452,6 +452,7 @@ assign config_data = config_data_in;
 
 
 //; my $tile_hash_ref;
+//; my $io_track = 0;
 //#####################################################
 //#Instantiate components
 //#####################################################
@@ -672,10 +673,12 @@ assign config_data = config_data_in;
 //;       my $h_new = $h+$h_delta;
 //;       my $w_new = $w+$w_delta;
       .p2f(wire_`$h`_`$w`_BUS1_S`$s`_T0),
-      .f2p(wire_`$h_new`_`$w_new`_BUS1_S`$opposite_side`_T0),
+      .f2p(wire_`$h_new`_`$w_new`_BUS1_S`$opposite_side`_T`$io_track++`),
       .pad(pad_S`$opposite_side`_T`$io_count`),
       .tile_id(16'h`$tile_addr_hex`)
     );
+//;	my $io1bit_num_tracks = $bus_num_tracks_hash{ 'BUS1' };
+//;	if($io_track eq $io1bit_num_tracks) { $io_track=0; }
 //;    } elsif ($tile_type eq "io16") {
     `$inst_obj->instantiate()` 
     (
