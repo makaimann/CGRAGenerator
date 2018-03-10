@@ -2162,6 +2162,11 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
     #######################################
     if DBG: print "2. Attach path endpoint '%s' to dest node '%s' (%s)"\
        % (path[-1], dname, where(1413))
+    
+    if (dname == 'OUTPUT') and re.search('in_s6', path[-1]):
+        output_endpoint_hack(dname, path, DBG)
+        if DBG: print "2 (redo). Attach path endpoint '%s' to dest node '%s' (%s)"\
+           % (path[-1], dname, where(2203))
 
     cend = connect_endpoint(snode, path[-1], dname, dtileno, DBG)
     if not cend:
@@ -2186,6 +2191,30 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
     # (or at least hv vs.vh) and compare thetwo
     return final_path
             
+def output_endpoint_hack(dname, path, DBG=0):
+    assert (dname == 'OUTPUT') and re.search('in_s6', path[-1])
+
+    if DBG: print '''
+          Well.  For one reason or another, we have arrived
+          at the lower left half (side 6) of a mem tile as
+          our OUTPUT endpoint. We gotta do extra stuff to get
+          it to come out the upper right side where it belongs.
+          '''
+    # Before: [ ...'T51_in_s2t0 -> T51_out_s0t0', 'T36_in_s6t0']
+    # After:  [ ...'T51_in_s2t0 -> T51_out_s0t0', 'T36_in_s6t0 -> T36_out_s7t0', 'T36_in_s3t0']
+
+    if DBG: pwhere(2207, "Before: path=[...'%s'" % path[-1])
+
+    new_in  = 'T%d_in_s6t0' % OUTPUT_TILENO
+    new_out = 'T%d_out_s7t0' % OUTPUT_TILENO
+    assert path[-1] == new_in # why not
+    path[-1] = '%s -> %s' % (new_in, new_out)
+
+    new_endpoint = 'T%d_in_s1t0' % OUTPUT_TILENO
+    path.append(new_endpoint)
+
+    if DBG: pwhere(2219, "After:  path=[...'%s', '%s'\n" % (path[-2], path[-1]))
+
 
 def ports_available(snode, path, DBG=0):
     stileno = snode.tileno
@@ -2322,7 +2351,7 @@ def can_connect_end(snode, end,dstport,DBG=0):
 def can_connect(snode, p1, p2, DBG=0):
     # Can we connect ports p1 to p2 as part of 'snode' net?
     if DBG>1: print "Can we connect '%s' to '%s' as part of '%s' net? (%s)"\
-       % (p1,p2,snode,where(1536))
+       % (p1,p2,snode.name,where(1536))
     c = snode.connect(p1,p2,DBG=DBG)
     if not c:
         if DBG>1: print 'oops no route from p1 to p2'

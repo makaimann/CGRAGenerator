@@ -191,7 +191,16 @@ def connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=0):
     # No need for a corner if sr, dst are in same row or col
     (cornerconn,path1,path2) = ([],[],[])
     
-    if rsrc==rdst:
+
+    # FIXME okay maybe this is kinda terrible.
+    memstraight = False
+    # If mem tile is 2 rows high, can match rsrc to either rdst or rdst+1
+    if rsrc == (rdst+1) and is_mem_rc(rdst,cdst):
+        if DBG: print "# connect_tiles.py: Straight enough! (For a memory tile anyway)"
+        memstraight = True
+
+    # if rsrc==rdst:
+    if (rsrc==rdst) or memstraight:
         if DBG: print "# Both tiles are in same row\n# "
         p = connect_tiles_same_row(src,dst,track,DBG=DBG-1)
         (begin,path1,end) = unpack_path(p)

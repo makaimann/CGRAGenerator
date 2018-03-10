@@ -45,6 +45,7 @@ set v =  $gen/verilator/generator_z_tb
 
 if (-e $tmpdir/test_results.log) rm $tmpdir/test_results.log
 
+unset TRACE
 foreach b ($bmarks)
   echo "------------------------------------------------------------------------"
   echo "TESTING $b"
@@ -57,8 +58,11 @@ foreach b ($bmarks)
   # Maybe (FIXME)
   set out = $tmpdir/${b}_CGRA_out.raw
 
+  set tswitch = ''
+  if ($?TRACE) set tswitch = "-trace $b.vcd"
+
   setenv SERPENT_HACK
-  (cd $v; ./run.csh -hackmem -config $bsa -input $input -output $out -delay $delay )
+  (cd $v; ./run.csh $tswitch -hackmem -config $bsa -input $input -output $out -delay $delay )
 
   echo "FINAL COMPARE FOR SUMMARY"
   ./compare_images.csh $b $out examples/${b}_halide_out.raw\
