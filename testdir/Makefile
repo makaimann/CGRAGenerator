@@ -60,6 +60,11 @@ test_all:
 	egrep ^hackdiff $(TEMPDIR)/hackdiff_test.log
 
 
+test_serpent_dev:
+	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR) pointwise conv_1_2
+	../bitstream/bsbuilder/testdir/test_bitstreams.csh $(TEMPDIR) pointwise conv_1_2
+
+
 test_serpent:
 	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR)
 	../bitstream/bsbuilder/testdir/test_bitstreams.csh $(TEMPDIR)

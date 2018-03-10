@@ -176,7 +176,8 @@ class Format:
                 tno = cgra_info.rc2tileno(r,c)
                 # if order[tno] == -1: print ' .',
                 # else: print '%2d' % tno
-                print '%03x' % tno,
+                if tno == 0: print ' x ',
+                else:        print '%3x' % tno,
             print ''
 
 

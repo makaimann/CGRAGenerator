@@ -191,27 +191,7 @@ def connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=0):
     # No need for a corner if sr, dst are in same row or col
     (cornerconn,path1,path2) = ([],[],[])
     
-    memstraight = False
-    if is_mem_rc(rdst,cdst):
-        print "####################################################################"
-        print "####################################################################"
-        print "####################################################################"
-        print "### NAW THIS AIN'T RIGHT ###########################################"
-        print "### NAW THIS AIN'T RIGHT ###########################################"
-        print "### NAW THIS AIN'T RIGHT ###########################################"
-        print "####################################################################"
-        print "####################################################################"
-        print "####################################################################"
-        print "#  rsrc = %d,  rdst = %d" % (rsrc, rdst)
-        rrsrc = rsrc - (rsrc % 2)
-        rrdst = rdst - (rdst % 2)
-        print "# rrsrc = %d, rrdst = %d" % (rrsrc, rrdst)
-        if rrsrc == rrdst:
-            print "# Straight enough! (For a memory tile anyway)"
-            memstraight = True
-
-    # if rsrc==rdst:
-    if (rsrc==rdst) or memstraight:
+    if rsrc==rdst:
         if DBG: print "# Both tiles are in same row\n# "
         p = connect_tiles_same_row(src,dst,track,DBG=DBG-1)
         (begin,path1,end) = unpack_path(p)

@@ -336,7 +336,8 @@ def main(DBG=1):
 
     # FIXME should be part of initialize_node_INPUT somehow right?
     # Allocate tile 0 for input node
-    packer.allocate(0)
+    # packer.allocate(0)  ARRGGGGH you such a idioot
+    packer.allocate(INPUT_TILE)
     if DBG>2:
         print "# order so far"
         print '# '
@@ -1594,7 +1595,7 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
                 pwhere(1567, 'Connecting to OUTPUT tile %d\n' % dtileno)
             else:
                 pwhere(1114, 'Nearest available tile is %d\n' % dtileno)
-                
+
         # If node is pe or mem, can try multiple tracks
 
         # (For now at least) output must be track 0
