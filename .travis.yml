@@ -22,8 +22,20 @@ script:
   # set -e => exit on failure. "You can sandwich the stuff in script with set -e and set +e."
   - set -e
 
-#   - cd testdir; make SILENT=TRUE test_serpent_dev
-  - cd testdir; make SILENT=TRUE test_all
+# #   - cd testdir; make SILENT=TRUE test_serpent_dev
+#   - cd testdir; make SILENT=TRUE test_all
+
+  #
+  #
+  # - cd testdir; make test_all
+  #
+  # BASIC TEST for new IO verilog: pointwise only 'pwv2_io.bs'
+  - pushd testdir
+  -   make SILENT=TRUE test_basic
+  -   make SILENT=TRUE test_unit
+  # - make SILENT=TRUE test_all
+  - popd
+
 
 #   # BASIC TEST for new IO verilog: pointwise only 'pwv2_io.bs'
 #   - pushd testdir
