@@ -33,7 +33,7 @@ script:
   - pushd testdir
   -   make SILENT=TRUE test_basic
   -   make SILENT=TRUE test_unit
-  -   make SILENT=TRUE test_serpent
+  -   make SILENT=TRUE test_serpent_dev
   # - make SILENT=TRUE test_all
   - popd
 
