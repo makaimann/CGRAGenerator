@@ -21,10 +21,6 @@ install:
 script:
   # set -e => exit on failure. "You can sandwich the stuff in script with set -e and set +e."
   - set -e
-
-# #   - cd testdir; make SILENT=TRUE test_serpent_dev
-#   - cd testdir; make SILENT=TRUE test_all
-
   #
   #
   # - cd testdir; make test_all
@@ -33,55 +29,40 @@ script:
   - pushd testdir
   -   make SILENT=TRUE test_basic
   -   make SILENT=TRUE test_unit
-  -   make SILENT=TRUE test_serpent_dev
+  #   make SILENT=TRUE test_serpent_dev
+  -   make SILENT=TRUE test_serpent
   # - make SILENT=TRUE test_all
   - popd
 
+  # Install python for testing infrastructure
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -u -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a
 
-#   # BASIC TEST for new IO verilog: pointwise only 'pwv2_io.bs'
-#   - pushd testdir
-#   -   make SILENT=TRUE test_basic
-#   -   make SILENT=TRUE test_unit
-#   -   make SILENT=TRUE test_serpent_dev
-#   #   make SILENT=TRUE test_all
-#   - popd
+  # Install python dependencies
+  - pip install pytest numpy
+  - pip install git+git://github.com/leonardt/pe.git
 
-#   # Install python for testing infrastructure
-#   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-#   - bash miniconda.sh -u -b -p $HOME/miniconda
-#   - export PATH="$HOME/miniconda/bin:$PATH"
-#   - hash -r
-#   - conda config --set always_yes yes --set changeps1 no
-#   - conda update -q conda
-#   - conda info -a
-# 
-#   # Install python dependencies
-#   - pip install pytest numpy
-#   - pip install git+git://github.com/leonardt/pe.git
-# 
-#   # Run python based tests
-#   - cd $TRAVIS_BUILD_DIR/tests/test_pe
-#   # Set env variables for genesis (installed earlier)
-#   - export GENESIS_HOME=/tmp/Genesis2/Genesis2Tools
-#   - export PATH=$GENESIS_HOME/bin:$GENESIS_HOME/gui/bin:$PATH
-#   - export PERL5LIB=$GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions:$PERL5LIB
-#   - ./run_tests.sh
-# 
-#   
-#   # Redo summary maybe
-#   # Read standalone test result(s) from 'log1'
-#   - echo ""
-#   - echo SUMMARY OF STANDALONE TEST RESULTS
-#   - echo ==================================================
-#   - cd testdir; ./writelog.csh log1 -print
-# 
-#   # What's this?  Do I want this?
-#   # Summary of hackdiff results
-#   egrep ^hackdiff $(TEMPDIR)/hackdiff_test.log
+  # Run python based tests
+  - cd $TRAVIS_BUILD_DIR/tests/test_pe
+  # Set env variables for genesis (installed earlier)
+  - export GENESIS_HOME=/tmp/Genesis2/Genesis2Tools
+  - export PATH=$GENESIS_HOME/bin:$GENESIS_HOME/gui/bin:$PATH
+  - export PERL5LIB=$GENESIS_HOME/PerlLibs/ExtrasForOldPerlDistributions:$PERL5LIB
+  - ./run_tests.sh
 
-
-
-
+  
+  # Redo summary maybe
+  # Read standalone test result(s) from 'log1'
+  - cd $TRAVIS_BUILD_DIR
+  - echo ""
+  - echo SUMMARY OF STANDALONE TEST RESULTS
+  - echo ==================================================
+  - cd testdir; ./writelog.csh log1 -print
 
 # ##############################################################################
 # # NOTES

@@ -818,12 +818,13 @@ class Node:
         except:
             if DBG: print "     NO"
         
-        print "Cannot connect '%s' to '%s' directly.  BUT" % (a,b)
-        print "maybe can connect through intermediary?"
+        print "     Cannot connect '%s' to '%s' directly.  BUT" % (a,b)
+        print "     maybe can connect through intermediary?"
         # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
         # FIXME too many intermediaries?
         pwhere(469)
     
+        # FIXME FIXME spaghetti code from here on down... :(
         # Try to salvage it; e.g. if dest is 'op1' then
         # 'reachable' list can contain 'out' wires; if
         # one of the reachable wires can connect to 'op1'
@@ -837,8 +838,20 @@ class Node:
 
         # FIXME too many intermediaries?
         if not re.search('(op1|op2|mem_in)', b):
-            print "Nope wrong kind of tile for intermediary..."
-            return False
+            print "     Nope wrong kind of wire for intermediary..."
+
+            # Cannot connect 'T36_in_s5t0' to 'T36_out_s0t0' directly.  BUT
+            print "     BUT! Mabye it's this special case with the memory tile"
+            
+            # if top/bottom, then corenerconn() turns
+            # this:      ('T36_in_s5t0', T36_out_s0t0')
+            # into this: ['T36_in_s5t0 -> T36_out_s7t0', 'T36_in_s1t0 -> T36_out_s0t0']
+            path = CT.find_cornerconn(a,b)
+            if len(path) == 2:
+                print "     Connecting top and bottom:", path; return path
+            else:
+                print "     No dice.";                         return False
+
 
         print "maybe can connect '%s' to '%s' through an intermediary"\
               % (a,b)
