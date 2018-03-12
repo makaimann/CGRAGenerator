@@ -470,6 +470,9 @@ if (-e obj_dir/Vtop) then
       goto RUN_SIM
     else
       echo No memhack, must rebuild
+    endif
+  endif
+endif
 
 if ($?tracefile) then
   echo build_simulator.csh $VSWITCH $testbench $tracefile
