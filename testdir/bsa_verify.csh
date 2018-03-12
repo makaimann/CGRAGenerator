@@ -48,7 +48,7 @@ endif
 unset VERBOSE;
 
 while ($#argv)
-  # echo "Found switch '$1'"
+  if ($?VERBOSE) echo "  Found switch '$1'"
   switch ("$1")
     case '-q':
       unset VERBOSE; breaksw
@@ -132,7 +132,7 @@ cat $bsa\
 
 
 # Decode the pure bitstream
-if ($?VERBOSE) echo $CGROOT/bitstream/decoder/decode.py $vswitch $bs -cgra $cgra
+if ($?VERBOSE) echo decode.py $vswitch $bs -cgra $cgra
 
 # $CGROOT/bitstream/decoder/decode.py $vswitch $bs -cgra $cgra \
 $CGROOT/bitstream/decoder/decode.py -q $bs -cgra $cgra \

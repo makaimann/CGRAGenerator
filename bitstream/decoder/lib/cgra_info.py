@@ -156,8 +156,8 @@ def mem_decode(e,DDDDDDDD):
 
         elif se.tag == 'tile_en':
             data = getnum(DDDDDDDD,16)
-            bith = getnum(se.attrib['bit'])
-            bitl = getnum(se.attrib['bit'])
+            bith = getnum(se.attrib['bith'])
+            bitl = getnum(se.attrib['bitl'])
             val = extract_field(data, bith, bitl)
             print "# data[(%d, %d)] : tile_en = %d" % (bith, bitl, val)
 
@@ -172,8 +172,8 @@ def mem_decode(e,DDDDDDDD):
 
         elif se.tag == 'chain_enable':
             data = getnum(DDDDDDDD,16)
-            bith = getnum(se.attrib['bit'])
-            bitl = getnum(se.attrib['bit'])
+            bith = getnum(se.attrib['bith'])
+            bitl = getnum(se.attrib['bitl'])
             val = extract_field(data, bith, bitl)
             print "# data[(%d, %d)] : chain_enable = %d" % (bith, bitl, val)
 
