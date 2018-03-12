@@ -135,15 +135,21 @@ endif
 
 unset HACKMEM
 
+# ALWAYS BE HACKMEM!
+set HACKMEM = 1
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+
 while ($#argv)
   # echo "Found switch '$1'"
   switch ("$1")
 
     case '-hackmem':
-      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
-      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
-      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
       set HACKMEM = 1
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
       breaksw
 
     case '-clean':
@@ -446,121 +452,32 @@ echo ''
 echo '------------------------------------------------------------------------'
 echo "run.csh: Build the simulator..."
 
-  # Build the necessary switches
+# How about skip simulator if:
+# 1. obj_dir/Vtop exists
+# 2. obj_dir/Vtop is newer than $vdir/../cgra_info.txt  NOPE
+# 3. hackmem is in place
 
-  # Gather the verilog files for verilator command line
-  pushd $vdir >& /dev/null
-    # set vfiles = (*.v *.sv)
-    set vfiles = (*.v)
-  popd >& /dev/null
+if (-e obj_dir/Vtop) then
+  echo Found existing obj_dir/Vtop
+  set vdir = ../../hardware/generator_z/top/genesis_verif
+  if (-e $vdir/memory_core_unq1.v) then 
+    echo Found $vdir/memory_core_unq1.v
+    unset foundhack
+    egrep 'assign.*WENHACK' $vdir/memory_core_unq1.v && set foundhack
+    if ($?foundhack) then
+      echo Found memhack
+      echo Found Vtop and memhack = skipping verilator build
+      goto RUN_SIM
+    else
+      echo No memhack, must rebuild
 
-  # So many warnings it wants to DIE!
-  set myswitches = '-Wno-fatal'
-  set top        = 'top'
-
-  # Add trace switch if trace requested
-  if ($?tracefile) set myswitches = "$myswitches --trace"
-
-  # Note default trace_filename in top_tb.cpp is "top_tb.vcd"
-
-  # Run verilator to build the simulator.
-
-  # build C++ project
-
-  set opt = ''
-
-# Hey HEY built a test_pe that maybe has working LUTs for kiwi;
-# new LUT code gets swapped in by top/run.csh
-#
-#   ########################################################################
-#   # O0 hack for nbdev3 and beyond: only runs on kiwi if opt OFF
-# 
-#   set opt = ''
-#   set branch = `git rev-parse --abbrev-ref HEAD`
-#   set badbranch = nbdev3
-#   if (! $?TRAVIS && "$branch" == "$badbranch") then
-# 
-#     # OMG -O0 is SOO SLOWWW let's just disable luts instead
-#     # set opt = '-O0'
-#     # echo
-#     # echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
-#     # echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
-#     # echo "WARNING VERILATOR OPT LEVEL 0 (NO OPT)"
-# 
-#     set hwdir = $vdir/../..
-#     echo "WARNING LUTS (and res_p) DISABLED b/c kiwi + $badbranch"
-#     echo "WARNING LUTS (and res_p) DISABLED b/c kiwi + $badbranch"
-#     echo "WARNING LUTS (and res_p) DISABLED b/c kiwi + $badbranch"
-#     echo
-#     echo diff $vdir/test_pe_unq1.sv $hwdir/pe_new/pe/rtl/test_pe_unq1.sv.no_lut
-#     diff $vdir/test_pe_unq1.sv $hwdir/pe_new/pe/rtl/test_pe_unq1.sv.no_lut
-# #     echo
-# #     echo cp $hwdir/pe_new/pe/rtl/test_pe_unq1.sv.no_lut $vdir/test_pe_unq1.sv
-# #     cp $hwdir/pe_new/pe/rtl/test_pe_unq1.sv.no_lut $vdir/test_pe_unq1.sv || exit 13
-# 
-#   endif
-
-  echo
-  echo verilator $opt -Wall $myswitches --cc --exe $testbench \
-    -y $vdir $vfiles --top-module $top \
-    | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
-  echo
-
-  # verilator --version; g++ --version
-
-  verilator $opt $myswitches -Wall $myswitches --cc --exe $testbench \
-    -y $vdir $vfiles --top-module $top \
-    >& $tmpdir/verilator.out
-
-  set verilator_exit_status = $status
-
-  if ($?VERBOSE) then
-    echo "%Warning1 Ignoring warnings about unoptimizable circularities in switchbox wires (see SR for explainer)."
-    echo '%Warning2 To get the flavor of all the warnings, just showing first 40 lines of output.'
-    echo "%Warning3 See $tmpdir/verilator.out for full log."
-    echo
-
-    # This (head -n 40) can cause broken pipe error (!)
-    # awk -f ./run-verilator-warning-filter.awk $tmpdir/verilator.out | head -n 40
-    awk -f ./run-verilator-warning-filter.awk $tmpdir/verilator.out
-
-  else
-    echo "See $tmpdir/verilator.out for full log of verilator warnings."
-  endif
-
-  if ($verilator_exit_status != 0) then
-    tail -40 $tmpdir/verilator.out
-    echo ""
-    echo "VERILATOR FAILED!"
-    echo "See $tmpdir/verilator.out for full log of verilator warnings."
-    exit -1
-  endif
-
-  echo
-  echo "run.csh: Build the testbench..."
-
-  if ($?VERBOSE) then
-    echo
-    echo "make \"
-    echo "  -j -C obj_dir/ -f $vtop.mk $vtop"
-  endif
-
-  echo
-  if (-e obj_dir/Vtop) /bin/rm obj_dir/Vtop
-
-  echo "make $vtop -j -C obj_dir/ -f $vtop.mk $vtop"
-  make \
-    -j -C obj_dir/ -f $vtop.mk $vtop \
-    >& $tmpdir/make_vtop.log \
-    || set ERROR
-
-  if ($?ERROR) then
-    cat $tmpdir/make_vtop.log; exit 13
-  endif
-
-  if ($?VERBOSE) then
-    cat $tmpdir/make_vtop.log; echo
-  endif
+if ($?tracefile) then
+  echo build_simulator.csh $VSWITCH $testbench $tracefile
+  build_simulator.csh $VSWITCH $testbench $tracefile
+else
+  echo build_simulator.csh $VSWITCH $testbench
+  build_simulator.csh $VSWITCH $testbench
+endif
 
 
 RUN_SIM:
