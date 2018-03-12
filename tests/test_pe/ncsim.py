@@ -4,29 +4,29 @@ def compile(name, opcode, tests):
     for test in tests:
         test_string += f"  op_a = {test[0]};\n"
         test_string += f"  op_b = {test[1]};\n"
-        test_string += f"  assert (res  == {test[2]}) else $error(\"Failed!\");\n"
+        test_string += f"  #1\n"
+        test_string += f"  if (res != {test[2]}) $display(\"Failed!\");\n"
+        test_string += f"  #20\n"
 
     harness = """\
 `timescale 1ns/1ns
-module tb;
+module test_pe_comp_unq1_tb;
 localparam WIDTH = 16;
-wire [WIDTH-1:0] op_a;
-wire [WIDTH-1:0] op_b;
-wire [WIDTH-1:0] op_c;
+reg [WIDTH-1:0] op_a;
+reg [WIDTH-1:0] op_b;
 wire [WIDTH-1:0] res;
 
 initial begin
 {tests}
-  #1000 $stop;
+  #20 $finish;
 end
 
 
 test_pe_comp_unq1 dut (
     .op_a(op_a),
     .op_b(op_b),
-    .op_c(op_c),
-    .res(res)
-    .op_code({opcode});
+    .res(res),
+    .op_code({opcode})
    );
 endmodule
 """.format(tests=test_string,opcode=opcode&0x1ff)
