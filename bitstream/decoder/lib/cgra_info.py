@@ -156,8 +156,8 @@ def mem_decode(e,DDDDDDDD):
 
         elif se.tag == 'tile_en':
             data = getnum(DDDDDDDD,16)
-            bith = getnum(se.attrib['bit'])
-            bitl = getnum(se.attrib['bit'])
+            bith = getnum(se.attrib['bith'])
+            bitl = getnum(se.attrib['bitl'])
             val = extract_field(data, bith, bitl)
             print "# data[(%d, %d)] : tile_en = %d" % (bith, bitl, val)
 
@@ -172,8 +172,8 @@ def mem_decode(e,DDDDDDDD):
 
         elif se.tag == 'chain_enable':
             data = getnum(DDDDDDDD,16)
-            bith = getnum(se.attrib['bit'])
-            bitl = getnum(se.attrib['bit'])
+            bith = getnum(se.attrib['bith'])
+            bitl = getnum(se.attrib['bitl'])
             val = extract_field(data, bith, bitl)
             print "# data[(%d, %d)] : chain_enable = %d" % (bith, bitl, val)
 
@@ -417,6 +417,16 @@ def ntiles():
     '''How many tiles?'''
     load_check()
     return len(CGRA.findall('tile')) # length = number of items in list
+
+def grid_dimensions():
+    '''Return grid (nrows,ncols) e.g. (16,16)'''
+    (maxrow,maxcol) = (0,0)
+    for i in range(ntiles()):
+        if tiletype(i) != 'io1bit': continue # Quelle hackrreur!
+        (r,c) = tileno2rc(i)
+        if r > maxrow: maxrow = r
+        if c > maxcol: maxcol = c
+    return (maxrow+1,maxcol+1)
 
 def getnum(s, base=10):
     '''s="14" => result=14; s="0x14" => result=20'''

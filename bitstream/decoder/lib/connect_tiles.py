@@ -191,7 +191,16 @@ def connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=0):
     # No need for a corner if sr, dst are in same row or col
     (cornerconn,path1,path2) = ([],[],[])
     
-    if rsrc==rdst:
+
+    # FIXME okay maybe this is kinda terrible.
+    memstraight = False
+    # If mem tile is 2 rows high, can match rsrc to either rdst or rdst+1
+    if rsrc == (rdst+1) and is_mem_rc(rdst,cdst):
+        if DBG: print "# connect_tiles.py: Straight enough! (For a memory tile anyway)"
+        memstraight = True
+
+    # if rsrc==rdst:
+    if (rsrc==rdst) or memstraight:
         if DBG: print "# Both tiles are in same row\n# "
         p = connect_tiles_same_row(src,dst,track,DBG=DBG-1)
         (begin,path1,end) = unpack_path(p)
@@ -250,13 +259,45 @@ def connect_through_corner(src,dst,rcorn,ccorn,track=0,dir='hv',DBG=0):
         if DBG>1: print "# "
 
         # In corner tile, connect end1 to begin2
-        cornerconn = ["%s -> %s" % (end1,begin2)]
-        if DBG>1: print "# corner:", cornerconn
-        if DBG: print "# "
+        # eg cornerconn = ["%s -> %s"] % (end1,begin2)
+        # or cornerconn = ["%s -> %s", "%s -> %s"] % (end1,mid1,mid2,begin2)]
+        cornerconn = find_cornerconn(end1,begin2,DBG=DBG)
 
         final_path = path1 + cornerconn + path2
         if DBG: prettyprint_path(dir, begin1, path1, cornerconn, path2, end2)
         return pack_path(begin1, final_path, end2)
+
+
+def find_cornerconn(end1,begin2,DBG=0):
+    '''Connect end1 to begin2 in same tile'''
+
+    (tileno1, dir1, side1, track1) = parsewire(end1)
+    (tileno2, dir2, side2, track2) = parsewire(begin2)
+    (half1, half2) = (side1/4,side2/4) # Note '/' div only works for pos ints!!!?
+    if half1 == half2:
+        cornerconn = ["%s -> %s" % (end1,begin2)]
+
+    else:
+        # Cannot connect top and bottom halves directly e.g. in_s6 -> out_s3
+        # corner: ['T69_in_s6t0 -> T69_out_s3t0'] must change to
+        # corner: ['T69_in_s6t0 -> T69_out_s7t0', 'T69_in_s1t0 -> T69_out_s3t0']
+        if DBG>1: print "# OOPS Cannot connect side %d to side %d w/o intermediary"
+        if side1 < 4:
+            if DBG>1: print "# Going from top to bottom half"
+            mid1 = 'T%d_out_s1t%d' % (tileno1, track1)
+            mid2 =  'T%d_in_s7t%d' % (tileno1, track1)
+        else:
+            if DBG>1: print "# Going from bottom to top half"
+            mid1 = 'T%d_out_s7t%d' % (tileno1, track1)
+            mid2 =  'T%d_in_s1t%d' % (tileno1, track1)
+        conn1 = "%s -> %s" % (end1,mid1)
+        conn2 = "%s -> %s" % (mid2,begin2)
+        cornerconn = [conn1,conn2]
+
+    if DBG>1: print "# corner:", cornerconn
+    if DBG: print "# "
+    return cornerconn
+
 
 def prettyprint_path(dir, begin, path1, cornerconn, path2, end):
     if dir == 'hv': (p1,p2) = ('hpath','vpath')

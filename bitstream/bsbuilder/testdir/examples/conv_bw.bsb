@@ -1,221 +1,237 @@
 
 # CONSTANTS
-# const0_0::add_457_460_461 T32_op2
-# const11_11::mul_45911_460 T25_op2
-# const12_12::mul_47112_472 T12_op2
-# const13_13$1::mul_48313_484 T10_op2
-# const14_14::mul_46314_464 T18_op2
-# const15_15::mul_47515_476 T4_op2
-# const16_16::mul_48716_488 T1_op2
-# const17_17::mul_46717_468 T16_op2
-# const18_18::mul_47918_480 T2_op2
-# const19_19::mul_49119_492 T0_op2
+# const0_0::add_457_460_461 T90_op2
+# const11_11::mul_45911_460 T75_op2
+# const12_12::mul_47112_472 T44_op2
+# const13_13$1::mul_48313_484 T42_op2
+# const14_14::mul_46314_464 T58_op2
+# const15_15::mul_47515_476 T25_op2
+# const16_16::mul_48716_488 T22_op2
+# const17_17::mul_46717_468 T56_op2
+# const18_18::mul_47918_480 T23_op2
+# const19_19::mul_49119_492 T21_op2
 
-# REGISTERS ['T0_out_s1t0', 'T3_out_s0t0', 'T17_out_s0t0', 'T25_op1', 'T12_op1', 'T10_op1']
+# REGISTERS ['T21_out_s1t0', 'T24_out_s0t0', 'T57_out_s0t0', 'T75_op1', 'T44_op1', 'T42_op1']
 
 # PE tiles
-T0_mul(wire,const19_19)    # mul_49119_492
-T1_mul(wire,const16_16)    # mul_48716_488
-T2_mul(wire,const18_18)    # mul_47918_480
-T4_mul(wire,const15_15)    # mul_47515_476
-T8_add(wire,wire)          # add_457_476_477
-T9_add(wire,wire)          # add_457_472_473
-T10_mul(reg,const13_13$1)  # mul_48313_484
-T11_add(wire,wire)         # add_457_464_465
-T12_mul(reg,const12_12)    # mul_47112_472
-T14_add(wire,wire)         # add_457_480_481
-T15_add(wire,wire)         # add_457_468_469
-T16_mul(wire,const17_17)   # mul_46717_468
-T18_mul(wire,const14_14)   # mul_46314_464
-T22_add(wire,wire)         # add_457_484_485
-T23_add(wire,wire)         # add_457_488_489
-T24_add(wire,wire)         # add_457_492_493
-T25_mul(reg,const11_11)    # mul_45911_460
-T32_add(wire,const0_0)     # add_457_460_461
+T21_mul(wire,const19_19)   # mul_49119_492
+T22_mul(wire,const16_16)   # mul_48716_488
+T23_mul(wire,const18_18)   # mul_47918_480
+T25_mul(wire,const15_15)   # mul_47515_476
+T40_add(wire,wire)         # add_457_476_477
+T41_add(wire,wire)         # add_457_472_473
+T42_mul(reg,const13_13$1)  # mul_48313_484
+T43_add(wire,wire)         # add_457_464_465
+T44_mul(reg,const12_12)    # mul_47112_472
+T54_add(wire,wire)         # add_457_480_481
+T55_add(wire,wire)         # add_457_468_469
+T56_mul(wire,const17_17)   # mul_46717_468
+T58_mul(wire,const14_14)   # mul_46314_464
+T72_add(wire,wire)         # add_457_484_485
+T73_add(wire,wire)         # add_457_488_489
+T74_add(wire,wire)         # add_457_492_493
+T75_mul(reg,const11_11)    # mul_45911_460
+T90_add(wire,const0_0)     # add_457_460_461
 
 # MEM tiles
-T3_mem_64    # mem_1 fifo_depth=64
-T17_mem_64   # mem_2 fifo_depth=64
+T24_mem_64   # mem_1 fifo_depth=64
+T57_mem_64   # mem_2 fifo_depth=64
 
 # ROUTING
 
 # INPUT::mem_1
-T0_in_s2t0 -> T0_out_s0t0
-T1_in_s2t0 -> T1_out_s0t0
-T2_in_s2t0 -> T2_out_s0t0
-T3_in_s2t0 -> T3_mem_in
+T21_in_s2t0 -> T21_out_s0t0
+T22_in_s2t0 -> T22_out_s0t0
+T23_in_s2t0 -> T23_out_s0t0
+T24_in_s2t0 -> T24_mem_in
 
 # INPUT::reg_0_1
-T0_in_s2t0 -> T0_out_s1t0 (r)
+T21_in_s2t0 -> T21_out_s1t0 (r)
 
 # INPUT::mul_49119_492
-T0_in_s2t0 -> T0_op1
+T21_in_s2t0 -> T21_op1
 
 # add_457_460_461::add_457_464_465
-T32_pe_out -> T32_out_s3t1
-T25_in_s1t1 -> T25_out_s3t1
-T18_in_s1t1 -> T18_out_s3t1
-T11_in_s1t1 -> T11_op2
+T90_pe_out -> T90_out_s3t1
+T75_in_s1t1 -> T75_out_s3t1
+T58_in_s1t1 -> T58_out_s3t1
+T43_in_s1t1 -> T43_op2
 
 # add_457_464_465::add_457_468_469
-T11_pe_out -> T11_out_s2t1
-T3_in_s4t1 -> T3_out_s6t1
-T10_in_s0t1 -> T10_out_s2t1
-T9_in_s0t1 -> T9_out_s1t1
-T15_in_s3t1 -> T15_out_s1t1
-T15_out_s1t1 -> T15_op2
+T43_pe_out -> T43_out_s2t1
+T24_in_s4t1 -> T24_out_s6t1
+T42_in_s0t1 -> T42_out_s2t1
+T41_in_s0t1 -> T41_out_s1t1
+T55_in_s3t1 -> T55_out_s1t1
+T55_out_s1t1 -> T55_op2
 
 # add_457_468_469::add_457_472_473
-T15_pe_out -> T15_out_s3t0
-T9_in_s1t0 -> T9_out_s2t0
-T9_out_s2t0 -> T9_op1
+T55_pe_out -> T55_out_s3t0
+T41_in_s1t0 -> T41_out_s2t0
+T41_out_s2t0 -> T41_op1
 
 # add_457_472_473::add_457_476_477
-T9_pe_out -> T9_out_s2t1
-T8_in_s0t1 -> T8_out_s2t1
-T8_out_s2t1 -> T8_op1
+T41_pe_out -> T41_out_s2t1
+T40_in_s0t1 -> T40_out_s2t1
+T40_out_s2t1 -> T40_op1
 
 # add_457_476_477::add_457_480_481
-T8_pe_out -> T8_out_s1t0
-T14_in_s3t0 -> T14_out_s2t0
-T14_out_s2t0 -> T14_op1
+T40_pe_out -> T40_out_s1t0
+T54_in_s3t0 -> T54_out_s2t0
+T54_out_s2t0 -> T54_op1
 
 # add_457_480_481::add_457_484_485
-T14_pe_out -> T14_out_s1t0
-T22_in_s3t0 -> T22_out_s2t0
-T22_out_s2t0 -> T22_op1
+T54_pe_out -> T54_out_s1t0
+T72_in_s3t0 -> T72_out_s2t0
+T72_out_s2t0 -> T72_op1
 
 # add_457_484_485::add_457_488_489
-T22_pe_out -> T22_out_s0t0
-T23_in_s2t0 -> T23_op1
+T72_pe_out -> T72_out_s0t0
+T73_in_s2t0 -> T73_op1
 
 # add_457_488_489::add_457_492_493
-T23_pe_out -> T23_out_s0t0
-T24_in_s2t0 -> T24_op1
+T73_pe_out -> T73_out_s0t0
+T74_in_s2t0 -> T74_op1
 
 # add_457_492_493::OUTPUT
-T24_pe_out -> T24_out_s0t0
+T74_pe_out -> T74_out_s0t0
+T57_in_s6t0 -> T57_out_s4t0
+T75_in_s2t0 -> T75_out_s0t0
+T76_in_s2t0 -> T76_out_s0t0
+T77_in_s2t0 -> T77_out_s0t0
+T61_in_s6t0 -> T61_out_s4t0
+T78_in_s2t0 -> T78_out_s0t0
+T79_in_s2t0 -> T79_out_s0t0
+T80_in_s2t0 -> T80_out_s0t0
+T65_in_s6t0 -> T65_out_s4t0
+T81_in_s2t0 -> T81_out_s0t0
+T82_in_s2t0 -> T82_out_s0t0
+T83_in_s2t0 -> T83_out_s0t0
+T69_in_s6t0 -> T69_out_s7t0
+T69_in_s1t0 -> T69_out_s3t0
+T36_in_s5t0 -> T36_out_s7t0
+T36_in_s1t0 -> T36_out_s0t0
 
 # mem_1::mem_2
-T3_mem_out -> T3_out_s5t0
-T17_in_s3t0 -> T17_out_s2t0
-T17_out_s2t0 -> T17_mem_in
+T24_mem_out -> T24_out_s5t0
+T57_in_s3t0 -> T57_out_s2t0
+T57_out_s2t0 -> T57_mem_in
 
 # mem_1::reg_1_1
-T3_mem_out -> T3_out_s0t0 (r)
+T24_mem_out -> T24_out_s0t0 (r)
 
 # mem_1::mul_47918_480
-T3_mem_out -> T3_out_s2t0
-T2_in_s0t0 -> T2_out_s2t0
-T2_out_s2t0 -> T2_op1
+T24_mem_out -> T24_out_s2t0
+T23_in_s0t0 -> T23_out_s2t0
+T23_out_s2t0 -> T23_op1
 
 # mem_2::reg_2_1
-T17_mem_out -> T17_out_s0t0 (r)
+T57_mem_out -> T57_out_s0t0 (r)
 
 # mem_2::mul_46717_468
-T17_mem_out -> T17_out_s2t1
-T16_in_s0t1 -> T16_out_s2t1
-T16_out_s2t1 -> T16_op1
+T57_mem_out -> T57_out_s2t1
+T56_in_s0t1 -> T56_out_s2t1
+T56_out_s2t1 -> T56_op1
 
 # mul_45911_460::add_457_460_461
-T25_pe_out -> T25_out_s1t0
-T32_in_s3t0 -> T32_out_s2t0
-T32_out_s2t0 -> T32_op1
+T75_pe_out -> T75_out_s1t0
+T90_in_s3t0 -> T90_out_s2t0
+T90_out_s2t0 -> T90_op1
 
 # mul_46314_464::add_457_464_465
-T18_pe_out -> T18_out_s3t0
-T11_in_s1t0 -> T11_out_s2t0
-T11_out_s2t0 -> T11_op1
+T58_pe_out -> T58_out_s3t0
+T43_in_s1t0 -> T43_out_s2t0
+T43_out_s2t0 -> T43_op1
 
 # mul_46717_468::add_457_468_469
-T16_pe_out -> T16_out_s2t0
-T15_in_s0t0 -> T15_out_s2t0
-T15_out_s2t0 -> T15_op1
+T56_pe_out -> T56_out_s2t0
+T55_in_s0t0 -> T55_out_s2t0
+T55_out_s2t0 -> T55_op1
 
 # mul_47112_472::add_457_472_473
-T12_pe_out -> T12_out_s2t3
-T11_in_s0t3 -> T11_out_s2t3
-T3_in_s4t3 -> T3_out_s6t3
-T10_in_s0t3 -> T10_out_s2t3
-T9_in_s0t3 -> T9_out_s1t3
-T9_out_s1t3 -> T9_op2
+T44_pe_out -> T44_out_s2t3
+T43_in_s0t3 -> T43_out_s2t3
+T24_in_s4t3 -> T24_out_s6t3
+T42_in_s0t3 -> T42_out_s2t3
+T41_in_s0t3 -> T41_out_s1t3
+T41_out_s1t3 -> T41_op2
 
 # mul_47515_476::add_457_476_477
-T4_pe_out -> T4_out_s1t2
-T11_in_s3t2 -> T11_out_s2t2
-T3_in_s4t2 -> T3_out_s6t2
-T10_in_s0t2 -> T10_out_s2t2
-T9_in_s0t2 -> T9_out_s2t2
-T8_in_s0t2 -> T8_out_s1t2
-T8_out_s1t2 -> T8_op2
+T25_pe_out -> T25_out_s1t2
+T43_in_s3t2 -> T43_out_s2t2
+T24_in_s4t2 -> T24_out_s6t2
+T42_in_s0t2 -> T42_out_s2t2
+T41_in_s0t2 -> T41_out_s2t2
+T40_in_s0t2 -> T40_out_s1t2
+T40_out_s1t2 -> T40_op2
 
 # mul_47918_480::add_457_480_481
-T2_pe_out -> T2_out_s2t1
-T1_in_s0t1 -> T1_out_s2t1
-T0_in_s0t1 -> T0_out_s1t1
-T8_in_s3t1 -> T8_out_s1t1
-T14_in_s3t1 -> T14_out_s1t1
-T14_out_s1t1 -> T14_op2
+T23_pe_out -> T23_out_s2t1
+T22_in_s0t1 -> T22_out_s2t1
+T21_in_s0t1 -> T21_out_s1t1
+T40_in_s3t1 -> T40_out_s1t1
+T54_in_s3t1 -> T54_out_s1t1
+T54_out_s1t1 -> T54_op2
 
 # mul_48313_484::add_457_484_485
-T10_pe_out -> T10_out_s1t0
-T16_in_s3t0 -> T16_out_s1t0
-T24_in_s3t0 -> T24_out_s2t0
-T23_in_s0t0 -> T23_out_s2t0
-T22_in_s0t0 -> T22_out_s1t0
-T22_out_s1t0 -> T22_op2
+T42_pe_out -> T42_out_s1t0
+T56_in_s3t0 -> T56_out_s1t0
+T74_in_s3t0 -> T74_out_s2t0
+T73_in_s0t0 -> T73_out_s2t0
+T72_in_s0t0 -> T72_out_s1t0
+T72_out_s1t0 -> T72_op2
 
 # mul_48716_488::add_457_488_489
-T1_pe_out -> T1_out_s1t0
-T9_in_s3t0 -> T9_out_s1t0
-T15_in_s3t0 -> T15_out_s1t0
-T23_in_s3t0 -> T23_out_s1t0
-T23_out_s1t0 -> T23_op2
+T22_pe_out -> T22_out_s1t0
+T41_in_s3t0 -> T41_out_s1t0
+T55_in_s3t0 -> T55_out_s1t0
+T73_in_s3t0 -> T73_out_s1t0
+T73_out_s1t0 -> T73_op2
 
 # mul_49119_492::add_457_492_493
-T0_pe_out -> T0_out_s0t1
-T1_in_s2t1 -> T1_out_s0t1
-T2_in_s2t1 -> T2_out_s1t1
-T10_in_s3t1 -> T10_out_s1t1
-T16_in_s3t1 -> T16_out_s1t1
-T24_in_s3t1 -> T24_out_s1t1
-T24_out_s1t1 -> T24_op2
+T21_pe_out -> T21_out_s0t1
+T22_in_s2t1 -> T22_out_s0t1
+T23_in_s2t1 -> T23_out_s1t1
+T42_in_s3t1 -> T42_out_s1t1
+T56_in_s3t1 -> T56_out_s1t1
+T74_in_s3t1 -> T74_out_s1t1
+T74_out_s1t1 -> T74_op2
 
 # reg_0_1::reg_0_2
-T8_in_s3t0 -> T8_out_s0t0
-T9_in_s2t0 -> T9_out_s0t0
-T10_in_s2t0 -> T10_op1 (r)
+T40_in_s3t0 -> T40_out_s0t0
+T41_in_s2t0 -> T41_out_s0t0
+T42_in_s2t0 -> T42_op1 (r)
 
 # reg_0_1::mul_48716_488
-T8_in_s3t0 -> T8_out_s0t0
-T9_in_s2t0 -> T9_out_s3t0
-T1_in_s1t0 -> T1_out_s2t0
-T1_out_s2t0 -> T1_op1
+T40_in_s3t0 -> T40_out_s0t0
+T41_in_s2t0 -> T41_out_s3t0
+T22_in_s1t0 -> T22_out_s2t0
+T22_out_s2t0 -> T22_op1
 
 # reg_0_2::mul_48313_484
-# T10_op1 (r) 
+# T42_op1 (r) 
 
 # reg_1_1::reg_1_2
-T4_in_s2t0 -> T4_out_s1t0
-T11_in_s3t0 -> T11_out_s0t0
-T12_in_s2t0 -> T12_op1 (r)
+T25_in_s2t0 -> T25_out_s1t0
+T43_in_s3t0 -> T43_out_s0t0
+T44_in_s2t0 -> T44_op1 (r)
 
 # reg_1_1::mul_47515_476
-T4_in_s2t0 -> T4_op1
+T25_in_s2t0 -> T25_op1
 
 # reg_1_2::mul_47112_472
-# T12_op1 (r) 
+# T44_op1 (r) 
 
 # reg_2_1::reg_2_2
-T18_in_s2t0 -> T18_out_s1t0
-T25_in_s3t0 -> T25_out_s2t0
-T25_out_s2t0 -> T25_op1 (r)
+T58_in_s2t0 -> T58_out_s1t0
+T75_in_s3t0 -> T75_out_s2t0
+T75_out_s2t0 -> T75_op1 (r)
 
 # reg_2_1::mul_46314_464
-T18_in_s2t0 -> T18_op1
+T58_in_s2t0 -> T58_op1
 
 # reg_2_2::mul_45911_460
-# T25_op1 (r) 
+# T75_op1 (r) 
 
-# INPUT  tile  0 (0,0) / in_BUS16_S2_T0 / wire_0_m1_BUS16_S0_T0
-# OUTPUT tile 24 (3,2) / out_BUS16_S0_T0 / wire_3_2_BUS16_S0_T0
+# INPUT  tile 21 (2,2) / in_BUS16_S2_T0 / wire_2_1_BUS16_S0_T0
+# OUTPUT tile 36 (2,17) / out_0_BUS16_S0_T0 / wire_2_17_BUS16_S0_T0

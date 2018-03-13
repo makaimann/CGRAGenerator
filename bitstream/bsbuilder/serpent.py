@@ -55,14 +55,53 @@ GRID_HEIGHT = GRID_WIDTH
 # INPUT_WIRE   = 'in_s2t0'
 # INPUT_WIRE_T = 'T0_in_s2t0'
 
-# New regime, input is T11_in_s2t0
-#FIXME should maybe search for first PE and make that the input tile
-INPUT_TILENO = 11
-INPUT_TILE   = INPUT_TILENO
-INPUT_WIRE   = 'in_s2t0'
-INPUT_WIRE_T = 'T11_in_s2t0'
+
+# These all get rewritten by find_input_tile, below.
+INPUT_TILENO =      26 # Actually I think it's 21 :o
+INPUT_TILE   =      INPUT_TILENO
+INPUT_WIRE   =      'in_s2t0'
+INPUT_WIRE_T =      'T%d_in_s2t0' % INPUT_TILENO
 INPUT_TILE_PE_OUT = "T%d_pe_out" % INPUT_TILENO
 
+# Find the input tile
+def find_input_tile():
+    # Assumes first pe tile found is the input tile (how terrible is that!?
+    for i in range(1000):
+        t = cgra_info.tiletype(i)
+        if t[0:2] == "pe":
+
+            global INPUT_TILENO
+            global INPUT_TILE
+            global INPUT_WIRE
+            global INPUT_WIRE_T
+            global INPUT_TILE_PE_OUT
+
+            INPUT_TILENO = i
+            INPUT_TILE   = INPUT_TILENO
+            INPUT_WIRE   = 'in_s2t0'
+            INPUT_WIRE_T = 'T%d_%s' % (INPUT_TILENO, INPUT_WIRE)
+            INPUT_TILE_PE_OUT = "T%d_pe_out" % INPUT_TILENO
+            
+            print "I think  input tile is T%d" % INPUT_TILENO
+            print "I think  input wire is %s" % INPUT_WIRE_T
+            print "I think output wire is %s" % INPUT_TILE_PE_OUT
+            return i
+
+
+OUTPUT_TILENO = 0x24
+# Find the output tile = last pe or mem in row 2
+def find_output_tile():
+    global OUTPUT_TILENO
+    for i in range(1000):
+        t = cgra_info.tiletype(i)
+        if (t[0:2] == "pe") or (t[0:3] == "mem"):
+            (r,c) = cgra_info.tileno2rc(i)
+            if r == 2:
+                OUTPUT_TILENO = i
+            elif r > 2:
+                print "I think output tile is T%d" % OUTPUT_TILENO
+                # Early out
+                return
 
 # Set this to True if a PE has been placed in the INPUT tile
 # FIXME is this the best way to do this!!?
@@ -164,7 +203,7 @@ def test_manhattan_distance_rc():
     print ''
 
 def test_fan_out():
-    # S0 only connecst to four sides
+    # S0 only connects to four sides
     cgra_info.fan_out('in_BUS16_S0_T0', 0, DBG=1)
     
     # S2 can also connect to op1
@@ -274,6 +313,10 @@ def main(DBG=1):
     print '# serpent.py: Read cgra info'
     cgra_info.read_cgra_info(cgra_filename, verbose=True)
 
+    # Find INPUT and OUTPUT tiles heuristically
+    find_input_tile()
+    find_output_tile()
+
     print '######################################################'
     print '# serpent.py: Initialize the packer'
     packer.USE_CGRA_INFO = True
@@ -293,7 +336,8 @@ def main(DBG=1):
 
     # FIXME should be part of initialize_node_INPUT somehow right?
     # Allocate tile 0 for input node
-    packer.allocate(0)
+    # packer.allocate(0)  ARRGGGGH you such a idioot
+    packer.allocate(INPUT_TILE)
     if DBG>2:
         print "# order so far"
         print '# '
@@ -764,18 +808,23 @@ class Node:
 
         # print "       Ask cgra: can '%s' connect to '%s'? (%s)" % (a,b,where(457))
 
-        if cgra_info.connect_within_tile(T, a, b, DBG-1):
+        # if cgra_info.connect_within_tile(T, a, b, DBG-1):
+        # FIXME is this bad?  connect_within_tile() used to
+        # return False if no connect, now it dies.
+        try:
+            cgra_info.connect_within_tile(T, a, b, DBG-1)
             if DBG: print '     YES'
             return ['%s -> %s' % (a,b)]
-        else:
+        except:
             if DBG: print "     NO"
         
-        print "Cannot connect '%s' to '%s' directly.  BUT" % (a,b)
-        print "maybe can connect through intermediary?"
+        print "     Cannot connect '%s' to '%s' directly.  BUT" % (a,b)
+        print "     maybe can connect through intermediary?"
         # sys.stdout.flush(); traceback.print_stack(); sys.stderr.flush()
         # FIXME too many intermediaries?
         pwhere(469)
     
+        # FIXME FIXME spaghetti code from here on down... :(
         # Try to salvage it; e.g. if dest is 'op1' then
         # 'reachable' list can contain 'out' wires; if
         # one of the reachable wires can connect to 'op1'
@@ -789,8 +838,20 @@ class Node:
 
         # FIXME too many intermediaries?
         if not re.search('(op1|op2|mem_in)', b):
-            print "Nope wrong kind of tile for intermediary..."
-            return False
+            print "     Nope wrong kind of wire for intermediary..."
+
+            # Cannot connect 'T36_in_s5t0' to 'T36_out_s0t0' directly.  BUT
+            print "     BUT! Mabye it's this special case with the memory tile"
+            
+            # if top/bottom, then corenerconn() turns
+            # this:      ('T36_in_s5t0', T36_out_s0t0')
+            # into this: ['T36_in_s5t0 -> T36_out_s7t0', 'T36_in_s1t0 -> T36_out_s0t0']
+            path = CT.find_cornerconn(a,b)
+            if len(path) == 2:
+                print "     Connecting top and bottom:", path; return path
+            else:
+                print "     No dice.";                         return False
+
 
         print "maybe can connect '%s' to '%s' through an intermediary"\
               % (a,b)
@@ -1476,7 +1537,7 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
     if DBG: print indent+"PNR '%s' -> '%s'" % (sname,dname)
 
-    # Source should alreay be placed, yes?
+    # Source should already be placed, yes?
     if not is_placed(sname):
         print "ERROR '%s' has not been placed yet?" % sname
     assert is_placed(sname)
@@ -1514,27 +1575,45 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         # print indent+"No home for '%s'"
         if DBG: print indent+"No home for '%s'" % dname
 
-        if dname=='OUTPUT':
-            process_output(sname,dname)
-            return True
+
+
+        # Removed 3/2018
+        # if dname=='OUTPUT':
+        #     process_output(sname,dname)
+        #     return True
+
+
 
         # Get nearest tile compatible with target node 'dname'
         # "Nearest" means closest to input tile (NW corner)
         # dtileno = get_nearest_tile(sname, dname)
-        if not is_placed(dname):
+
+        if dname == "OUTPUT":
+            dtileno = OUTPUT_TILENO
+        elif not is_placed(dname):
             dtileno = get_nearest_tile(sname, dname)
         else:
             dtileno = nodes[dname].tileno
-            print "Acutally it does have a home already, in tile %d" % dtileno
+            print "Actually it does have a home already, in tile %d" % dtileno
+            if dtileno in packer.EXCEPTIONS:
+                print "exceptions = ", packer.EXCEPTIONS
+                pwhere(1586, "OOPS Already tried and failed to reach T%d oh nooooo" % dtileno)
+                assert False, "Out of options"
 
         # FIXME will need an 'undo' for order[] list if dtileno ends up not used
 
         # print 'dtileno/nearest is %d' % dtileno
-        if DBG: pwhere(1114, 'Nearest available tile is %d\n' % dtileno)
+        if DBG:
+            if dname == "OUTPUT":
+                pwhere(1567, 'Connecting to OUTPUT tile %d\n' % dtileno)
+            else:
+                pwhere(1114, 'Nearest available tile is %d\n' % dtileno)
 
         # If node is pe or mem, can try multiple tracks
 
-        if is_mem(sname): trackrange = range(5)
+        # (For now at least) output must be track 0
+        if dname == "OUTPUT": trackrange = [0]
+        elif is_mem(sname): trackrange = range(5)
         elif is_pe(sname): trackrange = range(5)
         else: trackrange = [0]
 
@@ -1542,13 +1621,22 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             path = find_best_path(sname, dname, dtileno, track, DBG=1)
             if path: break
             if track != trackrange[-1]:
-                print "could not find path on track %d, try next track" % track
+                pwhere(1607, "could not find path on track %d, try track %d" % (track, track+1))
+                pwhere(1608, "trackrange = %s" % trackrange)
 
         if not path:
-            if DBG:
-                pwhere(1489,
-                       'Tile %d no good; undo and try again:' % dtileno)
+            if dname == "OUTPUT":
+                print "Cannot find our way to OUTPUT, looks like we're screwed :("
+                assert False, "Cannot find our way to OUTPUT, looks like we're screwed :("
+
+            pwhere(1489, 'Tile %d no good; undo and try again:' % dtileno)
             packer.unallocate(dtileno, DBG=0)
+
+            if dtileno in packer.EXCEPTIONS:
+                print "exceptions = ", packer.EXCEPTIONS
+                pwhere(1614, "OOPS Already tried and failed oh nooooo")
+                assert False, "Out of options"
+
             packer.EXCEPTIONS.append(dtileno)
             rval = place_and_route(sname,dname,indent='# ',DBG=0)
 
@@ -1570,8 +1658,18 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         print "# 1. place dname in dtileno"
         d_in = CT.allports(path)[-1]
 
-        if   is_pe(dname):  d_out = addT(dtileno,'pe_out')
+        if   is_pe(dname):
+            # Connect endpoint to pe_out
+            d_out = addT(dtileno,'pe_out')
+
         elif is_mem(dname): d_out = addT(dtileno, 'mem_out')
+
+        elif dname == "OUTPUT":
+            # (For now at least) output must be track 0, see above
+            # FIXME later could have an option to hop tracks maybe
+            trackno = 0
+            d_out = addT(dtileno,'_out_s0t%d' % trackno)
+
         elif is_regsolo(dname):
             print '# 1a. If regsolo, add name to REGISTERS for later'
             d_out = CT.find_neighbor(d_in, DBG=9)
@@ -1680,56 +1778,56 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 # END def place_and_route()
 ########################################################################
 
-def process_output(sname,dname, DBG=1):
-    snode = nodes[sname]
-    dnode = nodes[dname]
-    src = snode.output
-
-    if DBG>1:
-        snode.show()
-        dnode.show()
-
-    if DBG:
-        print ''
-        print "1. Route from '%s' output '%s' to any avail outport in tile %d"\
-              % (sname, src, snode.tileno)
-
-    t = snode.tileno
-    if DBG>1: print "\n# Tile %d free list: %s" % (t, resources[t])
-
-    # if 'src' is an outport, just use that
-    if re.search('T\d+_out_', src): outwire = src
-
-    # else choose first avail outwire
-    else:
-        for w in resources[t]:
-            if re.search('T\d+_out_', w):
-                if DBG: print "#  - Found candidate '%s'.  Will it connect?" % w
-                if cgra_info.connect_within_tile(t, src, w, DBG=0):
-                    if DBG: print '#  - YES'
-                    outwire = w
-                    break
-                else:
-                    if DBG: print "#  - NO, keep looking."
-
-    if DBG: print ''
-
-    snode.route['OUTPUT'] = ['%s -> %s' % (src,outwire)]
-    snode.net.append(outwire)
-    if DBG: snode.show()
-
-    dnode.type = 'OUTPUT'
-    dnode.tileno = snode.tileno
-    dnode.input0 = outwire
-    dnode.input1 = False
-    dnode.output = outwire
-    dnode.placed = True
-    dnode.net = [src,outwire]
-    if DBG: dnode.show()
-
-    return
+# Removed 3/2018
+# def process_output(sname,dname, DBG=1):
+#     snode = nodes[sname]
+#     dnode = nodes[dname]
+#     src = snode.output
+# 
+#     if DBG>1:
+#         snode.show()
+#         dnode.show()
+# 
+#     if DBG:
+#         print ''
+#         print "1. Route from '%s' output '%s' to any avail outport in tile %d"\
+#               % (sname, src, snode.tileno)
+# 
+#     t = snode.tileno
+#     if DBG>1: print "\n# Tile %d free list: %s" % (t, resources[t])
+# 
+#     # if 'src' is an outport, just use that
+#     if re.search('T\d+_out_', src): outwire = src
+# 
+#     # else choose first avail outwire
+#     else:
+#         for w in resources[t]:
+#             if re.search('T\d+_out_', w):
+#                 if DBG: print "#  - Found candidate '%s'.  Will it connect?" % w
+#                 if cgra_info.connect_within_tile(t, src, w, DBG=0):
+#                     if DBG: print '#  - YES'
+#                     outwire = w
+#                     break
+#                 else:
+#                     if DBG: print "#  - NO, keep looking."
+# 
+#     if DBG: print ''
+# 
+#     snode.route['OUTPUT'] = ['%s -> %s' % (src,outwire)]
+#     snode.net.append(outwire)
+#     if DBG: snode.show()
+# 
+#     dnode.type = 'OUTPUT'
+#     dnode.tileno = snode.tileno
+#     dnode.input0 = outwire
+#     dnode.input1 = False
+#     dnode.output = outwire
+#     dnode.placed = True
+#     dnode.net = [src,outwire]
+#     if DBG: dnode.show()
+# 
+#     return
     
-
 def squote(txt, f=''):
     fmt = '%'+str(f)+'s'  # E.g. '%-13s' when f=-13
     return fmt % ("'" + txt + "'")
@@ -2046,8 +2144,9 @@ def eval_path(path, snode, dname, dtileno, DBG=0):
     # part 2 verify begin and end points
     final_path = can_connect_ends(path, snode, dname, dtileno, DBG)
     if not final_path:
-        print "  Cannot connect '%s' to endpoint blah '%s'?" % (p, path[0])
-        assert False, 'disaster could not find a path (and/or could try again with a different tile?'
+        pwhere(2133, "  Cannot connect dst '%s' to endpoint '%s'?" % (dname, path[0]))
+        # assert False, 'disaster could not find a path (and/or could try again with a different tile?'
+        # Dude no need to die, it'll try again...right?
         return False
 
     return final_path
@@ -2076,17 +2175,23 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
     #######################################
     if DBG: print "2. Attach path endpoint '%s' to dest node '%s' (%s)"\
        % (path[-1], dname, where(1413))
+    
+    if (dname == 'OUTPUT') and re.search('in_s6', path[-1]):
+        output_endpoint_hack(dname, path, DBG)
+        if DBG: print "2 (redo). Attach path endpoint '%s' to dest node '%s' (%s)"\
+           % (path[-1], dname, where(2203))
 
     cend = connect_endpoint(snode, path[-1], dname, dtileno, DBG)
     if not cend:
-        print "  Cannot connect '%s' to endpoint blah '%s'?" % (p, path[0])
-        assert False, 'disaster could not find a path'
+        pwhere(2169, "  Cannot connect src '%s' to endpoint '%s'?" % (sname, path[0]))
+        # assert False, 'disaster could not find a path'
+        # Dude no need to die, it'll try again...right?
         return False
 
     # print 'ready to connect endpoint! %s' % cend
 
     # For now, return first path found
-    # FIXME for future, keep findin paths and return them all
+    # FIXME for future, keep finding paths and return them all
     final_path = cbegin + path[1:-1] + cend
     print "SUCCESS! Final path from '%s' to '%s' is: %s\n" \
           % (sname,dname,final_path)
@@ -2099,6 +2204,30 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
     # (or at least hv vs.vh) and compare thetwo
     return final_path
             
+def output_endpoint_hack(dname, path, DBG=0):
+    assert (dname == 'OUTPUT') and re.search('in_s6', path[-1])
+
+    if DBG: print '''
+          Well.  For one reason or another, we have arrived
+          at the lower left half (side 6) of a mem tile as
+          our OUTPUT endpoint. We gotta do extra stuff to get
+          it to come out the upper right side where it belongs.
+          '''
+    # Before: [ ...'T51_in_s2t0 -> T51_out_s0t0', 'T36_in_s6t0']
+    # After:  [ ...'T51_in_s2t0 -> T51_out_s0t0', 'T36_in_s6t0 -> T36_out_s7t0', 'T36_in_s3t0']
+
+    if DBG: pwhere(2207, "Before: path=[...'%s'" % path[-1])
+
+    new_in  = 'T%d_in_s6t0' % OUTPUT_TILENO
+    new_out = 'T%d_out_s7t0' % OUTPUT_TILENO
+    assert path[-1] == new_in # why not
+    path[-1] = '%s -> %s' % (new_in, new_out)
+
+    new_endpoint = 'T%d_in_s1t0' % OUTPUT_TILENO
+    path.append(new_endpoint)
+
+    if DBG: pwhere(2219, "After:  path=[...'%s', '%s'\n" % (path[-2], path[-1]))
+
 
 def ports_available(snode, path, DBG=0):
     stileno = snode.tileno
@@ -2171,6 +2300,18 @@ def connect_endpoint(snode, endpoint, dname, dtileno,DBG):
             continue
 
         cend = can_connect_end(snode, endpoint, dstport,DBG)
+# 
+# I think this is fixed 3/2018
+#         try:
+#             cend = can_connect_end(snode, endpoint, dstport,DBG)
+#         except:
+#             print "     Hm apparently not."
+#             cend = False
+#             assert not re.search('op', dstport), "TRY HARDER"
+#             # FIXME e.g. instead of
+#             # "Cannot connect path endpoint 'T40_in_s3t0' to dest port 'T40_op1'"
+#             # should try s3t0 -> s2t0, out_s2t0 -> op1
+# 
         if cend: return cend
         else:
             print "  Cannot connect path endpoint '%s' to dest port '%s'" \
@@ -2223,10 +2364,18 @@ def can_connect_end(snode, end,dstport,DBG=0):
 def can_connect(snode, p1, p2, DBG=0):
     # Can we connect ports p1 to p2 as part of 'snode' net?
     if DBG>1: print "Can we connect '%s' to '%s' as part of '%s' net? (%s)"\
-       % (p1,p2,snode,where(1536))
+       % (p1,p2,snode.name,where(1536))
     c = snode.connect(p1,p2,DBG=DBG)
     if not c:
         if DBG>1: print 'oops no route from p1 to p2'
+# 
+# Pretty sure we don't need this no mo
+# 
+#         # FIXME e.g. instead of
+#         # "Cannot connect path endpoint 'T40_in_s3t0' to dest port 'T40_op1'"
+#         # should try s3t0 -> s2t0, out_s2t0 -> op1
+#         assert not re.search('op', p2, "TRY HARDER 0")
+# 
         return False
     return c
 

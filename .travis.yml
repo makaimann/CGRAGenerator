@@ -29,8 +29,11 @@ script:
   - pushd testdir
   -   make SILENT=TRUE test_basic
   -   make SILENT=TRUE test_unit
+  #   make SILENT=TRUE test_serpent_dev
+  -   make SILENT=TRUE test_serpent | tee serpent_results.tmp
   # - make SILENT=TRUE test_all
   - popd
+  - grep RESULT $TRAVIS_BUILD_DIR/testdir/serpent_results.tmp
 
   # Install python for testing infrastructure
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -54,6 +57,9 @@ script:
   - ./run_tests.sh
 
   
+  # Redo serpent summary maybe
+  - grep RESULT $TRAVIS_BUILD_DIR/testdir/serpent_results.tmp
+
 # ##############################################################################
 # # NOTES
 # # 

@@ -6,12 +6,30 @@ if ($#argv == 0) then
   exit -1
 endif
 
+if ("$1" == "--help") then
+  echo 'make_bitstreams.csh tmpdir'
+  echo 'make_bitstreams.csh tmpdir pointwise'
+  echo 'make_bitstreams.csh tmpdir pointwise conv_1_2 conv_2_1 conv_3_1 conv_bw'
+  exit
+endif
+
 if (! -d $1) then
   echo 'Where should I put the bsa output files?'
   echo "Example: $0:t /tmp/build42/"
   exit -1
 endif
 set tmp = $1
+
+# Any remaining arguments constitute the list of benchmarks to run
+shift
+if ($#argv) then
+  set bmarks = ($*)
+else 
+  # Do benchmarks in order
+  set bmarks = (conv_1_2)
+  set bmarks = (pointwise conv_2_1 conv_3_1 conv_bw)
+  set bmarks = (pointwise conv_1_2 conv_2_1 conv_3_1 conv_bw)
+endif
 
 set scriptpath = `readlink -f $0`
 set scriptpath = $scriptpath:h
@@ -21,11 +39,6 @@ cd $scriptpath
 set gen = `(cd ../../..; pwd)`
 alias json2dot $gen/testdir/graphcompare/json2dot.py
 
-
-# Do benchmarks in order
-set bmarks = (conv_1_2)
-set bmarks = (pointwise conv_2_1 conv_3_1 conv_bw)
-set bmarks = (pointwise conv_1_2 conv_2_1 conv_3_1 conv_bw)
 
 echo "set tmp = $tmp"
 echo 'set gen = CGRAGenerator'
