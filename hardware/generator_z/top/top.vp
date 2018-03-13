@@ -726,7 +726,7 @@ assign config_data = config_data_in;
 //;         } else {
 //;              $str= "${str}wire_".($h)."_".($w+$i)."_BUS1_S${opposite_side}_T$io16_track,";
 //;         }
-//;			if($io16_track < $io1bit_num_tracks) { $io16_track++; }
+//;			if($io16_track < $io1bit_num_tracks-1) { $io16_track++; }
 //;			else { $io16_track = 0; }
 //;       }
 //;       $str=~s/,$//;
