@@ -45,7 +45,7 @@ script:
   - conda info -a
 
   # Install python dependencies
-  - pip install pytest numpy
+  - pip install pytest numpy delegator.py
   - pip install git+git://github.com/leonardt/pe.git
 
   # Run python based tests
