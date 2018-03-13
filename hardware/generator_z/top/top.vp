@@ -758,6 +758,14 @@ assign config_data = config_data_in;
 //;       print INFO $_;
 //;     }
 //;     close INP;
+//;   	if ($tile_type eq "io1") {
+//;	  my $io1_track = 0;
+//;	  my $side = $inst_obj->get_param('side');
+//;       if(($side % 2) eq 0) {$io1_track = ($h - 2) % $io1bit_num_tracks;}
+//;	  else {$io1_track = ($w - 2) % $io1bit_num_tracks;}
+//;	  print INFO "        <input>in_1BIT_S${side}_T$io1_track</input>\n";
+//;	  print INFO "        <output>out_1BIT_S${side}_T$io1_track</output>\n";
+//;	}
 //;   }
 //;   print INFO "  </tile>\n";
 //;   }
