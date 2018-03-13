@@ -453,6 +453,8 @@ assign config_data = config_data_in;
 
 //; my $tile_hash_ref;
 //; my $io_track = 0;
+//; my $io16_track = 0;
+//; my $io1bit_num_tracks = $bus_num_tracks_hash{ 'BUS1' };
 //#####################################################
 //#Instantiate components
 //#####################################################
@@ -677,7 +679,6 @@ assign config_data = config_data_in;
       .pad(pad_S`$opposite_side`_T`$io_count`),
       .tile_id(16'h`$tile_addr_hex`)
     );
-//;	my $io1bit_num_tracks = $bus_num_tracks_hash{ 'BUS1' };
 //;	if($io_track eq $io1bit_num_tracks) { $io_track=0; }
 //;    } elsif ($tile_type eq "io16") {
     `$inst_obj->instantiate()` 
@@ -717,14 +718,16 @@ assign config_data = config_data_in;
 //;       my $str = "";
 //;       for (my $i=0; $i<16; $i++) {
 //;         if ($s==0) {
-//;              $str= "${str}wire_".($h+$i)."_".($w)."_BUS1_S${opposite_side}_T0,";
+//;              $str= "${str}wire_".($h+$i)."_".($w)."_BUS1_S${opposite_side}_T$io16_track,";
 //;         } elsif ($s==1) {
-//;              $str= "${str}wire_".($h)."_".($w+$i)."_BUS1_S${opposite_side}_T0,";
+//;              $str= "${str}wire_".($h)."_".($w+$i)."_BUS1_S${opposite_side}_T$io16_track,";
 //;         } elsif ($s==2) {
-//;              $str= "${str}wire_".($h+$i)."_".($w)."_BUS1_S${opposite_side}_T0,";
+//;              $str= "${str}wire_".($h+$i)."_".($w)."_BUS1_S${opposite_side}_T$io16_track,";
 //;         } else {
-//;              $str= "${str}wire_".($h)."_".($w+$i)."_BUS1_S${opposite_side}_T0,";
+//;              $str= "${str}wire_".($h)."_".($w+$i)."_BUS1_S${opposite_side}_T$io16_track,";
 //;         }
+//;			if($io16_track < $io1bit_num_tracks) { $io16_track++; }
+//;			else { $io16_track = 0; }
 //;       }
 //;       $str=~s/,$//;
       .f2p_out({`$str`})
