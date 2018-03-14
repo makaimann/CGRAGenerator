@@ -1,19 +1,19 @@
 
 # CONSTANTS
-# const0_0::add_340_343_344 T55_op2
-# const3_3::mul_3423_343 T56_op2
-# const5_5::mul_3465_347 T23_op2
-# const7_7::mul_3507_351 T21_op2
+# const0_0::add_340_343_344_PE T55_op2
+# const3_3::mul_3423_343_PE T56_op2
+# const5_5::mul_3465_347_PE T23_op2
+# const7_7::mul_3507_351_PE T21_op2
 
 # REGISTERS []
 
 # PE tiles
-T21_mul(wire,const7_7)     # mul_3507_351
-T23_mul(wire,const5_5)     # mul_3465_347
-T40_add(wire,wire)         # add_340_351_352
-T41_add(wire,wire)         # add_340_347_348
-T55_add(wire,const0_0)     # add_340_343_344
-T56_mul(wire,const3_3)     # mul_3423_343
+T21_mul(wire,const7_7)     # mul_3507_351_PE
+T23_mul(wire,const5_5)     # mul_3465_347_PE
+T40_add(wire,wire)         # add_340_351_352_PE
+T41_add(wire,wire)         # add_340_347_348_PE
+T55_add(wire,const0_0)     # add_340_343_344_PE
+T56_mul(wire,const3_3)     # mul_3423_343_PE
 
 # MEM tiles
 T24_mem_10   # mem_1 fifo_depth=10
@@ -27,20 +27,20 @@ T22_in_s2t0 -> T22_out_s0t0
 T23_in_s2t0 -> T23_out_s0t0
 T24_in_s2t0 -> T24_mem_in
 
-# INPUT::mul_3507_351
+# INPUT::mul_3507_351_PE
 T21_in_s2t0 -> T21_op1
 
-# add_340_343_344::add_340_347_348
+# add_340_343_344_PE::add_340_347_348_PE
 T55_pe_out -> T55_out_s3t0
 T41_in_s1t0 -> T41_out_s2t0
 T41_out_s2t0 -> T41_op1
 
-# add_340_347_348::add_340_351_352
+# add_340_347_348_PE::add_340_351_352_PE
 T41_pe_out -> T41_out_s2t1
 T40_in_s0t1 -> T40_out_s2t1
 T40_out_s2t1 -> T40_op1
 
-# add_340_351_352::OUTPUT
+# add_340_351_352_PE::OUTPUT
 T40_pe_out -> T40_out_s0t0
 T41_in_s2t0 -> T41_out_s0t0
 T42_in_s2t0 -> T42_out_s0t0
@@ -64,28 +64,28 @@ T24_mem_out -> T24_out_s5t0
 T57_in_s3t0 -> T57_out_s2t0
 T57_out_s2t0 -> T57_mem_in
 
-# mem_1::mul_3465_347
+# mem_1::mul_3465_347_PE
 T24_mem_out -> T24_out_s2t0
 T23_in_s0t0 -> T23_out_s2t0
 T23_out_s2t0 -> T23_op1
 
-# mem_2::mul_3423_343
+# mem_2::mul_3423_343_PE
 T57_mem_out -> T57_out_s2t1
 T56_in_s0t1 -> T56_out_s2t1
 T56_out_s2t1 -> T56_op1
 
-# mul_3423_343::add_340_343_344
+# mul_3423_343_PE::add_340_343_344_PE
 T56_pe_out -> T56_out_s2t0
 T55_in_s0t0 -> T55_out_s2t0
 T55_out_s2t0 -> T55_op1
 
-# mul_3465_347::add_340_347_348
+# mul_3465_347_PE::add_340_347_348_PE
 T23_pe_out -> T23_out_s1t0
 T42_in_s3t0 -> T42_out_s2t0
 T41_in_s0t0 -> T41_out_s1t0
 T41_out_s1t0 -> T41_op2
 
-# mul_3507_351::add_340_351_352
+# mul_3507_351_PE::add_340_351_352_PE
 T21_pe_out -> T21_out_s1t0
 T40_in_s3t0 -> T40_out_s1t0
 T40_out_s1t0 -> T40_op2

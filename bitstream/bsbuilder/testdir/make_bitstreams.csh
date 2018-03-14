@@ -60,16 +60,16 @@ foreach b ($bmarks)
   echo "  json2dot < $map_json > $t/$map_dot"
   json2dot < $map_json > $tmp/$map_dot || exit -1
 
-  echo "  cmp examples/$map_dot $t/$map_dot"
-  cmp examples/$map_dot $tmp/$map_dot || set result = 'FAILED'
+  echo "cmp $tmp/$map_dot examples/$map_dot"
+  cmp $tmp/$map_dot examples/$map_dot || set result = 'FAILED'
   echo ""
 
 
-  echo "  ../serpent.py $t/$map_dot -o $t/$bsb > \$t/$b.log.serpent"
+  echo "  ../serpent.py $t/$map_dot -o $t/$bsb > $t/$b.log.serpent"
   ../serpent.py $tmp/$map_dot -o $tmp/$bsb > $tmp/$b.log.serpent || exit -1
 
   echo "  cmp $tmp/$bsb examples/$bsb"
-  cmp examples/$bsb $tmp/$bsb || set result = 'FAILED'
+  cmp $tmp/$bsb examples/$bsb || set result = 'FAILED'
   echo ""
 
   if ($?VERBOSE) then

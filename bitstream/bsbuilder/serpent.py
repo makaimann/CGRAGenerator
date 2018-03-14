@@ -1119,8 +1119,9 @@ def is_reg(nodename):    return nodename.find('reg') == 0
 def is_mem(nodename):    return nodename.find('mem') == 0
 def is_pe(nodename):
     return (nodename) and (\
-        (nodename.find('add') == 0) or\
-        (nodename.find('mul') == 0)\
+        (nodename.find('add') == 0) or \
+        (nodename.find('mul') == 0) or \
+        (nodename.find('PE') >= 0) \
          )
 def is_io(nodename):
     return (nodename and re.search("INPUT|OUTPUT", nodename)) == True
@@ -1447,6 +1448,7 @@ def process_nodes(sname, indent='# ', DBG=1):
         elif dname=='OUTPUT': otherchilds.append(dname)
         else:
             print "ERROR What is '%s'?" % dname
+            assert False, "ERROR What is '%s'?" % dname
 
     sorted_schildren = otherchilds + regchilds
     # Place and route all dests
@@ -1737,7 +1739,12 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
             nodes[dname].show()
             print ''
 
-        if DBG: print "# Route '%s -> %s' is now complete" % (sname,dname)
+        if DBG: print "# Route '%s -> %s' is now complete 1" % (sname,dname)
+
+        # Hmph! Hmph! There's a special case to consider.
+        # if dest_name appears twice in self.dests, that
+        # means we have to duplicate the route for both op1 and op2.
+        check_for_double_destination(sname,dname,DBG)
 
         if dname == 'reg_0_1':
             print 'GOT TWO ROUTES!  WOO AND HOO!'
@@ -1878,7 +1885,13 @@ def place_pe_in_input_tile(dname):
     # INPUT_WIRE_T = 'T0_in_s2t0'
     # add_route(sname, dname, INPUT_TILE, 'T0_in_s2t0', 'choose_op')
     add_route(sname, dname, INPUT_TILE, INPUT_WIRE_T, 'choose_op')
-    if DBG: print "# Route '%s -> %s' is now complete" % (sname,dname)
+    if DBG: print "# Route '%s -> %s' is now complete for INPUT" % (sname,dname)
+
+    # Hm! Hm! There's a special case to consider.
+    # if dest_name appears twice in self.dests, that
+    # means we have to duplicate the route for both op1 and op2.
+    check_for_double_destination(sname,dname,DBG)
+
     return
 
     # Long form:
@@ -1894,6 +1907,53 @@ def place_pe_in_input_tile(dname):
     # 
     # # Check that pe_out got removed from INPUT (tile0) resources
     # assert not ('pe_out' in resources[INPUT_TILENO])
+
+
+def check_for_double_destination(sname,dname,DBG=0):
+    # if dest_name appears twice in self.dests, that
+    # means we have to duplicate the route for both op1 and op2.
+    snode = nodes[sname]
+    if snode.dests.count(dname) < 2: return
+
+    if DBG:
+        print "#   OH!  Maybe not?"
+        print "#   I see '%s' in the 'dests' list TWICE" % dname
+        print "#   That means we have a path to op1 (right?)",
+        print "and now we have to build a path to op2"
+        # if DBG>1: print snode.dests
+
+    # Find the unused op (should be op2) (for now) and mark it in the destination
+    op = nodes[dname].addop(sname)
+    assert op == 'op2', "Well I guess it's time to fix this"
+    dst_port = "T%d_%s" % (nodes[dname].tileno, op)
+    #    Connecting 'INPUT' to 'add_inst0'/'op2'
+    if DBG: print "#   Connecting '%s' to '%s'/'%s'" \
+              % (sname,dname,op)
+
+    # Must add this: 'T21_in_s2t0 -> T21_op2' to snode.route[dname]
+    #   Before: [ ... 'T21_in_s2t0 -> T21_op1']
+    #   After:  [ ... 'T21_in_s2t0 -> T21_op1', 'T21_in_s2t0 -> T21_op2']
+    route = snode.route[dname]
+    path_to_op1 = route[-1]
+    parse = re.search('^(.*)op1$', path_to_op1)
+    if not parse: assert False, "Should have been a path to op1 I think"
+    if DBG: print "#     1. Found path to op1 '%s'" % path_to_op1
+
+    path_to_op2 = parse.group(1) + "op2"
+    if DBG: print "#     2. Built path to op2 '%s'" % path_to_op2
+    route.append(path_to_op2)
+    if DBG>1: print "now route is", route
+
+    # Gotta do this as well
+    (i,o) = CT.parse_connection(path_to_op2)
+    # E.g. path_to_op2 = 'T21_in_s2t0 -> T21_op2', o = "T21_op2"
+    snode.net.append(o)
+    if DBG>1: print "now net is", snode.net
+
+    # Now here's the tricky part (NOW the tricky part?)
+    # Remove one of the two dests so route doesn't get printed twice at the end.
+    snode.dests.remove(dname)
+    if DBG>1: print "now dests is ", snode.dests
 
 
 def place_folded_reg_in_input_tile(dname):
