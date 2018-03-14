@@ -452,6 +452,8 @@ assign config_data = config_data_in;
 
 
 //; my $tile_hash_ref;
+//; my $io1bit_num_tracks = $bus_num_tracks_hash{ 'BUS1' };
+//; my $io16bit_num_tracks = $bus_num_tracks_hash{ 'BUS16' };
 //#####################################################
 //#Instantiate components
 //#####################################################
@@ -671,15 +673,20 @@ assign config_data = config_data_in;
 //;       }
 //;       my $h_new = $h+$h_delta;
 //;       my $w_new = $w+$w_delta;
-      .p2f(wire_`$h`_`$w`_BUS1_S`$s`_T0),
-      .f2p(wire_`$h_new`_`$w_new`_BUS1_S`$opposite_side`_T0),
+//;		 my $io1_track = 0;
+//;		 if(($s % 2) eq 0) {$io1_track = ($h_new - 2) % $io1bit_num_tracks;}
+//;		 else {$io1_track = ($w_new - 2) % $io1bit_num_tracks;}
+      .p2f(wire_`$h`_`$w`_BUS1_S`$s`_T`$io1_track`),
+      .f2p(wire_`$h_new`_`$w_new`_BUS1_S`$opposite_side`_T`$io1_track`),
       .pad(pad_S`$opposite_side`_T`$io_count`),
       .tile_id(16'h`$tile_addr_hex`)
     );
 //;    } elsif ($tile_type eq "io16") {
+//;       my $s = $io_side;
+//; my $bus_width = $inst_obj -> get_param('width');
+    wire [`$bus_width-1`:0] fanout_`$h`_`$w`_BUS16_S`$s`_T0;
     `$inst_obj->instantiate()` 
     (
-//;       my $s = $io_side;
 //;       my $opposite_side = $s + int($sides*0.5);
 //;       if ($opposite_side > ($sides-1)) {$opposite_side -= $sides;}
 //;       my $w_delta=0;
@@ -696,36 +703,49 @@ assign config_data = config_data_in;
 //;       my $h_old = $h-$h_delta;
 //;       my $w_old = $w-$w_delta;
 //;       my $str = "";
+//;       my $io16_track = 0;							
 //;       for (my $i=0; $i<16; $i++) {
 //;         if ($s==0) {
-//;          $str= "${str}wire_".($h_old+$i)."_".($w_old)."_BUS1_S${s}_T0,";
+//;	     $io16_track = ($h+$i-2) % $io1bit_num_tracks;
+//;          $str= "${str}wire_".($h_old+$i)."_".($w_old)."_BUS1_S${s}_T$io16_track,";
 //;         } elsif ($s==1) {
-//;          $str= "${str}wire_".($h_old)."_".($w_old+$i)."_BUS1_S${s}_T0,";
+//;	     $io16_track = ($w+$i-2) % $io1bit_num_tracks;
+//;          $str= "${str}wire_".($h_old)."_".($w_old+$i)."_BUS1_S${s}_T$io16_track,";
 //;         } elsif ($s==2) {
-//;          $str= "${str}wire_".($h_old+$i)."_".($w_old)."_BUS1_S${s}_T0,";
+//;	     $io16_track = ($h+$i-2) % $io1bit_num_tracks;
+//;          $str= "${str}wire_".($h_old+$i)."_".($w_old)."_BUS1_S${s}_T$io16_track,";
 //;         } else {
-//;          $str= "${str}wire_".($h_old)."_".($w_old+$i)."_BUS1_S${s}_T0,";
+//;	     $io16_track = ($w+$i-2) % $io1bit_num_tracks;
+//;          $str= "${str}wire_".($h_old)."_".($w_old+$i)."_BUS1_S${s}_T$io16_track,";
 //;         }
 //;       }
 //;       $str=~s/,$//;
       .p2f_in({`$str`}),
-      .p2f_out(wire_`$h`_`$w`_BUS16_S`$s`_T0),
+      .p2f_out(fanout_`$h`_`$w`_BUS16_S`$s`_T0),
       .f2p_in(wire_`$h_new`_`$w_new`_BUS16_S`$opposite_side`_T0),
 //;       my $str = "";
 //;       for (my $i=0; $i<16; $i++) {
 //;         if ($s==0) {
-//;              $str= "${str}wire_".($h+$i)."_".($w)."_BUS1_S${opposite_side}_T0,";
+//;		 $io16_track = ($h+$i-2) % $io1bit_num_tracks;
+//;              $str= "${str}wire_".($h+$i)."_".($w)."_BUS1_S${opposite_side}_T$io16_track,";
 //;         } elsif ($s==1) {
-//;              $str= "${str}wire_".($h)."_".($w+$i)."_BUS1_S${opposite_side}_T0,";
+//;		 $io16_track = ($w+$i-2) % $io1bit_num_tracks;
+//;              $str= "${str}wire_".($h)."_".($w+$i)."_BUS1_S${opposite_side}_T$io16_track,";
 //;         } elsif ($s==2) {
-//;              $str= "${str}wire_".($h+$i)."_".($w)."_BUS1_S${opposite_side}_T0,";
+//;		 $io16_track = ($h+$i-2) % $io1bit_num_tracks;
+//;              $str= "${str}wire_".($h+$i)."_".($w)."_BUS1_S${opposite_side}_T$io16_track,";
 //;         } else {
-//;              $str= "${str}wire_".($h)."_".($w+$i)."_BUS1_S${opposite_side}_T0,";
+//;		 $io16_track = ($w+$i-2) % $io1bit_num_tracks;
+//;              $str= "${str}wire_".($h)."_".($w+$i)."_BUS1_S${opposite_side}_T$io16_track,";
 //;         }
 //;       }
 //;       $str=~s/,$//;
-      .f2p_out({`$str`})
+       .f2p_out({`$str`})
     );
+       //Fanout for p2f_out
+//;    for(my $track = 0; $track < $io16bit_num_tracks; $track++) { 
+ 	assign	wire_`$h`_`$w`_BUS16_S`$s`_T`$track` = fanout_`$h`_`$w`_BUS16_S`$s`_T0;
+//;    }
 //;    }
 //;   if ($tile_type eq "io1") {
 //;     print INFO "  <tile type='$tile_config->{ $tile_type }{ 'type' }' tile_addr='0x$tile_addr_hex' row='$h' col='$w' tracks='BUS1:1 BUS16:0'";
@@ -745,6 +765,14 @@ assign config_data = config_data_in;
 //;       print INFO $_;
 //;     }
 //;     close INP;
+//;   	if ($tile_type eq "io1") {
+//;	  my $io1_track = 0;
+//;	  my $side = $inst_obj->get_param('side');
+//;       if(($side % 2) eq 0) {$io1_track = ($h - 2) % $io1bit_num_tracks;}
+//;	  else {$io1_track = ($w - 2) % $io1bit_num_tracks;}
+//;	  print INFO "        <input>in_1BIT_S${side}_T$io1_track</input>\n";
+//;	  print INFO "        <output>out_1BIT_S${side}_T$io1_track</output>\n";
+//;	}
 //;   }
 //;   print INFO "  </tile>\n";
 //;   }

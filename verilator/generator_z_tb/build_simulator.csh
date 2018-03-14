@@ -12,7 +12,6 @@ if ("$1" == "-q") then
 endif
 
 set testbench = $1
-echo $#argv
 unset tracefile
 if ($#argv == 2) set tracefile = $2
 

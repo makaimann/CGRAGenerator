@@ -452,10 +452,12 @@ echo ''
 echo '------------------------------------------------------------------------'
 echo "run.csh: Build the simulator..."
 
-# How about skip simulator if:
+# How about skip verilator build if:
+# 0. Running on travis AND
 # 1. obj_dir/Vtop exists
-# 2. obj_dir/Vtop is newer than $vdir/../cgra_info.txt  NOPE
-# 3. hackmem is in place
+# 2. hackmem is in place
+
+if (! $?TRAVIS_BUILD_DIR) goto BUILD_SIM
 
 if (-e obj_dir/Vtop) then
   echo Found existing obj_dir/Vtop
@@ -474,6 +476,7 @@ if (-e obj_dir/Vtop) then
   endif
 endif
 
+BUILD_SIM:
 if ($?tracefile) then
   echo build_simulator.csh $VSWITCH $testbench $tracefile
   build_simulator.csh $VSWITCH $testbench $tracefile
