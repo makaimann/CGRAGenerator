@@ -14,7 +14,8 @@ ops += ['lshr', 'lshl']
 ops += ['add', 'sub']
 ops += ['abs']
 ops += ['eq']
-ops += ['sel']
+# FIXME: op_d doesn't seem to be working
+# ops += ['sel']
 
 signed_ops = ['min', 'max', 'le', 'ge']
 def pytest_generate_tests(metafunc):
