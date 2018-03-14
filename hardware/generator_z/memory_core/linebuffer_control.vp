@@ -78,6 +78,7 @@ wire [`$dwidth - 1`:0] data_out_d0;
 wire valid_d0;
 wire [`$dwidth - 1`:0] depth_even;
 wire stall_read_int;
+wire output_sr_data_avail;
 
 //; my $inp_sr = generate('input_sr', 'input_sr', dwidth => $dwidth);
 //; my $out_sr = generate('output_sr', 'output_sr', dwidth => $dwidth);
