@@ -683,7 +683,8 @@ assign config_data = config_data_in;
     );
 //;    } elsif ($tile_type eq "io16") {
 //;       my $s = $io_side;
-    wire [15:0] fanout_`$h`_`$w`_BUS16_S`$s`_T0;
+//; my $bus_width = $inst_obj -> get_param('width');
+    wire [`$bus_width-1`:0] fanout_`$h`_`$w`_BUS16_S`$s`_T0;
     `$inst_obj->instantiate()` 
     (
 //;       my $opposite_side = $s + int($sides*0.5);
