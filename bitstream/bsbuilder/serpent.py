@@ -1059,7 +1059,8 @@ def is_mem(nodename):    return nodename.find('mem') == 0
 def is_pe(nodename):
     return (nodename) and (\
         (nodename.find('add') == 0) or\
-        (nodename.find('mul') == 0)\
+        (nodename.find('mul') == 0) or\
+        (nodename.find('inst') == 0)\
          )
 def is_io(nodename):
     return (nodename and re.search("INPUT|OUTPUT", nodename)) == True
