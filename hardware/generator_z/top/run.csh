@@ -79,19 +79,28 @@ echo cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
 cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
 echo
 
-# echo 
-# echo WARNING/FIXME: hacking out pe_output_2 from memory_tile
-# echo WARNING/FIXME: hacking out pe_output_2 from memory_tile
-# echo WARNING/FIXME: hacking out pe_output_2 from memory_tile
-# #echo 'grep -v ".pe_output_2(almost_empty)," genesis_verif/memory_tile_unq1.v'
-# #grep -v ".pe_output_2(almost_empty)," genesis_verif/memory_tile_unq1.v > /tmp/tmp$$
-# #diff genesis_verif/memory_tile_unq1.v /tmp/tmp$$
-# #mv  /tmp/tmp$$ genesis_verif/memory_tile_unq1.v
-# 
-# echo 
-
 source clean_up_cgra_inputs.csh
 source remove_genesis_wires.csh
+
+
+
+##############################################################################
+echo 
+echo WARNING/FIXME cgra_info.txt hack
+echo WARNING/FIXME cgra_info.txt hack
+echo WARNING/FIXME cgra_info.txt hack
+echo top/run.csh hacking in new tmp_target_cgra_info_io.xml in place of cgra_info.txt
+
+echo cp tmp_target_cgra_info_io.xml cgra_info.txt
+cp cgra_info.txt cgra_info_orig.txt
+cp tmp_target_cgra_info_io.xml cgra_info.txt
+diff -Bb cgra_info_orig.txt cgra_info.txt \
+  && echo HOORAY can remove hack now \
+  || echo BOO hack still needed
+echo
+##############################################################################
+
+
 
 if [ `hostname` == "kiwi" ]; then
   echo Checking cgra_info for errors...
