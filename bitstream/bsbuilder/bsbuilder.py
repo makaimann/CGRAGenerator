@@ -122,6 +122,13 @@ def main():
             if DBG: print ""
             continue
 
+
+
+
+
+
+        # NOTE in 16x16 grid w/io pads, input can only go to tile 0x15 (T21) in_s2t0
+
         # self.in -> T0_in_s2t0
         if re.search('self.in', line):
             io_info.append(process_input(line))
@@ -266,12 +273,17 @@ def preprocess(input_lines, DBG=0):
 
 def process_input(line):
     '''
+    # NOTE in 16x16 grid w/io pads, input can *only* go to tile 0x15 (T21) in_s2t0
     line = 'self.in -> T0_in_s2t0'
     rval = 'INPUT  tile  0 (0,0) / in_BUS16_S2_T0 / wire_0_m1_BUS16_S0_T0'
     '''
+
     wire = re.search('self.in\s*->\s*(\S+)', line).group(1)
     # (tileno,lhs) = striptile(wire)
     # (tileno,lhs) = cgra_info.parse_resource(wire)
+
+    assert wire == 'T21_in_s2t0', "\nERROR %s;\n'self.in' can only connect to T21_in_s2t0\n\n" % line
+
     (tileno, dir, side, track) = cgra_info.parse_canon(wire)
     (r,c) = cgra_info.tileno2rc(tileno)
     g = cgra_info.canon2global(wire)
@@ -308,8 +320,10 @@ def bs_connection(tileno, line, DBG=0):
     reg = parse.group(3)
     assert reg=='r' or reg==None
 
-    (t,lhs) = striptile(lhs); assert t == -1 or t == tileno, 'wrong tile!?'
-    (t,rhs) = striptile(rhs); assert t == -1 or t == tileno, 'wrong tile!?'
+    (t,lhs) = striptile(lhs); assert t == -1 or t == tileno, \
+              "'%s': wrong lhs tile '%s' should be -1 or %s\n" % (line, t, tileno)
+    (t,rhs) = striptile(rhs); assert t == -1 or t == tileno, \
+              "'%s': wrong lhs tile '%s' should be -1 or %s\n" % (line, t, tileno)
     if DBG>1: print "# lhs '%s', rhs '%s', reg '%s'" % (lhs,rhs,reg)
 
     # Connect lhs to rhs

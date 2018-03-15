@@ -156,8 +156,8 @@ def mem_decode(e,DDDDDDDD):
 
         elif se.tag == 'tile_en':
             data = getnum(DDDDDDDD,16)
-            bith = getnum(se.attrib['bit'])
-            bitl = getnum(se.attrib['bit'])
+            bith = getnum(se.attrib['bith'])
+            bitl = getnum(se.attrib['bitl'])
             val = extract_field(data, bith, bitl)
             print "# data[(%d, %d)] : tile_en = %d" % (bith, bitl, val)
 
@@ -172,8 +172,8 @@ def mem_decode(e,DDDDDDDD):
 
         elif se.tag == 'chain_enable':
             data = getnum(DDDDDDDD,16)
-            bith = getnum(se.attrib['bit'])
-            bitl = getnum(se.attrib['bit'])
+            bith = getnum(se.attrib['bith'])
+            bitl = getnum(se.attrib['bitl'])
             val = extract_field(data, bith, bitl)
             print "# data[(%d, %d)] : chain_enable = %d" % (bith, bitl, val)
 
@@ -417,6 +417,16 @@ def ntiles():
     '''How many tiles?'''
     load_check()
     return len(CGRA.findall('tile')) # length = number of items in list
+
+def grid_dimensions():
+    '''Return grid (nrows,ncols) e.g. (16,16)'''
+    (maxrow,maxcol) = (0,0)
+    for i in range(ntiles()):
+        if tiletype(i) != 'io1bit': continue # Quelle hackrreur!
+        (r,c) = tileno2rc(i)
+        if r > maxrow: maxrow = r
+        if c > maxcol: maxcol = c
+    return (maxrow+1,maxcol+1)
 
 def getnum(s, base=10):
     '''s="14" => result=14; s="0x14" => result=20'''
@@ -674,17 +684,21 @@ def find_mux(tile, src, snk, DBG=0):
                         if src == owsrc:
                             return get_encoding(tile,bb,mux,msrc,DBG-1)
 
-    if DBG:
+    # if DBG:
+    if True:
         # Provide helpful messages about why we failed
-        sys.stderr.write("\n\nCannot connect '%s' to '%s'\n\n" % (src,snk))
+        errmsg = "\nTile %s: Cannot connect '%s' to '%s'\n" %\
+                         (tile.attrib['tile_addr'], src,snk)
 
         rlist = find_sources(tile, 'sb', src) + find_sources(tile, 'cb', src)
         rlist = '\n    '.join(rlist)
-        sys.stderr.write("%s can connect to\n    %s\n\n" % (src, rlist))
+        errmsg = errmsg + "%s can connect to\n    %s\n" % (src, rlist)
 
         rlist = find_sinks(tile, 'sb', snk) + find_sinks(tile, 'cb', snk)
         rlist = '\n    '.join(rlist)
-        sys.stderr.write("%s can connect to\n    %s\n" % (snk, rlist))
+        errmsg = errmsg + "%s can connect to\n    %s\n" % (snk, rlist)
+
+        assert False, errmsg
 
     # Note find_mux must be allowed to fail gracefully
     # as that e.g. triggers a retry in the serpent PNR

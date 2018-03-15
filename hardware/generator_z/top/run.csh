@@ -1,19 +1,21 @@
-#!/bin/bash -f
+#!/bin/bash
 
-# Haha guess what 'source' (below) does not work on travis script
-unless specify "bash" above!
-
-# To generate fabric with memories, do -
-# setenv CGRA_GEN_USE_MEM 1
-# 
 # @Caleb: For providing registers on all outputs of all SBs, do-
-# setenv CGRA_GEN_ALL_REG 1
+# setenv CGRA_GEN_ALL_REG 1 (csh syntax)
+export CGRA_GEN_ALL_REG=1
 
-# Genesis2.pl -parse -generate -top top -input\
 
 if [ -d genesis_verif ]; then
   rm -rf genesis_verif
 fi
+
+# Let's do this in run.csh instead...
+# branch=`git rev-parse --abbrev-ref HEAD`
+# if [[ `hostname` == "kiwi" && "$branch" == "nbdev3" ]]; then
+#   echo kiwi branch nbdev3 means must use no-opt or disable luts
+# fi
+
+
 
 Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   top.vp \
@@ -33,6 +35,8 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../pe_new/pe/rtl/test_opt_reg.svp  \
   ../pe_new/pe/rtl/test_simple_shift.svp \
   ../pe_new/pe/rtl/test_shifter.svp  \
+  ../pe_new/pe/rtl/test_debug_reg.svp  \
+  ../pe_new/pe/rtl/test_opt_reg_file.svp  \
   \
   ../pe_tile_new/pe_tile_new.vp \
   \
@@ -42,10 +46,55 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../global_signal_tile/global_signal_tile.vp \
   \
   ../memory_tile/memory_tile.vp \
-  ../memory_core/memory_core.vp \
+  ../memory_core/input_sr.vp \
+  ../memory_core/output_sr.vp \
+  ../memory_core/linebuffer_control.vp \
+  ../memory_core/fifo_control.vp \
   ../memory_core/mem.vp \
-  ../global_controller/global_controller.vp \
-  ../jtag/jtag.vp
+  ../memory_core/memory_core.vp \
+  \
+  ../global_controller/global_controller.svp \
+  \
+  ../jtag/jtag.svp \
+  ../jtag/Template/src/digital/template_ifc.svp \
+  ../jtag/Template/src/digital/cfg_ifc.svp \
+  ../jtag/Template/src/digital/flop.svp \
+  ../jtag/Template/src/digital/tap.svp \
+  ../jtag/Template/src/digital/reg_file.svp \
+  ../jtag/Template/src/digital/cfg_and_dbg.svp
+
+# echo
+# echo HACKWARNING Restoring original LUT code
+# echo HACKWARNING Restoring original LUT code
+# echo HACKWARNING Restoring original LUT code
+# echo git checkout ../pe_new/pe/rtl/test_pe.svp
+# git checkout ../pe_new/pe/rtl/test_pe.svp
+# echo
+
+echo
+echo HACKWARNING Swapping stub in place of DW_tap
+echo HACKWARNING Swapping stub in place of DW_tap
+echo HACKWARNING Swapping stub in place of DW_tap
+echo cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
+cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
+echo
+
+# echo 
+# echo WARNING/FIXME: hacking out pe_output_2 from memory_tile
+# echo WARNING/FIXME: hacking out pe_output_2 from memory_tile
+# echo WARNING/FIXME: hacking out pe_output_2 from memory_tile
+# #echo 'grep -v ".pe_output_2(almost_empty)," genesis_verif/memory_tile_unq1.v'
+# #grep -v ".pe_output_2(almost_empty)," genesis_verif/memory_tile_unq1.v > /tmp/tmp$$
+# #diff genesis_verif/memory_tile_unq1.v /tmp/tmp$$
+# #mv  /tmp/tmp$$ genesis_verif/memory_tile_unq1.v
+# 
+# echo 
 
 source clean_up_cgra_inputs.csh
 source remove_genesis_wires.csh
+
+if [ `hostname` == "kiwi" ]; then
+  echo Checking cgra_info for errors...
+  echo xmllint --noout cgra_info.txt
+  xmllint --noout cgra_info.txt |& head -n 20
+fi

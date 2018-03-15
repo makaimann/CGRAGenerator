@@ -10,7 +10,9 @@
 
 //; # Specify the CGRA grid size as 8x8,16x16, or 64x64. You can generate additional sizes by modifying
 //; # the IO_count and basic_block_repeat_* variables below.
-//; my $grid_size = "8x8";
+//; # my $grid_size = "8x8";
+//; # my $grid_size = "64x64";
+//; my $grid_size = "16x16";
 //; #
 //; # for IOs
 //; # <number of bits> <number of bits> <number of bits> <number of bits>
@@ -333,7 +335,9 @@ config_addr_in,
 config_data_in,
 tdi,
 tdo,
-tms
+tms,
+tck,
+trst_n
 );
 
 //;open(INFO, ">cgra_info.txt") or die "Couldn't open file cgra_info.txt, $!";
@@ -345,6 +349,8 @@ tms
   input [31:0] config_data_in;
   input tdi;
   input tms;
+  input tck;
+  input trst_n;
   output tdo;
    // --------------------------------------
    // PLACEHOLDERS FOR VERILATOR INPUT WIRES
@@ -376,22 +382,30 @@ wire [31:0] config_addr;
 wire [31:0] config_data;
 wire clk;
 wire reset;
-
+wire stall;
+//CONFIG_HACK. ONCE GC IS DONE SEND ADDR AND DATA IN THROUGH JTAG
+assign config_addr = config_addr_in;
+assign config_data = config_data_in;
 //; my $global_controller_obj = generate("global_controller", "global_controller", dummy_value => 0);
     `$global_controller_obj->instantiate()` 
     (
       .clk_in(clk_in),
-      .clk_out(clk),
+      .clk_out(), //clk),
       .reset_in(reset_in),
-      .reset_out(reset),
-      .config_addr_in(config_addr_in),
-      .config_addr_out(config_addr),
-      .config_data_in(config_data_in),
-      .config_data_out(config_data),
+      .reset_out(), //reset),
+      .config_addr_out(),//config_addr),
+      .config_data_in(),//config_data_in),
+      .config_data_out(),//config_data),
       .tdi(tdi),
       .tdo(tdo),
-      .tms(tms)
+      .tms(tms),
+      .tck(tck),
+      .trst_n(trst_n),
+      .cgra_stalled(stall)
     );
+    //UNTIL WE FIX TESTS TO INPUT CFG ADDR AND DATA THROUGH JTAG, DON'T RUN CLK SIGNALS THROUGH GC
+    assign clk = clk_in;
+    assign reset = reset_in;
 
 // FIXME Note there are LOTS of unused wires being created below!
 // FIXME I assume they will be hooked up to something eventually
@@ -438,6 +452,8 @@ wire reset;
 
 
 //; my $tile_hash_ref;
+//; my $io1bit_num_tracks = $bus_num_tracks_hash{ 'BUS1' };
+//; my $io16bit_num_tracks = $bus_num_tracks_hash{ 'BUS16' };
 //#####################################################
 //#Instantiate components
 //#####################################################
@@ -449,11 +465,16 @@ wire reset;
 //;     my $io_side = -1;
 //;     my $io_count = -1;
 //;     my $io_group = -1;
+//;     my $io_gcount = 0;
 //;     if (($tile_type eq "X")) {next;}
 //;     if ($tile_type=~m/io/) {
 //;       $io_side = $tile_grid{"${key}_side"};
 //;       $io_count = $tile_grid{"${key}_count"};
-//;       $io_group = int($io_count/16);
+//;       if ($io_side==0) {$io_gcount = $io_count + $IO_count[0] + $IO_count[1] + $IO_count[3];}
+//;       if ($io_side==2) {$io_gcount = $io_count + $IO_count[3];}
+//;       if ($io_side==3) {$io_gcount = $io_count + $IO_count[3] + $IO_count[0];}
+//;       if ($io_side==1) {$io_gcount = $io_count + 0;}
+//;       $io_group = int($io_gcount/16);
 //;     }
 //;     my $options = "";
 //;     my $tile_addr_hex = sprintf("%X", $tile_addr);
@@ -652,15 +673,20 @@ wire reset;
 //;       }
 //;       my $h_new = $h+$h_delta;
 //;       my $w_new = $w+$w_delta;
-      .p2f(wire_`$h`_`$w`_BUS1_S`$s`_T0),
-      .f2p(wire_`$h_new`_`$w_new`_BUS1_S`$opposite_side`_T0),
+//;		 my $io1_track = 0;
+//;		 if(($s % 2) eq 0) {$io1_track = ($h_new - 2) % $io1bit_num_tracks;}
+//;		 else {$io1_track = ($w_new - 2) % $io1bit_num_tracks;}
+      .p2f(wire_`$h`_`$w`_BUS1_S`$s`_T`$io1_track`),
+      .f2p(wire_`$h_new`_`$w_new`_BUS1_S`$opposite_side`_T`$io1_track`),
       .pad(pad_S`$opposite_side`_T`$io_count`),
       .tile_id(16'h`$tile_addr_hex`)
     );
 //;    } elsif ($tile_type eq "io16") {
+//;       my $s = $io_side;
+//; my $bus_width = $inst_obj -> get_param('width');
+    wire [`$bus_width-1`:0] fanout_`$h`_`$w`_BUS16_S`$s`_T0;
     `$inst_obj->instantiate()` 
     (
-//;       my $s = $io_side;
 //;       my $opposite_side = $s + int($sides*0.5);
 //;       if ($opposite_side > ($sides-1)) {$opposite_side -= $sides;}
 //;       my $w_delta=0;
@@ -677,36 +703,49 @@ wire reset;
 //;       my $h_old = $h-$h_delta;
 //;       my $w_old = $w-$w_delta;
 //;       my $str = "";
+//;       my $io16_track = 0;							
 //;       for (my $i=0; $i<16; $i++) {
 //;         if ($s==0) {
-//;          $str= "${str}wire_".($h_old+$i)."_".($w_old)."_BUS1_S${s}_T0,";
+//;	     $io16_track = ($h+$i-2) % $io1bit_num_tracks;
+//;          $str= "${str}wire_".($h_old+$i)."_".($w_old)."_BUS1_S${s}_T$io16_track,";
 //;         } elsif ($s==1) {
-//;          $str= "${str}wire_".($h_old)."_".($w_old+$i)."_BUS1_S${s}_T0,";
+//;	     $io16_track = ($w+$i-2) % $io1bit_num_tracks;
+//;          $str= "${str}wire_".($h_old)."_".($w_old+$i)."_BUS1_S${s}_T$io16_track,";
 //;         } elsif ($s==2) {
-//;          $str= "${str}wire_".($h_old+$i)."_".($w_old)."_BUS1_S${s}_T0,";
+//;	     $io16_track = ($h+$i-2) % $io1bit_num_tracks;
+//;          $str= "${str}wire_".($h_old+$i)."_".($w_old)."_BUS1_S${s}_T$io16_track,";
 //;         } else {
-//;          $str= "${str}wire_".($h_old)."_".($w_old+$i)."_BUS1_S${s}_T0,";
+//;	     $io16_track = ($w+$i-2) % $io1bit_num_tracks;
+//;          $str= "${str}wire_".($h_old)."_".($w_old+$i)."_BUS1_S${s}_T$io16_track,";
 //;         }
 //;       }
 //;       $str=~s/,$//;
       .p2f_in({`$str`}),
-      .p2f_out(wire_`$h`_`$w`_BUS16_S`$s`_T0),
+      .p2f_out(fanout_`$h`_`$w`_BUS16_S`$s`_T0),
       .f2p_in(wire_`$h_new`_`$w_new`_BUS16_S`$opposite_side`_T0),
 //;       my $str = "";
 //;       for (my $i=0; $i<16; $i++) {
 //;         if ($s==0) {
-//;              $str= "${str}wire_".($h+$i)."_".($w)."_BUS1_S${opposite_side}_T0,";
+//;		 $io16_track = ($h+$i-2) % $io1bit_num_tracks;
+//;              $str= "${str}wire_".($h+$i)."_".($w)."_BUS1_S${opposite_side}_T$io16_track,";
 //;         } elsif ($s==1) {
-//;              $str= "${str}wire_".($h)."_".($w+$i)."_BUS1_S${opposite_side}_T0,";
+//;		 $io16_track = ($w+$i-2) % $io1bit_num_tracks;
+//;              $str= "${str}wire_".($h)."_".($w+$i)."_BUS1_S${opposite_side}_T$io16_track,";
 //;         } elsif ($s==2) {
-//;              $str= "${str}wire_".($h+$i)."_".($w)."_BUS1_S${opposite_side}_T0,";
+//;		 $io16_track = ($h+$i-2) % $io1bit_num_tracks;
+//;              $str= "${str}wire_".($h+$i)."_".($w)."_BUS1_S${opposite_side}_T$io16_track,";
 //;         } else {
-//;              $str= "${str}wire_".($h)."_".($w+$i)."_BUS1_S${opposite_side}_T0,";
+//;		 $io16_track = ($w+$i-2) % $io1bit_num_tracks;
+//;              $str= "${str}wire_".($h)."_".($w+$i)."_BUS1_S${opposite_side}_T$io16_track,";
 //;         }
 //;       }
 //;       $str=~s/,$//;
-      .f2p_out({`$str`})
+       .f2p_out({`$str`})
     );
+       //Fanout for p2f_out
+//;    for(my $track = 0; $track < $io16bit_num_tracks; $track++) { 
+ 	assign	wire_`$h`_`$w`_BUS16_S`$s`_T`$track` = fanout_`$h`_`$w`_BUS16_S`$s`_T0;
+//;    }
 //;    }
 //;   if ($tile_type eq "io1") {
 //;     print INFO "  <tile type='$tile_config->{ $tile_type }{ 'type' }' tile_addr='0x$tile_addr_hex' row='$h' col='$w' tracks='BUS1:1 BUS16:0'";
@@ -726,6 +765,14 @@ wire reset;
 //;       print INFO $_;
 //;     }
 //;     close INP;
+//;   	if ($tile_type eq "io1") {
+//;	  my $io1_track = 0;
+//;	  my $side = $inst_obj->get_param('side');
+//;       if(($side % 2) eq 0) {$io1_track = ($h - 2) % $io1bit_num_tracks;}
+//;	  else {$io1_track = ($w - 2) % $io1bit_num_tracks;}
+//;	  print INFO "        <input>in_1BIT_S${side}_T$io1_track</input>\n";
+//;	  print INFO "        <output>out_1BIT_S${side}_T$io1_track</output>\n";
+//;	}
 //;   }
 //;   print INFO "  </tile>\n";
 //;   }

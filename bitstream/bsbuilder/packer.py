@@ -67,11 +67,14 @@ def init_globals(grid_width = 8, grid_height = 8, DBG=0):
     if USE_CGRA_INFO:
         # FIXME should also use cgra_info to set width, height
         NTILES = cgra_info.ntiles()
+        (GRID_WIDTH,GRID_HEIGHT) = cgra_info.grid_dimensions()
+
+    print "# Grid is maybe %dx%d" % (GRID_WIDTH,GRID_HEIGHT)
 
     tiles = range(NTILES)
     if DBG: print "# tiles:"; print '#', tiles, '\n'
 
-    order = 64 * [-1]
+    order = NTILES * [-1]
     if DBG: print "# order:"; print '#', order, '\n'
    
 # If a tile didn't work out, you can uanllocate() it (see below),
@@ -131,6 +134,8 @@ def rc2tileno(r,c):
     if (r < 0) or (c < 0): return -1
     if USE_CGRA_INFO: return cgra_info.rc2tileno(r,c)
     else:
+        # FIXME this should never happen...riiight?
+        assert False, 'FALSE since 3/7/2018'
         tno = 8*r + c
         if tno > NTILES: return -1
         return tno
@@ -168,10 +173,11 @@ class Format:
         for r in range(GRID_HEIGHT):
             print '#   ',
             for c in range(GRID_WIDTH):
-                tno = rc2tileno(r,c)
+                tno = cgra_info.rc2tileno(r,c)
                 # if order[tno] == -1: print ' .',
                 # else: print '%2d' % tno
-                print '%2d' % tno,
+                if tno == 0: print ' x ',
+                else:        print '%3x' % tno,
             print ''
 
 

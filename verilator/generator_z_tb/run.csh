@@ -1,5 +1,8 @@
 #!/bin/csh -f
 
+# Can use this to extend time on travis
+# ./my_travis_wait.csh 60 &
+
 set VERBOSE
 
 # Build a tmp space for intermediate files
@@ -48,14 +51,13 @@ git branch | grep '^*' >    $tmpdir/tmp
 set branch = `sed 's/^..//' $tmpdir/tmp`
 rm $tmpdir/tmp
 
-# In travis, 'git branch' returns something like
-#   "* (HEAD detached at 09a4672)"
-#   "  master"
-
+unset TRAVIS
 # Travis branch comes up as 'detached' :(
 #   * (HEAD detached at a220e19)
 #     master
 if (`expr "$branch" : ".*detached"`) then
+  echo "run.csh: I think we are running from travis"
+  set TRAVIS
   set branch = `git branch | grep -v '^*' | awk '{print $1}'`
 endif
 echo "run.csh: I think we are in branch '$branch'"
@@ -64,10 +66,10 @@ echo "run.csh: I think we are in branch '$branch'"
 # set config   = ../../bitstream/examples/940/pw.bs
 # if ("$branch" == "srdev") set config = ../../bitstream/examples/pwv2_io.bs
 # if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2_io.bs
-set config   = ../../bitstream/examples/pwv2_io.bs
 
-# Try a thing
-set config   = ../../bitstream/examples/pwv2_nb2.bsa
+# set config   = ../../bitstream/examples/pwv2_io.bs
+# set config   = ../../bitstream/examples/pwv2_nb2.bsa
+set config   = ../../bitstream/examples/pw2_sixteen.bsa
 
 
 set DELAY = '0,0'
@@ -79,8 +81,15 @@ set DELAY = '0,0'
 # echo .${config}.
 # echo $DELAY
 
+# gray_small (100K cycles) still too big for 16x16
+# set input     = io/gray_small.png
 
-set input     = io/gray_small.png
+# pointwise w/'conv_bw' takes 4000 cycles to complete
+set input     = io/conv_bw_in.png
+
+if ("$branch" == "sixteen") set input = io/input_10x10_1to100.png
+
+
 set output    = $tmpdir/output.raw
 set nclocks   = "1M"
 unset tracefile
@@ -113,9 +122,6 @@ if ($#argv == 1) then
   endif
 endif
 
-echo config = $config 2
-
-# TODO: could create a makefile that produces a VERY SIMPLE run.csh given all these parms...(?)
 
 
 # NO don't cleanup might want this later (for -nobuild)...
@@ -129,15 +135,21 @@ echo config = $config 2
 
 unset HACKMEM
 
+# ALWAYS BE HACKMEM!
+set HACKMEM = 1
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+
 while ($#argv)
   # echo "Found switch '$1'"
   switch ("$1")
 
     case '-hackmem':
-      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
-      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
-      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
       set HACKMEM = 1
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
       breaksw
 
     case '-clean':
@@ -236,8 +248,6 @@ endif
 
 
 ##############################################################################
-##############################################################################
-##############################################################################
 # # Here's a weird hack, okay...srdev travis only gets to run with pwv2 config
 # 
 # # # Set config conditionally depending on current branch
@@ -245,18 +255,11 @@ endif
 # # 
 # if ("$branch" == "srdev" || "$branch" == "avdev") then
 #   if ("$config" == "../../bitstream/examples/pwv1.bs") then
-#     echo
-#     echo '  SRDEV TRAVIS hack'
-#     echo '  SRDEV TRAVIS hack'
 #     echo '  SRDEV TRAVIS hack'
 #     echo '  pwv1 was requested; using pwv2 instead...'
-#     echo ''
 #     set config = ../../bitstream/examples/pwv2.bs
 #   endif
 # endif
-# 
-##############################################################################
-##############################################################################
 ##############################################################################
 
 
@@ -280,8 +283,30 @@ endif
 
 if (! -e $config) then
   echo "run.csh: ERROR Cannot find config file '$config'"
-  exit -1
+  exit 13
 endif
+
+if (`expr "$config" : ".*lbuf.*"`) then
+  if (! $?HACKMEM) then
+    echo
+    echo "run.csh: ERROR '$config' looks like an lbuf config file"
+    echo "run.csh: ERROR should be using hackmem flag, yes?"
+    exit 13
+  endif
+endif
+
+
+unset io_hack
+grep -i ffffffff $config > /tmp/tmp && set io_hack
+if ($?io_hack) then
+  echo 'ERROR Config file $config appears to be trying to use the old I/O hack:'
+  cat /tmp/tmp; /bin/rm /tmp/tmp
+  echo 'ERROR We no longer support I/O hacks, please use I/O pads instead'
+  echo
+  exit 13
+endif
+
+
 
 # Turn nclocks into an integer.
 set nclocks = `echo $nclocks | sed 's/,//g' | sed 's/K/000/' | sed 's/M/000000/'`
@@ -334,23 +359,9 @@ set config_io = $tmpdir/${croot}io
 
 # Are you kidding me
 set path = ($path .)
-# which run-injectio.csh
-# ls -l run-injectio.csh
-
-# Use decoder to produce an annotated bitstream WITH I/O COMMENTS
-echo "run.csh: run-injectio.csh $config -o $config_io"
-run-injectio.csh $VSWITCH $config -o $config_io || exit -1
-
-# Find IO wires.  This is what we're looking for:
-#     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T0"
-#     "# INPUT  tile  0 (0,0) / out_s1t0 / wire_0_0_BUS16_S1_T1"
-#     "# OUTPUT tile  2 (2,0) /  in_s3t0 / wire_1_0_BUS16_S1_T0"
-
-set inwires =  `egrep '^# INPUT  tile' $config_io | awk '{print $NF}'`
-set outwires = `egrep '^# OUTPUT tile' $config_io | awk '{print $NF}'`
 
 # Clean up config file for verilator use
-grep -v '#' $config_io | grep . > $tmpdir/tmpconfig
+grep -v '#' $config | grep . > $tmpdir/tmpconfig
 set config = $tmpdir/tmpconfig
 
 if ($?VERBOSE) then
@@ -360,22 +371,6 @@ if ($?VERBOSE) then
   tail $config
 endif
 
-if ($?VERBOSE) then
-    echo ""
-    echo '------------------------------------------------------------------------'
-    echo "BEGIN find input and output wires"
-    echo ""
-    echo "  USING I/O WIRE NAMES DERIVED FROM BITSTREAM"
-    echo ""
-    echo "  inwires  = $inwires"
-    echo "  outwires = $outwires"
-    echo
-    echo "END find input and output wires"
-    echo ""
-    echo '------------------------------------------------------------------------'
-endif
-
-
 set vdir = ../../hardware/generator_z/top/genesis_verif
 if (! -e $vdir) then
   echo "ERROR: Could not find vfile directory"
@@ -384,28 +379,6 @@ if (! -e $vdir) then
   echo "    (cd $vdir:h; ./run.csh; popd) |& tee tmp.log"
   exit -1
 endif
-
-##################################################################################
-# echo "BEGIN top.v manipulation (won't be needed after we figure out io pads)..."
-
-    # E.g. bname = 'pointwise/gray_small'
-    set iname = $input:t; set iname = $iname:r
-    set bname = $config:t; set bname = "$bname:r/$iname:r"
-
-    echo ''
-    echo BENCHMARK $bname
-    echo "run.csh: Inserting IO wirenames into verilog top module '$vdir/top.v'..."
-    echo "inwire '$inwires', outwire '$outwires'"
-
-    ./run-wirehack.csh \
-        -inwires "$inwires" \
-        -outwires "$outwires" \
-        -vtop "$vdir/top.v" > $tmpdir/wirehack.log
-
-    if ($?VERBOSE) cat $tmpdir/wirehack.log
-
-# echo END top.v manipulation
-##################################################################################
 
 echo ''
 echo '------------------------------------------------------------------------'
@@ -432,11 +405,24 @@ echo "Building the verilator simulator executable..."
     # To:
     #   assign wen = WENHACK
 
+    unset ERR
+    egrep '^assign wen_in_int = .*' $vdir/memory_core_unq1.v || set ERR
+    if ($?ERR) then
+      echo
+      echo "run.csh: ERROR looks like WENHACK would FAIL"
+      exit 13
+    endif
+
     # ls -l $vdir
     mv $vdir/memory_core_unq1.v $tmpdir/memory_core_unq1.v.orig
     cat $tmpdir/memory_core_unq1.v.orig \
-      | sed 's/^assign wen = .*/assign wen = WENHACK;/' \
+      | sed 's/^assign wen_in_int = .*/assign wen_in_int = WENHACK;/' \
       > $vdir/memory_core_unq1.v
+
+    # old
+    #  | sed 's/^assign wen = .*/assign wen = WENHACK;/' \
+
+
 
     # No longer doing:
     #  | sed 's/assign int_ren = .*/assign int_ren = 1;/' \
@@ -456,93 +442,54 @@ echo "Building the verilator simulator executable..."
 
   endif
 
+echo 'Note: No more IO hacks;'
+echo 'pixels must arrive via pad_S2_T[8:15] aka wire_2_1_BUS16_S0_T0'
+echo 'and           exit via pad_S0_T[7:0] aka wire_2_17_BUS16_S0_T0'
+
+
+
 echo ''
 echo '------------------------------------------------------------------------'
 echo "run.csh: Build the simulator..."
 
-  # Build the necessary switches
+if ($?SKIP_RUNCSH_BUILD) then
+  echo "WARNING SKIPPING SIMULATOR BUILD B/C FOUND ENV VAR 'SKIP_RUNCSH_BUILD'"
+  echo "WARNING SKIPPING SIMULATOR BUILD B/C FOUND ENV VAR 'SKIP_RUNCSH_BUILD'"
+  echo "WARNING SKIPPING SIMULATOR BUILD B/C FOUND ENV VAR 'SKIP_RUNCSH_BUILD'"
+  goto RUN_SIM
+endif
 
-  # Gather the verilog files for verilator command line
-  pushd $vdir >& /dev/null
-    # set vfiles = (*.v *.sv)
-    set vfiles = (*.v)
-  popd >& /dev/null
+# How about skip verilator build if:
+# 0. Running on travis AND
+# 1. obj_dir/Vtop exists
+# 2. hackmem is in place
 
-  # So many warnings it wants to DIE!
-  set myswitches = '-Wno-fatal'
-  set top        = 'top'
-
-  # Add trace switch if trace requested
-  if ($?tracefile) set myswitches = "$myswitches --trace"
-
-  # Note default trace_filename in top_tb.cpp is "top_tb.vcd"
-
-  # Run verilator to build the simulator.
-
-  # build C++ project
-
-  echo
-  echo verilator -Wall $myswitches --cc --exe $testbench \
-    -y $vdir $vfiles --top-module $top \
-    | fold -s | sed '2,$s/^/  /' | sed 's/$/  \\/'
-  echo
-
-  verilator $myswitches -Wall $myswitches --cc --exe $testbench \
-    -y $vdir $vfiles --top-module $top \
-    >& $tmpdir/verilator.out
-
-  set verilator_exit_status = $status
-
-  if ($?VERBOSE) then
-    echo "%Warning1 Ignoring warnings about unoptimizable circularities in switchbox wires (see SR for explainer)."
-    echo '%Warning2 To get the flavor of all the warnings, just showing first 40 lines of output.'
-    echo "%Warning3 See $tmpdir/verilator.out for full log."
-    echo
-
-    # This (head -n 40) can cause broken pipe error (!)
-    # awk -f ./run-verilator-warning-filter.awk $tmpdir/verilator.out | head -n 40
-    awk -f ./run-verilator-warning-filter.awk $tmpdir/verilator.out
-
-  else
-    echo "See $tmpdir/verilator.out for full log of verilator warnings."
+if (! $?TRAVIS_BUILD_DIR) goto BUILD_SIM
+if (-e obj_dir/Vtop) then
+  echo Found existing obj_dir/Vtop
+  set vdir = ../../hardware/generator_z/top/genesis_verif
+  if (-e $vdir/memory_core_unq1.v) then 
+    echo Found $vdir/memory_core_unq1.v
+    unset foundhack
+    egrep 'assign.*WENHACK' $vdir/memory_core_unq1.v && set foundhack
+    if ($?foundhack) then
+      echo Found memhack
+      echo Found Vtop and memhack = skipping verilator build
+      goto RUN_SIM
+    else
+      echo No memhack, must rebuild
+    endif
   endif
+endif
 
-  if ($verilator_exit_status != 0) then
-    tail -40 $tmpdir/verilator.out
-    echo ""
-    echo "VERILATOR FAILED!"
-    echo "See $tmpdir/verilator.out for full log of verilator warnings."
-    exit -1
-  endif
-
-  echo
-  echo "run.csh: Build the testbench..."
-
-  if ($?VERBOSE) then
-    echo
-    echo "make \"
-    echo "  VM_USER_CFLAGS='-DINWIRE=top->$inwires -DOUTWIRE=top->$outwires' \"
-    echo "  -j -C obj_dir/ -f $vtop.mk $vtop"
-  endif
-
-  echo
-  echo "TODO/FIXME this only works if there is exactly ONE each INWIRE and OUTWIRE\!\!"
-  echo "make $vtop -DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'"
-  /bin/rm obj_dir/Vtop
-
-  make \
-    VM_USER_CFLAGS="-DINWIRE='top->$inwires' -DOUTWIRE='top->$outwires'" \
-    -j -C obj_dir/ -f $vtop.mk $vtop \
-    >& $tmpdir/make_vtop.log \
-    || set ERROR
-
-  if ($?ERROR) then
-    cat $tmpdir/make_vtop.log; exit -1
-  endif
-
-  if ($?VERBOSE) then
-    cat $tmpdir/make_vtop.log; echo
-  endif
+BUILD_SIM:
+if ($?tracefile) then
+  echo build_simulator.csh $VSWITCH $testbench $tracefile
+  build_simulator.csh $VSWITCH $testbench $tracefile
+else
+  echo build_simulator.csh $VSWITCH $testbench
+  build_simulator.csh $VSWITCH $testbench
+endif
 
 
 RUN_SIM:

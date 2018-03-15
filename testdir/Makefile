@@ -2,57 +2,52 @@
 # Makefile Definitions
 ################################################################################
 
-# ifndef SMASH
-#   $(error ERROR: Chip Gen path is not set. Use "setenv SMASH <path_to_chipgen>")
-# else
-#   $(warning WARNING: SMASH set to $(SMASH))
-# endif
-
 VERILATOR_TOP := ../verilator/generator_z_tb
+HARDWARE_TOP  :=  ../hardware/generator_z/top
 
 SILENT := FALSE
 ifeq ($(SILENT), TRUE)
-       QUIET := -q
+	QUIET := -q
+	VSWITCH :=
 else
-       QUIET :=
+	QUIET :=
+	VSWITCH := -v
 endif
 # $(warning OUTPUT = "$(OUTPUT)")
 
 TEMPDIR := $(shell mktemp -d /tmp/gentest-XXX)
 DELAY = 0,0
 
-# gray_small_4x4:
-# 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
-# 	CONFIG="-oldmem -4x4 -config ../../bitstream/examples/cd387-good.bs"
-# 
-# gray_4x4:
-# 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray" \
-# 	CONFIG="-oldmem -4x4 -config ../../bitstream/examples/cd387-good.bs"
-
 pw_gray_small_8x8:
-# 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
-#	CONFIG="-config ../../bitstream/examples/pwv2.bs"
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" \
 	CONFIG="-config ../../bitstream/examples/pw1009.bsa"
-
 
 pw_gray_8x8:
 	make test TEMPDIR=$(TEMPDIR) IMAGE="gray" \
 	CONFIG="-config ../../bitstream/examples/pwv2.bs"
 
-# Use run.csh built-in default config
 test_basic:
+#	# Use run.csh built-in default config
 	@./writelog.csh log1 -init
-	make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small" DELAY="0,0" \
+#	# make test TEMPDIR=$(TEMPDIR) IMAGE="gray_small"         DELAY="0,0"
+	make test TEMPDIR=$(TEMPDIR) IMAGE="input_10x10_1to100" DELAY="0,0" \
 	          CONFIG=""
 	@echo
 	@./writelog.csh log1 -print
+
+update_cgra:
+	cd $(HARDWARE_TOP); ./run.csh
+
+test_unit:
+	make update_cgra
+	./unit_tests/utest $(VSWITCH)
 
 
 
 test_all:
 	make hackdiff_test 2>&1 | tee $(TEMPDIR)/hackdiff_test.log
-	make test_standalone
+	make test_unit
+	make test_basic
 	make test_serpent
 
         # Read standalone test result(s) from 'log1'
@@ -64,6 +59,14 @@ test_all:
         # Summary of hackdiff results
 	egrep ^hackdiff $(TEMPDIR)/hackdiff_test.log
 
+
+test_serpent_dev:
+	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR) pointwise conv_1_2 conv_2_1
+	../bitstream/bsbuilder/testdir/test_bitstreams.csh $(TEMPDIR) pointwise conv_1_2 conv_2_1
+	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR) conv_3_1
+	../bitstream/bsbuilder/testdir/test_bitstreams.csh $(TEMPDIR) conv_3_1
+	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR) conv_bw
+	../bitstream/bsbuilder/testdir/test_bitstreams.csh $(TEMPDIR) conv_bw
 
 test_serpent:
 	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR)
