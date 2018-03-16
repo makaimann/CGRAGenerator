@@ -82,28 +82,8 @@ echo
 source clean_up_cgra_inputs.csh
 source remove_genesis_wires.csh
 
-
-
-##############################################################################
-echo 
-echo WARNING/FIXME cgra_info.txt hack
-echo WARNING/FIXME cgra_info.txt hack
-echo WARNING/FIXME cgra_info.txt hack
-echo top/run.csh hacking in new tmp_target_cgra_info_io.xml in place of cgra_info.txt
-
-echo cp tmp_target_cgra_info_io.xml cgra_info.txt
-cp cgra_info.txt cgra_info_orig.txt
-cp tmp_target_cgra_info_io.xml cgra_info.txt
-diff -Bb cgra_info_orig.txt cgra_info.txt \
-  && echo HOORAY can remove hack now \
-  || echo BOO hack still needed
-echo
-##############################################################################
-
-
-
 if [ `hostname` == "kiwi" ]; then
   echo Checking cgra_info for errors...
   echo xmllint --noout cgra_info.txt
-  xmllint --noout cgra_info.txt |& head -n 20
+  xmllint --noout cgra_info.txt 2>&1 | head -n 20
 fi
