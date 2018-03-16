@@ -45,9 +45,6 @@ def test_where():
 
 import packer
 
-# well this is awful isn't it
-WEN_LUT_LIST = []
-
 # FIXME/TODO globals wrapper and initializer thingy, see packer.py maybe
 GRID_WIDTH  = 8
 GRID_HEIGHT = GRID_WIDTH
@@ -439,10 +436,6 @@ def final_output(DBG=0):
 
             print ''
 
-            if is_mem(dname) and nodes[dname].wen_lut:
-                print "# wen_lut::%s" % dname
-                route_wen(dname)
-
     # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
     # OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
     print_io_info()
@@ -505,10 +498,6 @@ def print_oplist():
 
     print ''
 
-    # FIXME should be separate print_wenlist()
-    print "# LUT tiles for wen_lut's", WEN_LUT_LIST
-    for i in WEN_LUT_LIST: print "T%d_lutFF(0,0,0)" % i
-    print ''
 
 def print_memlist():
     # E.g. prints
@@ -597,7 +586,6 @@ class Node:
         self.name       = nodename
         self.tileno     = -1 # Because 0 is a valid tile number, see?
         self.fifo_depth = -1
-        self.wen_lut    = False
 
         # input/output EXAMPLES (FIXME needs update)
         #            input0/1         output
@@ -646,13 +634,12 @@ class Node:
         # also: is_{const,mem,reg,pe,io}
         # FIXME add the other types, make it a separate func
         print "  type='%s'" % type
-        print "  ----"
+
         print "  tileno= %s" % self.tileno
         print "  input0='%s'" % self.input0
         print "  input1='%s'" % self.input1
         print "  output='%s'" % self.output
-        print "  ----"
-        if self.wen_lut: print "  wen_lut=%s" % str(self.wen_lut)
+
         print "  placed= %s" % self.placed # FIXME needed/used?
         print "  dests=%s" % self.dests
         # print "  route=%s" % self.route
@@ -990,55 +977,49 @@ def build_nodes(DBG=0):
 
 def build_node(nodes, line, DBG=0):
 
-    # Rewrite to simplify
-    # e.g. "INPUT" -> "lb_p4_clamped_stencil_update_stream$mem_1$cgramem"; # fifo_depth 64
-    # =>   "INPUT" -> "mem_1"; # fifo_depth 64
+        # Don't care about luts (for now)
+        if re.search("wen_lut", line):
+            if DBG: pwhere(976, "# WARNING ignoring wen_lut")
+            return
 
-    line = re.sub('lb_p4_clamped_stencil_update_stream\$', "", line)
-    line = re.sub("\$cgramem", "", line)
-    if DBG>1: pwhere(978, "# Building node for input line '%s'" % line)
+        # Rewrite to simplify
+        # e.g. "INPUT" -> "lb_p4_clamped_stencil_update_stream$mem_1$cgramem"; # fifo_depth 64
+        # =>   "INPUT" -> "mem_1"; # fifo_depth 64
 
-    parse = re.search('["]([^"]+)["][^"]+["]([^"]+)["]', line)
-    if not parse:
-        if DBG: pwhere(995, "# Could/did not parse input line '%s'" % line)
-        return
+        line = re.sub('lb_p4_clamped_stencil_update_stream\$', "", line)
+        line = re.sub("\$cgramem", "", line)
+        if DBG>1: pwhere(978, "# Building node for input line '%s'" % line)
 
-    lhs = parse.group(1); rhs = parse.group(2)
-    if DBG>1: print "# Found lhs/rhs", lhs, rhs, "\n";
+        parse = re.search('["]([^"]+)["][^"]+["]([^"]+)["]', line)
+        if not parse:
+            if DBG: pwhere(995, "# Could/did not parse line '%s'" % line)
+            return
 
-    addnode(rhs);
+        lhs = parse.group(1); rhs = parse.group(2)
+        if DBG>1: print "# Found lhs/rhs", lhs, rhs, "\n";
+        addnode(rhs); addnode(lhs)
+        nodes[lhs].dests.append(rhs)
+        # print nodes[rhs].dests
 
-    if lhs == 'wen_lut':
-        if DBG: pwhere(1013, "# WARNING no longer ignoring wen_lut\n")
-        assert rhs[0:3] == 'mem', 'oops why does wen_lut not connect to a mem tile!?'
-        nodes[rhs].wen_lut = 'needs_wenlut'
-        nodes[rhs].show()
-        return
-
-    addnode(lhs)
-
-    nodes[lhs].dests.append(rhs)
-    # print nodes[rhs].dests
-
-    # Uhhhh...look for and process fifo_depth comments
-    process_fifo_depth_comments(rhs,line,DBG)
+        # Uhhhh...if rhs node is a mem, there should be a fifo_depth comment
+        process_fifo_depth(rhs,line)
 
 
-def process_fifo_depth_comments(rhs, line, DBG=0):
+# Uhhhh...if rhs node is a mem, there should be a fifo_depth comment, e.g.
+def process_fifo_depth(nodename, line):
     '''
-    Look for something like rhs="mem_1" and line=
+    Look for something like
         "INPUT" -> "mem_1"; # fifo_depth 64
     and add fifo_depth to "mem_1" node info
     '''
-    parse =  re.search('fifo_depth\s+(\d+)$', line)
-    if not parse:
-        return
-    else:
-        if DBG: pwhere(1019, "# Found a fifo_depth comment to process")
-        assert rhs[0:3] == 'mem', 'oops dunno what mem to config fifo_depth'
-        fifo_depth = parse.group(1)
-        nodes[rhs].fifo_depth = int(fifo_depth)
-        # print "\n666foo", rhs, line; nodes[rhs].show()
+    if nodename[0:3] != 'mem': return
+
+    fd = re.search('fifo_depth\s+(\d+)$', line).group(1)
+    nodes[nodename].fifo_depth = int(fd)
+
+    # print ''
+    # print "666foo", nodename, line
+    # nodes[nodename].show()
 
 
 def addnode(nodename):
@@ -1505,10 +1486,6 @@ def process_nodes(sname, indent='# ', DBG=1):
 
         if DBG: pnr_debug_info(was_placed,was_routed,indent,sname,dname)
 
-        # Hmph! Hmph! Another special case!
-        # If placed tile is a mem tile, look for an associated wen_lut
-        check_for_wen_lut(sname,dname,DBG)
-
         # Do this as a separate pass for breadth-first...
         # process_nodes(dname, indent+'    ')
 
@@ -1769,14 +1746,18 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         # means we have to duplicate the route for both op1 and op2.
         check_for_double_destination(sname,dname,DBG)
 
-        # FIXME ?? ?? what the hell is this all about?
-        if dname == 'reg_0_1': print 'GOT TWO ROUTES!  WOO AND HOO!'
+        if dname == 'reg_0_1':
+            print 'GOT TWO ROUTES!  WOO AND HOO!'
+            # assert False,\
+            #        '\n\n\nGOT TWO ROUTES!  WOO AND HOO!  What now.\n\n\n'
 
-        # FIXME We used to have this option for random placement I guess
-        # FIXME Clean up this comment block?
+        # something like:
+        # - change packer to use cgra_info for rc2tileno/tileno2rc DONE maybe
+        # - set packer.order[] such that only mem tiles are valid (!= -1); 
+        # - call the appropriate thingy mcboo
+
         # if DBG: print indent+"For now just place it randomly"
         # (tileno,resource) = randomly_place(dname)
-
         (tileno,resource) = (dtileno, d_out)
 
     else:
@@ -1803,67 +1784,6 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
 # END def place_and_route()
 ########################################################################
-
-def check_for_wen_lut(sname, dname, DBG=0):
-    if not is_mem(dname): return
-    if DBG: pwhere(1842, "Placed a mem tile.  Is there an associated wen_lut?")
-    if nodes[dname].wen_lut == 'needs_wenlut':
-        if DBG: print "#   Yes. Now where to put it? Look right. Look left."
-        mtileno = nodes[dname].tileno
-        (r,c) = cgra_info.tileno2rc(mtileno)
-        # print "#   Mem tile is in tile %d (0x%x)" % (mtileno,mtileno)
-
-        # Check tile to right of memtile, then if not avail, check left
-        candside = 'right'; cand = cgra_info.rc2tileno(r,c+1)
-        print "#   So...to my right is tile %d (0x%d).  Is it free?" % (cand,cand),
-        print packer.is_free(cand)
-        if not packer.is_free(cand):
-            # Not free
-            candside = 'left'; cand = cgra_info.rc2tileno(r,c-1)
-            if DBG: print "#  Okay, well then to my left is tile %d (0x%d)," % (cand,cand),
-            if DBG: print "Is it free?", packer.is_free(cand)
-            if not packer.is_free(cand): assert False, "oh that's a shame"
-
-        # Whew assert did not trigger so one of them works.
-        # print "okay successfully found a candidate to hold the wen_lut hooray"
-        if DBG:
-            print '#   Great! Place the wen_lut in tile %d(0x%x)' % (cand,cand)
-            print ''
-            print "# order before wen_lut alloc:"
-            packer.FMT.order()
-            print ''
-        packer.allocate(cand, DBG=0)
-        if DBG:
-            print "# order after wen_lut alloc:"
-            packer.FMT.order()
-            print ''
-
-        # Make a note to build the LUT later
-        global WEN_LUT_LIST; WEN_LUT_LIST.append(cand)
-
-        # Make a note to build the wen_lut path later
-        nodes[dname].wen_lut = (cand,candside) # E.g. "(25, 'right')"
-        # print nodes[dname].wen_lut
-
-def route_wen(memtile):
-    '''
-    # Route the stinkin wen_lut wire
-    # E.g. if mem tile is 24 and wen_lut tile is 25:
-    # T25_pe_out.0 -> T25_out_s2t0.0
-    # T24_in_s0t0.0 -> T24_out_s2t0.0
-    # T24_out_s2t0.0 -> T24_wen
-    '''
-    mtileno = nodes[memtile].tileno
-    (wentileno,wenside) = nodes[memtile].wen_lut
-
-    if wenside == 'right':
-        print 'T%d_pe_out.0 -> T%d_out_s2t0.0' % (wentileno, wentileno)
-        print 'T%d_in_s0t0.0 -> T%d_out_s2t0.0' % (mtileno, mtileno)
-        print 'T%d_out_s2t0.0 -> T%d_wen' % (mtileno, mtileno)
-    else:
-        print 'T%d_pe_out.0 -> T%d_out_s0t0.0' % (wentileno, wentileno)
-        print 'T%d_out_s2t0.0 -> T%d_wen' % (mtileno, mtileno)
-
 
 # Removed 3/2018
 # def process_output(sname,dname, DBG=1):
