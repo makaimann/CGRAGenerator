@@ -977,10 +977,11 @@ def build_nodes(DBG=0):
 
 def build_node(nodes, line, DBG=0):
 
+    # FIXME Delete this little codegroup :(
     # Don't care about luts (for now)
+    # DO care about luts after all
     if re.search("wen_lut", line):
-        if DBG: pwhere(976, "# WARNING ignoring wen_lut")
-        return
+        if DBG: pwhere(984, "# WARNING no longer ignoring wen_lut")
 
     # Rewrite to simplify
     # e.g. "INPUT" -> "lb_p4_clamped_stencil_update_stream$mem_1$cgramem"; # fifo_depth 64
@@ -1001,25 +1002,25 @@ def build_node(nodes, line, DBG=0):
     nodes[lhs].dests.append(rhs)
     # print nodes[rhs].dests
 
-    # Uhhhh...if rhs node is a mem, there should be a fifo_depth comment
-    process_fifo_depth(rhs,line)
+    # Uhhhh...look for and process fifo_depth comments
+    process_fifo_depth_comments(rhs,line,DBG)
 
 
-# Uhhhh...if rhs node is a mem, there should be a fifo_depth comment, e.g.
-def process_fifo_depth(nodename, line):
+def process_fifo_depth_comments(rhs, line, DBG=0):
     '''
-    Look for something like
+    Look for something like rhs="mem_1" and line=
         "INPUT" -> "mem_1"; # fifo_depth 64
     and add fifo_depth to "mem_1" node info
     '''
-    if nodename[0:3] != 'mem': return
-
-    fd = re.search('fifo_depth\s+(\d+)$', line).group(1)
-    nodes[nodename].fifo_depth = int(fd)
-
-    # print ''
-    # print "666foo", nodename, line
-    # nodes[nodename].show()
+    parse =  re.search('fifo_depth\s+(\d+)$', line)
+    if not parse:
+        return
+    else:
+        if DBG: pwhere(1019, "# Found a fifo_depth comment to process")
+        assert rhs[0:3] == 'mem', 'oops dunno what mem to config fifo_depth'
+        fifo_depth = parse.group(1)
+        nodes[rhs].fifo_depth = int(fifo_depth)
+        # print "\n666foo", rhs, line; nodes[rhs].show()
 
 
 def addnode(nodename):
