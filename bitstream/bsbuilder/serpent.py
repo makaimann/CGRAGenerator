@@ -344,6 +344,12 @@ def main(DBG=1):
         packer.FMT.order()
         print ''
 
+    # May as well just jump right in...
+    print ''
+    print '########################################'
+    print '# serpent.py: wen luts'
+    wen_luts(DBG=1)
+
     print ''
     print '########################################'
     print '# serpent.py: register folding'
@@ -376,6 +382,25 @@ def main(DBG=1):
 
     sys.exit(0)
     
+
+
+def wen_luts(DBG=9):
+    '''Process all the wen_luts'''
+    global nodes
+    if DBG: print "# Process all the wen_luts"
+    for nodename in nodes:
+        if nodename == 'wen_lut':
+            if DBG: pwhere(1292, 'hey found a wen_lut.  what now?')
+
+# FIXME WENLUT
+# Add a field to Node class for wen_lut "self.wen_lut = -1"
+# Then fix things up in 'def check_for_wen_lut' below
+# before/after checks:
+# ../serpent.py -v examples/conv_2_1_mapped.dot -o tmpdir/c21.bsb2 > & tmp.log2 ; tail tmp.log2
+# c ; ( diff tmp.log tmp.log2 ; diff tmpdir/c21.bsb tmpdir/c21.bsb2 )
+
+
+
 
 def final_output(DBG=0):
 
@@ -1747,18 +1772,18 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         # means we have to duplicate the route for both op1 and op2.
         check_for_double_destination(sname,dname,DBG)
 
-        if dname == 'reg_0_1':
-            print 'GOT TWO ROUTES!  WOO AND HOO!'
-            # assert False,\
-            #        '\n\n\nGOT TWO ROUTES!  WOO AND HOO!  What now.\n\n\n'
+        # Hmph! Hmph! Another special case!
+        # If placed tile is a mem tile, look for an associated wen_lut
+        check_for_wen_lut(sname,dname,DBG)
 
-        # something like:
-        # - change packer to use cgra_info for rc2tileno/tileno2rc DONE maybe
-        # - set packer.order[] such that only mem tiles are valid (!= -1); 
-        # - call the appropriate thingy mcboo
+        # FIXME ?? ?? what the hell is this all about?
+        if dname == 'reg_0_1': print 'GOT TWO ROUTES!  WOO AND HOO!'
 
+        # FIXME We used to have this option for random placement I guess
+        # FIXME Clean up this comment block?
         # if DBG: print indent+"For now just place it randomly"
         # (tileno,resource) = randomly_place(dname)
+
         (tileno,resource) = (dtileno, d_out)
 
     else:
@@ -1785,6 +1810,17 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
 # END def place_and_route()
 ########################################################################
+
+# FIXME WENLUT
+def check_for_wen_lut(sname, dname, DBG=0):
+    if not is_mem(dname): return
+    if DBG: pwhere(1791, "# Found a mem tile.  Is there an associated wen_lut?")
+
+
+
+
+
+
 
 # Removed 3/2018
 # def process_output(sname,dname, DBG=1):
