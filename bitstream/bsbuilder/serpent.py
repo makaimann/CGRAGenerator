@@ -977,32 +977,32 @@ def build_nodes(DBG=0):
 
 def build_node(nodes, line, DBG=0):
 
-        # Don't care about luts (for now)
-        if re.search("wen_lut", line):
-            if DBG: pwhere(976, "# WARNING ignoring wen_lut")
-            return
+    # Don't care about luts (for now)
+    if re.search("wen_lut", line):
+        if DBG: pwhere(976, "# WARNING ignoring wen_lut")
+        return
 
-        # Rewrite to simplify
-        # e.g. "INPUT" -> "lb_p4_clamped_stencil_update_stream$mem_1$cgramem"; # fifo_depth 64
-        # =>   "INPUT" -> "mem_1"; # fifo_depth 64
+    # Rewrite to simplify
+    # e.g. "INPUT" -> "lb_p4_clamped_stencil_update_stream$mem_1$cgramem"; # fifo_depth 64
+    # =>   "INPUT" -> "mem_1"; # fifo_depth 64
 
-        line = re.sub('lb_p4_clamped_stencil_update_stream\$', "", line)
-        line = re.sub("\$cgramem", "", line)
-        if DBG>1: pwhere(978, "# Building node for input line '%s'" % line)
+    line = re.sub('lb_p4_clamped_stencil_update_stream\$', "", line)
+    line = re.sub("\$cgramem", "", line)
+    if DBG>1: pwhere(978, "# Building node for input line '%s'" % line)
 
-        parse = re.search('["]([^"]+)["][^"]+["]([^"]+)["]', line)
-        if not parse:
-            if DBG: pwhere(995, "# Could/did not parse line '%s'" % line)
-            return
+    parse = re.search('["]([^"]+)["][^"]+["]([^"]+)["]', line)
+    if not parse:
+        if DBG: pwhere(995, "# Could/did not parse line '%s'" % line)
+        return
 
-        lhs = parse.group(1); rhs = parse.group(2)
-        if DBG>1: print "# Found lhs/rhs", lhs, rhs, "\n";
-        addnode(rhs); addnode(lhs)
-        nodes[lhs].dests.append(rhs)
-        # print nodes[rhs].dests
+    lhs = parse.group(1); rhs = parse.group(2)
+    if DBG>1: print "# Found lhs/rhs", lhs, rhs, "\n";
+    addnode(rhs); addnode(lhs)
+    nodes[lhs].dests.append(rhs)
+    # print nodes[rhs].dests
 
-        # Uhhhh...if rhs node is a mem, there should be a fifo_depth comment
-        process_fifo_depth(rhs,line)
+    # Uhhhh...if rhs node is a mem, there should be a fifo_depth comment
+    process_fifo_depth(rhs,line)
 
 
 # Uhhhh...if rhs node is a mem, there should be a fifo_depth comment, e.g.
