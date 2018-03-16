@@ -952,57 +952,57 @@ def build_nodes(DBG=0):
     #
     #   node["INPUT"].dests = ["mem_1" "reg_0_1", "mul_49119_492_PE"]
 
-    global nodes
-    nodes = {}
+    global nodes; nodes = {}
 
-    # filename = 'examples/build.171027/conv_bw_mapped.dot'
     # filename = 'examples/build.171027/pointwise_mapped.dot'
     filename = dot_filename
 
+    input_lines = []
     if DBG: print filename
     inputstream = open(filename);
-    input_lines = [] # for line in sys.stdin: input_lines.append(line)
     for line in inputstream: input_lines.append(line)
     inputstream.close()
-
-
 
     # for line in sys.stdin:
     for line in input_lines:
         line = line.strip()
-
-        # Don't care about luts (for now)
-        if re.search("wen_lut", line): continue
-
-
-        # E.g.     '"INPUT" -> "lb_p4_clamped_stencil_update_stream$mem_1$cgramem"; # fifo_depth 64'
-        # Becomes: '"INPUT" -> "mem_1"; # fifo_depth 64'
-
-        line = re.sub('lb_p4_clamped_stencil_update_stream\$', "", line)
-        line = re.sub("\$cgramem", "", line)
-        if DBG>1: print "# ", line
-
-        parse = re.search('["]([^"]+)["][^"]+["]([^"]+)["]', line)
-        # if not parse: print "# FOO IGNORED\n"
-        if not parse: continue
-
-        lhs=parse.group(1)
-        rhs=parse.group(2)
-
-        if DBG>1: print "# FOO", lhs, rhs, "\n";
-
-        addnode(rhs); addnode(lhs)
-        nodes[lhs].dests.append(rhs)
-        # print nodes[rhs].dests
-
-        # Uhhhh...if rhs node is a mem, there should be a fifo_depth comment
-        process_fifo_depth(rhs,line)
+        build_node(nodes, line, DBG)
 
     if DBG:
         print ''
         print "Found nodes and destinations:"
         for n in sorted(nodes): print "  %-20s %s" % (n, nodes[n].dests)
         print ""
+
+
+def build_node(nodes, line, DBG=0):
+
+        # Don't care about luts (for now)
+        if re.search("wen_lut", line):
+            if DBG: pwhere(976, "# WARNING ignoring wen_lut")
+            return
+
+        # Rewrite to simplify
+        # e.g. "INPUT" -> "lb_p4_clamped_stencil_update_stream$mem_1$cgramem"; # fifo_depth 64
+        # =>   "INPUT" -> "mem_1"; # fifo_depth 64
+
+        line = re.sub('lb_p4_clamped_stencil_update_stream\$', "", line)
+        line = re.sub("\$cgramem", "", line)
+        if DBG>1: pwhere(978, "# Building node for input line '%s'" % line)
+
+        parse = re.search('["]([^"]+)["][^"]+["]([^"]+)["]', line)
+        if not parse:
+            if DBG: pwhere(995, "# Could/did not parse line '%s'" % line)
+            return
+
+        lhs = parse.group(1); rhs = parse.group(2)
+        if DBG>1: print "# Found lhs/rhs", lhs, rhs, "\n";
+        addnode(rhs); addnode(lhs)
+        nodes[lhs].dests.append(rhs)
+        # print nodes[rhs].dests
+
+        # Uhhhh...if rhs node is a mem, there should be a fifo_depth comment
+        process_fifo_depth(rhs,line)
 
 
 # Uhhhh...if rhs node is a mem, there should be a fifo_depth comment, e.g.
