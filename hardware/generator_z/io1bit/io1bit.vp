@@ -73,7 +73,11 @@ tile_id
 endmodule
 
 //;print TILEINFO "        <io_group>$io_group</io_group>\n";
-//;print TILEINFO "        <direction in='0' out='1'>0</direction>\n";
+//;print TILEINFO "			<tri feature_address='0' reg_address='0' bith='0' bitl='0'>\n";
+//;print TILEINFO "				<direction sel='0'>in</direction>\n";
+//;print TILEINFO "				<direction sel='1'>out</direction>\n";
+//;print TILEINFO "			</tri>\n";
+//print TILEINFO "        <direction in='0' out='1'>0</direction>\n;
 //print TILEINFO "        <input>in_1BIT_S${side}_T0</input>\n";
 //print TILEINFO "        <output>out_1BIT_S${side}_T0</output>\n";
 
