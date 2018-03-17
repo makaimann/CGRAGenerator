@@ -1857,12 +1857,13 @@ def route_wen(memtile):
     (wentileno,wenside) = nodes[memtile].wen_lut
 
     if wenside == 'right':
-        print 'T%d_pe_out.0 -> T%d_out_s2t0.0' % (wentileno, wentileno)
+        print 'T%d_pe_out.0 -> T%d_out_s2t0.0'  % (wentileno, wentileno)
         print 'T%d_in_s0t0.0 -> T%d_out_s2t0.0' % (mtileno, mtileno)
-        print 'T%d_out_s2t0.0 -> T%d_wen' % (mtileno, mtileno)
+        print 'T%d_out_s2t0.0 -> T%d_wen'       % (mtileno, mtileno)
     else:
         print 'T%d_pe_out.0 -> T%d_out_s0t0.0' % (wentileno, wentileno)
-        print 'T%d_out_s2t0.0 -> T%d_wen' % (mtileno, mtileno)
+        print 'T%d_in_s2t0.0 -> T%d_wen'       % (mtileno, mtileno)
+    print ''
 
 
 # Removed 3/2018
