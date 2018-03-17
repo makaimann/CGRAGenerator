@@ -13,7 +13,6 @@ ops += ['lshr', 'lshl']
 # ops += ['ashr']
 ops += ['add', 'sub']
 ops += ['abs']
-ops += ['eq']
 # FIXME: op_d doesn't seem to be working
 # ops += ['sel']
 
