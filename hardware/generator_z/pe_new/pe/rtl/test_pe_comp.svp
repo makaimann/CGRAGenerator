@@ -124,14 +124,6 @@ localparam PE_LTE_MIN_OP = 6'h5;
 //;   predicate => 'op_a lte op_b'
 //; };
 
-/***********************************
-localparam PE_EQ_OP      = 6'h6;
-//;# $pecomp_info_hash->{ 'eq' } = {
-//;#   opcode => '06',
-//;#   result => 'op_a+op_b',
-//;#   predicate => 'op_a === op_b'
-//;# };
-***********************************/
 
 localparam PE_SEL_OP     = 6'h8;
 //; $pecomp_info_hash->{ 'sel' } = {
@@ -341,7 +333,6 @@ always_comb begin
     PE_ABS_OP     : pe_oper = Abs_Op;
     PE_GTE_MAX_OP : pe_oper = GteMax_Op;
     PE_LTE_MIN_OP : pe_oper = LteMin_Op;
-//    PE_EQ_OP      : pe_oper = Eq_Op;
     PE_SEL_OP     : pe_oper = Sel_Op;
     PE_RSHFT_OP   : pe_oper = Rshft_Op;
     PE_LSHFT_OP   : pe_oper = Lshft_Op;
@@ -574,11 +565,6 @@ always_comb begin : proc_alu
         res_w       = res_p_w ? op_a : op_b;
 //; }
       end
-/*    PE_EQ_OP: begin
-        res_p_w = cmpr_eq;
-        res_w   = op_b;
-      end
-*/
       PE_SEL_OP: begin
         res_w = op_d_p ? op_a : op_b;
       end
