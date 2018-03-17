@@ -1,2 +1,9 @@
 .cache
 __pycache__
+*.pyc
+.pytest_cache/
+INCA_libs/
+irun.history
+irun.key
+irun.log
+verilog.vcd
