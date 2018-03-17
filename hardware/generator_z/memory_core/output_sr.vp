@@ -93,7 +93,7 @@ valid
         data_out <= {data_sr[`($dwidth*3) - 1`: `($dwidth*2)`]};
       end
     end else begin
-      data_out = `$dwidth`'d0;
+      data_out <= `$dwidth`'d0;
     end
   end
   always @(*) begin

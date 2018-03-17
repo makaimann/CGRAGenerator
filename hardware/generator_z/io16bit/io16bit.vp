@@ -30,7 +30,12 @@ endmodule
 //; # For PNR puposes, the opration is identical for both 1 bit and 16 bit IO tiles.
 //; # PNR sets the direction tag below for 16 bit and 1 bit IO tiles.
 //;print TILEINFO "        <io_group>$io_group</io_group>\n";
-//;print TILEINFO "        <direction in='0' out='1'>0</direction>\n";
+//;print TILEINFO "			<tri feature_address='0' reg_address='0' bith='0' bitl='0'>\n";
+//;print TILEINFO "				<direction sel='0'>in</direction>\n";
+//;print TILEINFO "				<direction sel='1'>out</direction>\n";
+//;print TILEINFO "			</tri>\n";
+
+//print TILEINFO "        <direction in='0' out='1'>0</direction>\n";
 //;print TILEINFO "        <input>in_16BIT_S${side}_T0</input>\n";
 //;for(my $track = 0; $track < $num_tracks; $track++) {
 //;	print TILEINFO "        <output>out_16BIT_S${side}_T$track</output>\n";

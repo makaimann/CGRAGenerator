@@ -42,6 +42,7 @@ if DBG:
 
 def uniquify(nodename):
     '''Turn e.g. "PE_U70.data.out, PE_U8.data.in.1" into "PE_U70, PE_U8"'''
+    # Huh really more of a UN-uniquify isn't it
     parse = re.search('([^.]*)[.]', nodename)
     if parse: nodename = parse.group(1)
 
@@ -60,7 +61,7 @@ def uniquify(nodename):
     if parse:
         # print "FOO", ; print nodename
         # print "FOO", ; print instances[nodename]
-        nodename = "%s" % parse.group(1)
+        nodename = "%s_PE" % parse.group(1)
         return nodename
     
 #     # Sample const node:

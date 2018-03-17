@@ -1,20 +1,20 @@
 
 # CONSTANTS
-# const2__348::mul_347_348_349 T21_op2
+# const2__348::mul_347_348_349_PE T21_op2
 
 # REGISTERS []
 
 # PE tiles
-T21_mul(wire,const2__348)  # mul_347_348_349
+T21_mul(wire,const2__348)  # mul_347_348_349_PE
 
 # MEM tiles
 
 # ROUTING
 
-# INPUT::mul_347_348_349
+# INPUT::mul_347_348_349_PE
 T21_in_s2t0 -> T21_op1
 
-# mul_347_348_349::OUTPUT
+# mul_347_348_349_PE::OUTPUT
 T21_pe_out -> T21_out_s0t0
 T22_in_s2t0 -> T22_out_s0t0
 T23_in_s2t0 -> T23_out_s0t0

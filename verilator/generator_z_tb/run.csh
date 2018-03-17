@@ -452,13 +452,19 @@ echo ''
 echo '------------------------------------------------------------------------'
 echo "run.csh: Build the simulator..."
 
+if ($?SKIP_RUNCSH_BUILD) then
+  echo "WARNING SKIPPING SIMULATOR BUILD B/C FOUND ENV VAR 'SKIP_RUNCSH_BUILD'"
+  echo "WARNING SKIPPING SIMULATOR BUILD B/C FOUND ENV VAR 'SKIP_RUNCSH_BUILD'"
+  echo "WARNING SKIPPING SIMULATOR BUILD B/C FOUND ENV VAR 'SKIP_RUNCSH_BUILD'"
+  goto RUN_SIM
+endif
+
 # How about skip verilator build if:
 # 0. Running on travis AND
 # 1. obj_dir/Vtop exists
 # 2. hackmem is in place
 
 if (! $?TRAVIS_BUILD_DIR) goto BUILD_SIM
-
 if (-e obj_dir/Vtop) then
   echo Found existing obj_dir/Vtop
   set vdir = ../../hardware/generator_z/top/genesis_verif

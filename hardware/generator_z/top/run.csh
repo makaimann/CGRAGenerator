@@ -79,22 +79,11 @@ echo cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
 cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
 echo
 
-# echo 
-# echo WARNING/FIXME: hacking out pe_output_2 from memory_tile
-# echo WARNING/FIXME: hacking out pe_output_2 from memory_tile
-# echo WARNING/FIXME: hacking out pe_output_2 from memory_tile
-# #echo 'grep -v ".pe_output_2(almost_empty)," genesis_verif/memory_tile_unq1.v'
-# #grep -v ".pe_output_2(almost_empty)," genesis_verif/memory_tile_unq1.v > /tmp/tmp$$
-# #diff genesis_verif/memory_tile_unq1.v /tmp/tmp$$
-# #mv  /tmp/tmp$$ genesis_verif/memory_tile_unq1.v
-# 
-# echo 
-
 source clean_up_cgra_inputs.csh
 source remove_genesis_wires.csh
 
 if [ `hostname` == "kiwi" ]; then
   echo Checking cgra_info for errors...
   echo xmllint --noout cgra_info.txt
-  xmllint --noout cgra_info.txt |& head -n 20
+  xmllint --noout cgra_info.txt 2>&1 | head -n 20
 fi
