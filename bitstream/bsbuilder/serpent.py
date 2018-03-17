@@ -45,6 +45,9 @@ def test_where():
 
 import packer
 
+# well this is awful isn't it
+WEN_LUT_LIST = []
+
 # FIXME/TODO globals wrapper and initializer thingy, see packer.py maybe
 GRID_WIDTH  = 8
 GRID_HEIGHT = GRID_WIDTH
@@ -344,12 +347,6 @@ def main(DBG=1):
         packer.FMT.order()
         print ''
 
-    # May as well just jump right in...
-    print ''
-    print '########################################'
-    print '# serpent.py: wen luts'
-    wen_luts(DBG=1)
-
     print ''
     print '########################################'
     print '# serpent.py: register folding'
@@ -382,25 +379,6 @@ def main(DBG=1):
 
     sys.exit(0)
     
-
-
-def wen_luts(DBG=9):
-    '''Process all the wen_luts'''
-    global nodes
-    if DBG: print "# Process all the wen_luts"
-    for nodename in nodes:
-        if nodename == 'wen_lut':
-            if DBG: pwhere(1292, 'hey found a wen_lut.  what now?')
-
-# FIXME WENLUT
-# Add a field to Node class for wen_lut "self.wen_lut = -1"
-# Then fix things up in 'def check_for_wen_lut' below
-# before/after checks:
-# ../serpent.py -v examples/conv_2_1_mapped.dot -o tmpdir/c21.bsb2 > & tmp.log2 ; tail tmp.log2
-# c ; ( diff tmp.log tmp.log2 ; diff tmpdir/c21.bsb tmpdir/c21.bsb2 )
-
-
-
 
 def final_output(DBG=0):
 
@@ -460,6 +438,10 @@ def final_output(DBG=0):
                 print mark_regs(c)
 
             print ''
+
+            if is_mem(dname) and nodes[dname].wen_lut:
+                print "# wen_lut::%s" % dname
+                route_wen(dname)
 
     # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
     # OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
@@ -523,6 +505,10 @@ def print_oplist():
 
     print ''
 
+    # FIXME should be separate print_wenlist()
+    print "# LUT tiles for wen_lut's", WEN_LUT_LIST
+    for i in WEN_LUT_LIST: print "T%d_lutFF(0,0,0)" % i
+    print ''
 
 def print_memlist():
     # E.g. prints
@@ -611,6 +597,7 @@ class Node:
         self.name       = nodename
         self.tileno     = -1 # Because 0 is a valid tile number, see?
         self.fifo_depth = -1
+        self.wen_lut    = False
 
         # input/output EXAMPLES (FIXME needs update)
         #            input0/1         output
@@ -659,12 +646,13 @@ class Node:
         # also: is_{const,mem,reg,pe,io}
         # FIXME add the other types, make it a separate func
         print "  type='%s'" % type
-
+        print "  ----"
         print "  tileno= %s" % self.tileno
         print "  input0='%s'" % self.input0
         print "  input1='%s'" % self.input1
         print "  output='%s'" % self.output
-
+        print "  ----"
+        if self.wen_lut: print "  wen_lut=%s" % str(self.wen_lut)
         print "  placed= %s" % self.placed # FIXME needed/used?
         print "  dests=%s" % self.dests
         # print "  route=%s" % self.route
@@ -1002,12 +990,6 @@ def build_nodes(DBG=0):
 
 def build_node(nodes, line, DBG=0):
 
-    # FIXME Delete this little codegroup :(
-    # Don't care about luts (for now)
-    # DO care about luts after all
-    if re.search("wen_lut", line):
-        if DBG: pwhere(984, "# WARNING no longer ignoring wen_lut")
-
     # Rewrite to simplify
     # e.g. "INPUT" -> "lb_p4_clamped_stencil_update_stream$mem_1$cgramem"; # fifo_depth 64
     # =>   "INPUT" -> "mem_1"; # fifo_depth 64
@@ -1018,12 +1000,23 @@ def build_node(nodes, line, DBG=0):
 
     parse = re.search('["]([^"]+)["][^"]+["]([^"]+)["]', line)
     if not parse:
-        if DBG: pwhere(995, "# Could/did not parse line '%s'" % line)
+        if DBG: pwhere(995, "# Could/did not parse input line '%s'" % line)
         return
 
     lhs = parse.group(1); rhs = parse.group(2)
     if DBG>1: print "# Found lhs/rhs", lhs, rhs, "\n";
-    addnode(rhs); addnode(lhs)
+
+    addnode(rhs);
+
+    if lhs == 'wen_lut':
+        if DBG: pwhere(1013, "# WARNING no longer ignoring wen_lut\n")
+        assert rhs[0:3] == 'mem', 'oops why does wen_lut not connect to a mem tile!?'
+        nodes[rhs].wen_lut = 'needs_wenlut'
+        nodes[rhs].show()
+        return
+
+    addnode(lhs)
+
     nodes[lhs].dests.append(rhs)
     # print nodes[rhs].dests
 
@@ -1512,6 +1505,10 @@ def process_nodes(sname, indent='# ', DBG=1):
 
         if DBG: pnr_debug_info(was_placed,was_routed,indent,sname,dname)
 
+        # Hmph! Hmph! Another special case!
+        # If placed tile is a mem tile, look for an associated wen_lut
+        check_for_wen_lut(sname,dname,DBG)
+
         # Do this as a separate pass for breadth-first...
         # process_nodes(dname, indent+'    ')
 
@@ -1772,10 +1769,6 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         # means we have to duplicate the route for both op1 and op2.
         check_for_double_destination(sname,dname,DBG)
 
-        # Hmph! Hmph! Another special case!
-        # If placed tile is a mem tile, look for an associated wen_lut
-        check_for_wen_lut(sname,dname,DBG)
-
         # FIXME ?? ?? what the hell is this all about?
         if dname == 'reg_0_1': print 'GOT TWO ROUTES!  WOO AND HOO!'
 
@@ -1811,15 +1804,65 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 # END def place_and_route()
 ########################################################################
 
-# FIXME WENLUT
 def check_for_wen_lut(sname, dname, DBG=0):
     if not is_mem(dname): return
-    if DBG: pwhere(1791, "# Found a mem tile.  Is there an associated wen_lut?")
+    if DBG: pwhere(1842, "Placed a mem tile.  Is there an associated wen_lut?")
+    if nodes[dname].wen_lut == 'needs_wenlut':
+        if DBG: print "#   Yes. Now where to put it? Look right. Look left."
+        mtileno = nodes[dname].tileno
+        (r,c) = cgra_info.tileno2rc(mtileno)
+        # print "#   Mem tile is in tile %d (0x%x)" % (mtileno,mtileno)
 
+        # Check tile to right of memtile, then if not avail, check left
+        candside = 'right'; cand = cgra_info.rc2tileno(r,c+1)
+        print "#   So...to my right is tile %d (0x%d).  Is it free?" % (cand,cand),
+        print packer.is_free(cand)
+        if not packer.is_free(cand):
+            # Not free
+            candside = 'left'; cand = cgra_info.rc2tileno(r,c-1)
+            if DBG: print "#  Okay, well then to my left is tile %d (0x%d)," % (cand,cand),
+            if DBG: print "Is it free?", packer.is_free(cand)
+            if not packer.is_free(cand): assert False, "oh that's a shame"
 
+        # Whew assert did not trigger so one of them works.
+        # print "okay successfully found a candidate to hold the wen_lut hooray"
+        if DBG:
+            print '#   Great! Place the wen_lut in tile %d(0x%x)' % (cand,cand)
+            print ''
+            print "# order before wen_lut alloc:"
+            packer.FMT.order()
+            print ''
+        packer.allocate(cand, DBG=0)
+        if DBG:
+            print "# order after wen_lut alloc:"
+            packer.FMT.order()
+            print ''
 
+        # Make a note to build the LUT later
+        global WEN_LUT_LIST; WEN_LUT_LIST.append(cand)
 
+        # Make a note to build the wen_lut path later
+        nodes[dname].wen_lut = (cand,candside) # E.g. "(25, 'right')"
+        # print nodes[dname].wen_lut
 
+def route_wen(memtile):
+    '''
+    # Route the stinkin wen_lut wire
+    # E.g. if mem tile is 24 and wen_lut tile is 25:
+    # T25_pe_out.0 -> T25_out_s2t0.0
+    # T24_in_s0t0.0 -> T24_out_s2t0.0
+    # T24_out_s2t0.0 -> T24_wen
+    '''
+    mtileno = nodes[memtile].tileno
+    (wentileno,wenside) = nodes[memtile].wen_lut
+
+    if wenside == 'right':
+        print 'T%d_pe_out.0 -> T%d_out_s2t0.0' % (wentileno, wentileno)
+        print 'T%d_in_s0t0.0 -> T%d_out_s2t0.0' % (mtileno, mtileno)
+        print 'T%d_out_s2t0.0 -> T%d_wen' % (mtileno, mtileno)
+    else:
+        print 'T%d_pe_out.0 -> T%d_out_s0t0.0' % (wentileno, wentileno)
+        print 'T%d_out_s2t0.0 -> T%d_wen' % (mtileno, mtileno)
 
 
 # Removed 3/2018
