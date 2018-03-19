@@ -507,7 +507,7 @@ def print_oplist():
 
     # FIXME should be separate print_wenlist()
     print "# LUT tiles for wen_lut's", WEN_LUT_LIST
-    for i in WEN_LUT_LIST: print "T%d_lutFF(0,0,0)" % i
+    for i in WEN_LUT_LIST: print "T%d_lutF(0,0,0)" % i
     print ''
 
 def print_memlist():
