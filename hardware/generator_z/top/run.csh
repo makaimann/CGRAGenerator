@@ -61,7 +61,10 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../jtag/Template/src/digital/flop.svp \
   ../jtag/Template/src/digital/tap.svp \
   ../jtag/Template/src/digital/reg_file.svp \
-  ../jtag/Template/src/digital/cfg_and_dbg.svp
+  ../jtag/Template/src/digital/cfg_and_dbg.svp \
+  || exit 13
+
+
 
 # echo
 # echo HACKWARNING Restoring original LUT code
