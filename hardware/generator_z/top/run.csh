@@ -86,8 +86,8 @@ source remove_genesis_wires.csh
 # Must fix e.g.  <depth bith='15' bitl='3'>0</depth>
 # should be <fifo_depth bith='15' bitl='3'>0</fifo_depth>
 # Second run below should say 'no errors found'
-find_and_fix_depth_problems.csh
-find_and_fix_depth_problems.csh
+./find_and_fix_depth_problems.csh
+./find_and_fix_depth_problems.csh
 
 
 if [ `hostname` == "kiwi" ]; then
