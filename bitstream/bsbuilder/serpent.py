@@ -507,7 +507,7 @@ def print_oplist():
 
     # FIXME should be separate print_wenlist()
     print "# LUT tiles for wen_lut's", WEN_LUT_LIST
-    for i in WEN_LUT_LIST: print "T%d_lutF(0,0,0)" % i
+    for i in WEN_LUT_LIST: print "T%d_lutF(const0,const0,const0)" % i
     print ''
 
 def print_memlist():
@@ -1848,21 +1848,21 @@ def check_for_wen_lut(sname, dname, DBG=0):
 def route_wen(memtile):
     '''
     # Route the stinkin wen_lut wire
-    # E.g. if mem tile is 24 and wen_lut tile is 25:
-    # T25_pe_out.0 -> T25_out_s2t0.0
-    # T24_in_s0t0.0 -> T24_out_s2t0.0
-    # T24_out_s2t0.0 -> T24_wen
+    # E.g. if mem tile is 24 and wen_lut tile is 25, then emit:
+    #   T25_pe_out_b0 -> T25_out_s2t0_b0
+    #   T24_in_s0t0_b0 -> T24_out_s2t0_b0
+    #   T24_out_s2t0_b0 -> T24_wen
     '''
     mtileno = nodes[memtile].tileno
     (wentileno,wenside) = nodes[memtile].wen_lut
 
     if wenside == 'right':
-        print 'T%d_pe_out.0 -> T%d_out_s2t0.0'  % (wentileno, wentileno)
-        print 'T%d_in_s0t0.0 -> T%d_out_s2t0.0' % (mtileno, mtileno)
-        print 'T%d_out_s2t0.0 -> T%d_wen'       % (mtileno, mtileno)
+        print 'T%d_pe_out_b0 -> T%d_out_s2t0_b0'  % (wentileno, wentileno)
+        print 'T%d_in_s0t0_b0 -> T%d_out_s2t0_b0' % (mtileno, mtileno)
+        print 'T%d_out_s2t0_b0 -> T%d_wen'       % (mtileno, mtileno)
     else:
-        print 'T%d_pe_out.0 -> T%d_out_s0t0.0' % (wentileno, wentileno)
-        print 'T%d_in_s2t0.0 -> T%d_wen'       % (mtileno, mtileno)
+        print 'T%d_pe_out_b0 -> T%d_out_s0t0_b0' % (wentileno, wentileno)
+        print 'T%d_in_s2t0_b0 -> T%d_wen'       % (mtileno, mtileno)
     print ''
 
 

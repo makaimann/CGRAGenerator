@@ -1026,7 +1026,7 @@ def canon2global(name, DBG=0):
     # OUTPUT tile 15 (2,1) / in_BUS16_S2_T4 / wire_2_0_BUS16_S0_T4
     # OUTPUT tile 15 (2,1) / in_BUS16_S2_T4 / wire_2_0_BUS16_S0_T4
 
-def special_wirenames(d):
+def special_wirenames(d, name):
     # not a wire; name is returned as 'd'
     if d == 'op1'     :  newname = 'data0'
     elif d == 'op2'   :  newname = 'data1'
@@ -1074,7 +1074,7 @@ def canon2cgra(name, DBG=0):
     # assert T != -1
     if DBG>1: print (T,d,side,t)
     if side == -1:
-        newname = special_wirenames(d) # e.g. op1, op2, wen, waddr...
+        newname = special_wirenames(d,name) # e.g. op1, op2, wen, waddr...
 
     else:
         dnot = 'out';

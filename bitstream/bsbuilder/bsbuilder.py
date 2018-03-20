@@ -401,23 +401,12 @@ def reg_field_bug_hack(tileno):
     #   File "cgra_info.py", line 781, in encode_parms
     #     assert regh==regl, 'select field crossed reg boundary!'
     # AssertionError: select field crossed reg boundary!
-    # 
-    #     print 'WHOOP there it is'
-    #     assert False
     
     # <sb feature_address='0' bus='BUS1' row='0'>
     #   <mux snk='out_0_BUS1_2_0' reg='1' configh='32' configl='30' configr='70'>
-    #                                     ^^^^^^^^^^^^^^^^^^^^^^^^^
-    #     <src sel='2'>in_0_BUS1_3_0</src>
+    #     <src sel='0'>in_0_BUS1_0_0</src>
 
-    print '# '
-    print '# REG_FIELD_HACK (bsbuilder.py) inserting hand-written code'
-    print '# REG_FIELD_HACK (bsbuilder.py) inserting hand-written code'
-    print '# REG_FIELD_HACK (bsbuilder.py) inserting hand-written code'
-
-    # Stupid comment
-    # data[(32, 30)] : @ tile (2, 3) connect wire 2 (out_BUS16_S2_T1) to data0
-    (configh,configl,sel) = (32,30,2)
+    (configh,configl,sel) = (32,30,0)
 
     c = cgra_info.gen_comment_conn(
         configh, #parms['configh'],
@@ -428,22 +417,26 @@ def reg_field_bug_hack(tileno):
         'out_0_BUS1_2_0', #canon2cgra(snk))
         )
     
-    # reg 1, element 0, tile 'tileno' = 1 (top bit of 0x2)
-    addr = 0x01000000 | tileno
-    data = 0x0000000
-    assert data == (2 << configl) >> 32
-    comment = [c + ' (REG 01)']
-    addbs(addr, data, comment)
-
     # reg 0, element 0, tile 'tileno' = 0x80000000 (top bit of 0x2)
-    addr = 0x01000000 | tileno
-    data = 0x80000000
-    assert data == (2 << configl) & 0xFFFFFFFF
-    comment = [c + ' (REG 00)']
+    (regno,elno) = (0,0)
+    addr = (regno << 24) | (elno << 16) | tileno
+    data = (sel << configl) & 0xFFFFFFFF
+    assert data == 0
+    comment = [c + ' (REG 00)'
+               , 'da99[(31, 30)] : REG_FIELD_HACK (bsbuilder.py) hand-written code above'
+               ]
     addbs(addr, data, comment)
 
+    # reg 1, element 0, tile 'tileno' = 1 (top bit of 0x2)
+    (regno,elno) = (1,0)
+    addr = (regno << 24) | (elno << 16) | tileno
+    data = (sel << configl) >> 32
+    assert data == 0
+    comment = [c + ' (REG 01)'
+               , 'da99[(32, 32)] : REG_FIELD_HACK (bsbuilder.py) hand-written code above'
+               ]
+    addbs(addr, data, comment)
     return True
-
 
 
 def parse_tile_decl(line):
@@ -868,7 +861,7 @@ def bs_lut(tileno, line, DBG=0):
     parse = re.search('lut([0-9a-fA-F])\s*\(\s*(\S+)\s*,\s*(\S+)\s*,\s*(\S+)\s*\)', line)
     if not parse: return False
 
-    print 'hey found a lut'
+    # print 'hey found a lut'
 
     lutval = parse.group(1)       # 'F'
     bit0   = parse.group(2)       # 'const0'
