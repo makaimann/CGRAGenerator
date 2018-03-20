@@ -83,13 +83,6 @@ source clean_up_cgra_inputs.csh
 source remove_genesis_wires.csh
 
 
-# Must fix e.g. <src sel='0'>in_1_BUS16_0_3</src>
-# should be     <src sel='0'>in_1_BUS16_S0_T3</src>
-# Second run below should say 'no errors found'
-find_and_fix_ST_deficient_memwires.csh
-find_and_fix_ST_deficient_memwires.csh
-
-
 # Must fix e.g.  <depth bith='15' bitl='3'>0</depth>
 # should be <fifo_depth bith='15' bitl='3'>0</fifo_depth>
 # Second run below should say 'no errors found'
