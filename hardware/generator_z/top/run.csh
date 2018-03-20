@@ -76,6 +76,10 @@ echo HACKWARNING Swapping stub in place of DW_tap
 echo HACKWARNING Swapping stub in place of DW_tap
 echo HACKWARNING Swapping stub in place of DW_tap
 echo cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
+set -x
+pwd
+ls
+ls ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
 cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
 echo
 

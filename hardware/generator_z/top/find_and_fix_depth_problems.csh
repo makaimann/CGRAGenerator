@@ -12,8 +12,8 @@ if ($nlines == 0) then
   exit 0
 endif
 
-echo "ERROR cgra_info.txt has one or more incorrect fifo_depth designations:"
-echo "ERROR cgra_info.txt has one or more incorrect fifo_depth designations:"
+echo "ERROR cgra_info.txt has one or more incorrect fifo_depth designations"
+echo "ERROR cgra_info.txt has one or more incorrect fifo_depth designations"
 echo "ERROR cgra_info.txt has one or more incorrect fifo_depth designations:"
 echo
 head -n 1 /tmp/tmp$$
