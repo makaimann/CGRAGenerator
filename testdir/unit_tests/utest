@@ -9,6 +9,9 @@ if ("$1" == "--help") then
   exit
 endif
 
+set VSWITCH = ''
+
+
 set scriptpath = `readlink -f $0`
 set scriptpath = $scriptpath:h
 

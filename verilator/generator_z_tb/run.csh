@@ -531,6 +531,7 @@ echo ''
 # Check WENHACK status
     # In memory_core_unq1.v, look for:
     #   assign wen_in_int = WENHACK
+    set vdir = ../../hardware/generator_z/top/genesis_verif
     egrep '^assign.*WENHACK' $vdir/memory_core_unq1.v && set WENHACKED
     if ($?WENHACKED) then
       echo 'WARNING Looks like WENHACK is ON'
