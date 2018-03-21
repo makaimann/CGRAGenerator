@@ -32,12 +32,13 @@ def bodysource(tests):
         unsigned int* test = tests[i];
         top->op_a = test[0];
         top->op_b = test[1];
+        top->op_d_p = test[2];
         top->eval();
-        printf("[Test Iteration %d] Inputs: op_a=%x, op_b=%x\\n", i, test[0], test[1]);
-        printf("    expected_res=%x, actual_res=%x\\n", test[2], top->res);
-        printf("    expected_res_p=%x, actual_res_p=%x\\n", test[3], top->res_p);
-        assert(top->res == test[2]);
-        assert(top->res_p == test[3]);
+        printf("[opcode=%x, Test Iteration %d] Inputs: op_a=%x, op_b=%x, op_d_p=%x\\n", top->op_code, i, test[0], test[1], test[2]);
+        printf("    expected_res=%x, actual_res=%x\\n", test[3], top->res);
+        printf("    expected_res_p=%x, actual_res_p=%x\\n", test[4], top->res_p);
+        assert(top->res == test[3]);
+        assert(top->res_p == test[4]);
     }}
 '''.format(ntests=len(tests))
 

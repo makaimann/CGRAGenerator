@@ -7,21 +7,31 @@ def random(func, n, width):
     max = 1 << width
     tests = []
     for i in range(n):
-        x = randint(0,max)
-        y = randint(0,max)
-        test = [x, y]
+        a = randint(0,max)
+        b = randint(0,max)
+        d_p = 0  # Ignore for now
+        test = [a, b, d_p]
         result = func(*test)
-        test.extend(list(result))
+        if not isinstance(result, tuple):
+            result = [result]
+        else:
+            result = list(result)
+        test.extend(result)
         tests.append(test)
     return tests
 
 def complete(func, n, width):
     max = 1 << width
     tests = []
-    for i in range(n):
-        for j in range(n):
-            test = [i, j]
+    for a in range(n):
+        for b in range(n):
+            d_p = 0  # Ignore for now
+            test = [a, b, d_p]
             result = func(*test)
-            test.extend(list(result))
+            if not isinstance(result, tuple):
+                result = [result]
+            else:
+                result = list(result)
+            test.extend(result)
             tests.append(test)
     return tests

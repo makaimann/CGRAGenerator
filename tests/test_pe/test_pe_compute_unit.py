@@ -63,10 +63,7 @@ def test_signed_op(signed_op, signed):
     run_ncsim_test(signed_op, a.opcode, tests)
 
 def test_comparison_op(comparison_op, signed):
-    if comparison_op == "eq":
-        a = getattr(pe, comparison_op)()
-    else:
-        a = getattr(pe, comparison_op)(signed)
+    a = getattr(pe, comparison_op)(signed)
 
     tests = complete(a, 4, 16)
 
