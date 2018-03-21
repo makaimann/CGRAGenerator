@@ -7,8 +7,8 @@ def random(func, n, width):
     max = 1 << width
     tests = []
     for i in range(n):
-        a = randint(0,max)
-        b = randint(0,max)
+        a = randint(0,max - 1)
+        b = randint(0,max - 1)
         d_p = 0  # Ignore for now
         test = [a, b, d_p]
         result = func(a=a, b=b, d=d_p)
@@ -21,7 +21,6 @@ def random(func, n, width):
     return tests
 
 def complete(func, n, width):
-    max = 1 << width
     tests = []
     for a in range(n):
         for b in range(n):

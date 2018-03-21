@@ -60,7 +60,6 @@ int main(int argc, char **argv, char **env) {{
     {test}
 
     top->op_code = {op};
-    top->op_d_p = 0;
 
     {body}
 
@@ -71,11 +70,11 @@ int main(int argc, char **argv, char **env) {{
 
 
 def compile(name, top_name, opcode, tests):
-    print("========== BEGIN: Compiling verilator test harness ===========")
+    # print("========== BEGIN: Compiling verilator test harness ===========")
     verilatorcpp = harness(top_name, opcode, tests)
     with open('build/sim_'+name+'.cpp', "w") as f:
         f.write(verilatorcpp)
-    print("========== DONE:  Compiling verilator test harness ===========")
+    # print("========== DONE:  Compiling verilator test harness ===========")
 
 
 
@@ -83,12 +82,12 @@ def run_verilator_test(verilog_file_name, driver_name, top_module):
     (_, filename, _, _, _, _) = inspect.getouterframes(inspect.currentframe())[1]
     file_path = os.path.dirname(filename)
     build_dir = os.path.join(file_path, 'build')
-    print("========== BEGIN: Using verilator to generate test files =====")
+    # print("========== BEGIN: Using verilator to generate test files =====")
     assert not subprocess.call('verilator -I../rtl -Wno-fatal --cc {} --exe {}.cpp --top-module {}'.format(verilog_file_name, driver_name, top_module), cwd=build_dir, shell=True)
-    print("========== DONE:  Using verilator to generate test files =====")
-    print("========== BEGIN: Compiling verilator test ===================")
-    assert not subprocess.call('make -C obj_dir -j -f V{0}.mk V{0} -B'.format(top_module), cwd=build_dir, shell=True)
-    print("========== DONE:  Compiling verilator test ===================")
-    print("========== BEGIN: Running verilator test =====================")
+    # print("========== DONE:  Using verilator to generate test files =====")
+    # print("========== BEGIN: Compiling verilator test ===================")
+    assert not subprocess.call('make --silent -C obj_dir -j -f V{0}.mk V{0} -B'.format(top_module), cwd=build_dir, shell=True)
+    # print("========== DONE:  Compiling verilator test ===================")
+    # print("========== BEGIN: Running verilator test =====================")
     assert not subprocess.call('./obj_dir/V{}'.format(top_module), cwd=build_dir, shell=True)
-    print("========== DONE:  Running verilator test =====================")
+    # print("========== DONE:  Running verilator test =====================")
