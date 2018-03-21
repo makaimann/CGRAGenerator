@@ -88,6 +88,7 @@ def caveats():
 CAVEATS: BROKEN/DISABLED/HACKED (see FIXME in utest.py, isa.py)
 CAVEATS: BROKEN/DISABLED/HACKED (see FIXME in utest.py, isa.py)
 CAVEATS: BROKEN/DISABLED/HACKED (see FIXME in utest.py, isa.py)
+  lbuf tests still require WENHACK(!!!) and will probably break if it is disabled
   'rshft/lshft' model wrong in 'isa.py'; wrote my own instead (utest.py/FIXME)
   'gte/lte' model broken(?) in 'isa.py'; wrote my own instead (utest.py/FIXME)
   'sel' - no test yet b/c needs 'd' input
