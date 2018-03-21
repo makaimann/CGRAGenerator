@@ -25,9 +25,9 @@ ops  = ['or_', 'and_', 'xor']
 ops += ['lshr', 'lshl']
 # ops += ['ashr']
 ops += ['add', 'sub']
+ops += ['mul0', 'mul1', 'mul2']
 ops += ['abs']
-# FIXME: op_d doesn't seem to be working
-# ops += ['sel']
+ops += ['sel']
 
 comparison_ops = ['ge', 'le']
 
