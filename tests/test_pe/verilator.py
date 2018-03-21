@@ -4,13 +4,19 @@ import inspect
 
 __all__ = ['harness', 'compile']
 
+def to_string(val):
+    if isinstance(val, bool):
+        return "1" if val else "0"
+    else:
+        return str(val)
+
 def testsource(tests):
     source = '''
     unsigned int tests[{}][{}] = {{
 '''.format(len(tests), len(tests[0]))
 
     for test in tests:
-        testvector = ', '.join([str(t) for t in test])
+        testvector = ', '.join([to_string(t) for t in test])
         source += '''\
         {{ {} }}, 
 '''.format(testvector)
@@ -27,9 +33,11 @@ def bodysource(tests):
         top->op_a = test[0];
         top->op_b = test[1];
         top->eval();
-        std::cout << "test_iter=" << i << ", op_a=" << test[0] << ", op_b=" << test[1] << ", expected_res=" << test[2] << ", actual_res=" << top->res << "\\n";
+        printf("[Test Iteration %d] Inputs: op_a=%x, op_b=%x\\n", i, test[0], test[1]);
+        printf("    expected_res=%x, actual_res=%x\\n", test[2], top->res);
+        printf("    expected_res_p=%x, actual_res_p=%x\\n", test[3], top->res_p);
         assert(top->res == test[2]);
-        assert(top->res_p == test[3]);  // FIXME: Add res_p to reporting
+        assert(top->res_p == test[3]);
     }}
 '''.format(ntests=len(tests))
 
@@ -42,6 +50,7 @@ def harness(top_name, opcode, tests):
 #include "verilated.h"
 #include <cassert>
 #include <iostream>
+#include <printf.h>
 
 int main(int argc, char **argv, char **env) {{
     Verilated::commandArgs(argc, argv);
