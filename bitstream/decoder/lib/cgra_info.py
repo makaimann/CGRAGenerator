@@ -189,7 +189,7 @@ def cb_decode(cb,tileno,DDDDDDDD):
     # 00040011 00000005
     # <cb feature_address='4' bus='BUS1'>
     #     <sel_width>4</sel_width>
-    #     <mux snk='d'>
+    #     <mux snk='din'>
     #       <src sel='0'>in_BUS1_S0_T0</src>
     #       <src sel='1'>in_BUS1_S0_T1</src>
     #       <src sel='2'>in_BUS1_S0_T2</src>
@@ -201,7 +201,7 @@ def cb_decode(cb,tileno,DDDDDDDD):
     #       <src sel='8'>in_BUS1_S2_T3</src>
     #       <src sel='9'>in_BUS1_S2_T4</src>
     # OUT:
-    # data[(3, 0)] : @ tile (3, 2) connect wire 5 (in_0_BUS16_2_0) to din
+    # data[(3, 0)] : @ tile (3, 2) connect wire 5 (in_BUS1_S2_T0) to din
     DBG=0
     if DBG: print "Found %s %s" % (cb.tag, str(cb.attrib))
 
@@ -623,10 +623,17 @@ def find_connectables(fan_dir, port, tileno, DBG=0):
 
     # in_0_BUS16_S2_T0 can connect to ['raddr', 'waddr', 'wdata']
 
-    # in_0_BUS16_S2_T0 can connect to ['raddr', 'waddr', 'wdata']
-    # Sometimes e.g. 'in_0_BUS16_1_2' is called 'in_0_BUS16_S1_T2' and
-    # vice versa UGH yes it's a bug.  oneworld() "fixes" it
-    port = oneworld(port)
+
+
+
+# THIS IS NO LONGER TOLERATED!!!
+#     # in_0_BUS16_S2_T0 can connect to ['raddr', 'waddr', 'wdata']
+#     # Sometimes e.g. 'in_0_BUS16_1_2' is called 'in_0_BUS16_S1_T2' and
+#     # vice versa UGH yes it's a bug.  oneworld() "fixes" it
+#     port = oneworld(port)
+
+
+
     rlist = search_muxes(fan_dir, tile, port, DBG-1)
 
 #     # in_0_BUS16_S2_T0 can connect to ['raddr', 'waddr', 'wdata']
@@ -643,7 +650,6 @@ def find_connectables(fan_dir, port, tileno, DBG=0):
 
 def search_muxes(fan_dir, tile, port, DBG=0):
     DBG = max(0,DBG)
-    port = oneworld(port)
     if fan_dir == 'fan_out':
         sblist = find_sources(tile, 'sb', port, DBG)
         cblist = find_sources(tile, 'cb', port, DBG)
@@ -663,25 +669,27 @@ def find_mux(tile, src, snk, DBG=0):
     '''Find the mux that connects "src" to "snk" in "tile"'''
     DBG = max(DBG,0)
     rlist = []
-    src = oneworld(src)
-    snk = oneworld(snk)
     for box in ['sb','cb']:
         for bb in tile.iter(box):
             for mux in bb.iter('mux'):
 
+
+
+
+                # SI PODEMOS!
                 # Can't do single-bit wires (yet)  SI PODEMOS!
                 # if re.search('_BUS1_', mux.attrib['snk']):
                 # assert False, "Can't do single-bit wires (yet)"
 
+
+
+
                 # Look for sinks whose src is rdst
-                # if mux.attrib['snk'] == rdst:
-                # ow = oneworld(mux.attrib['snk'])
-                # owsnk = cgra2canon(mux.attrib['snk'], DBG=9)
-                owsnk = oneworld(mux.attrib['snk'])
+                owsnk = mux.attrib['snk']
                 if owsnk == snk:
                     if DBG: print 'found snk', mux.attrib['snk']
                     for msrc in mux.iter('src'):
-                        owsrc = oneworld(msrc.text)
+                        owsrc = msrc.text
                         if src == owsrc:
                             return get_encoding(tile,bb,mux,msrc,DBG-1)
 
@@ -844,23 +852,23 @@ def find_sources(tile, box, rsrc, DBG=0):
     '''
     DBG = max(DBG,0)
     assert box in ['sb','cb']
-    rsrc = oneworld(rsrc)
     rlist = []
 
     for box in tile.iter(box):
         for mux in box.iter('mux'):
             for src in mux.iter('src'):
 
-                # (Unnecessary) optimization
-                if re.search('BUS1_', src.text): continue
+                # From when we didn't handle single-bit
+                # # (Unnecessary) optimization
+                # if re.search('BUS1_', src.text): continue
+                owsrc = src.text
 
-                owsrc = oneworld(src.text)
                 if DBG: print 'found src', src.text
-                # if src.text == rsrc:
-                if oneworld(src.text) == rsrc:
+                if src.text == rsrc:
                     snk = mux.attrib['snk']
                     if DBG: print 'found snk', snk
-                    rlist.append(oneworld(snk))
+                    rlist.append(snk)
+
     if DBG:
         print rsrc, 'can connect to', rlist
         print ''
@@ -874,7 +882,6 @@ def find_sinks(tile, box, rdst, DBG=0):
     '''
     DBG = max(DBG,0)
     assert box in ['sb','cb']
-    rdst = oneworld(rdst)
     rlist = []
 
     for bb in tile.iter(box):
@@ -882,16 +889,17 @@ def find_sinks(tile, box, rdst, DBG=0):
             # Look for sinks whose src is rdst
             # if mux.attrib['snk'] == rdst:
             # ow = oneworld(mux.attrib['snk'])
-            owsnk = oneworld(mux.attrib['snk'])
+            owsnk = mux.attrib['snk']
 
-            # (Unnecessary) optimization
-            if re.search('BUS1_', owsnk): continue
+            # From when we didn't handle single-bit
+            # # (Unnecessary) optimization
+            # if re.search('BUS1_', owsnk): continue
 
             if owsnk == rdst:
                 if DBG: print 'found snk', mux.attrib['snk']
                 for src in mux.iter('src'):
                     if DBG: print 'found src', src.text
-                    rlist.append(oneworld(src.text))
+                    rlist.append(src.text)
     return rlist
 
      
@@ -901,33 +909,34 @@ def get_tile(tileno):
         if t == tileno: return tile
     return -1
 
-def oneworld(w, DBG=0):
-    '''
-    Sometimes e.g. 'in_0_BUS16_1_2' is called 'in_0_BUS16_S1_T2' and vice vera.
-    UGH yes it is a bug.
-    This func converts all names to the canonical '...S1_T2' form
-    '''
-    w2 = w # default
-
-#     parse = re.search('^(in|out)_([01])_BUS16_S(\d+)_T(\d+)', w)
+# THIS IS NO LONGER TOLERATED!!!
+# def oneworld(w, DBG=0):
+#     '''
+#     Sometimes e.g. 'in_0_BUS16_1_2' is called 'in_0_BUS16_S1_T2' and vice vera.
+#     UGH yes it is a bug.
+#     This func converts all names to the canonical '...S1_T2' form
+#     '''
+#     w2 = w # default
+# 
+# #     parse = re.search('^(in|out)_([01])_BUS16_S(\d+)_T(\d+)', w)
+# #     if parse:
+# #         if DBG: print '           # OH NO found ST wire name "%s"' % w
+# #         dir = parse.group(1)
+# #         tb  = parse.group(2)
+# #         side  = parse.group(3)
+# #         track = parse.group(4)
+# #         w2 = "%s_%s_BUS16_%s_%s" % (dir,tb,side,track)
+# 
+#     parse = re.search('^(in|out)_([01])_BUS16_(\d+)_(\d+)', w)
 #     if parse:
-#         if DBG: print '           # OH NO found ST wire name "%s"' % w
+#         if DBG: print '           # OH NO found non-ST wire name "%s"' % w
 #         dir = parse.group(1)
 #         tb  = parse.group(2)
 #         side  = parse.group(3)
 #         track = parse.group(4)
-#         w2 = "%s_%s_BUS16_%s_%s" % (dir,tb,side,track)
-
-    parse = re.search('^(in|out)_([01])_BUS16_(\d+)_(\d+)', w)
-    if parse:
-        if DBG: print '           # OH NO found non-ST wire name "%s"' % w
-        dir = parse.group(1)
-        tb  = parse.group(2)
-        side  = parse.group(3)
-        track = parse.group(4)
-        w2 = "%s_%s_BUS16_S%s_T%s" % (dir,tb,side,track)
-
-    return w2
+#         w2 = "%s_%s_BUS16_S%s_T%s" % (dir,tb,side,track)
+# 
+#     return w2
 
 
 def parse_resource(r):
@@ -1112,8 +1121,6 @@ def canon2cgra(name, DBG=0):
 
     if DBG: print "to_cgra: cgra name for '%s' is '%s'" % (oldname, newname)
     if DBG: print ''
-
-    assert newname == oneworld(newname)
     return newname
 
             # sample memtile wire names:
@@ -1265,7 +1272,6 @@ def connect_within_tile(tileno, src, snk, DBG):
     # (regaddr,regdata) for registering the sink (if applicable)
 
     # FIXME DO WE STILL NEED SEARCH_MUXES()??
-    # #     port = oneworld(port)
     # #     rlist = search_muxes(fan_dir, tile, port, DBG-1)
 
     tile = get_tile(tileno)
