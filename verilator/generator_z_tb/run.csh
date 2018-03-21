@@ -133,13 +133,14 @@ endif
 # I GUESS 4x4 vs. 8x8 is implied by presence or absence of CGRA_GEN_USE_MEM (!!???)
 # I can't find anything else that does it :(
 
-unset HACKMEM
 
 # ALWAYS BE HACKMEM!
-set HACKMEM = 1
-echo "WARNING DEFAULT IS TEMPORARY TERRIBLE HACKMEM"
-echo "WARNING DEFAULT IS TEMPORARY TERRIBLE HACKMEM"
-echo "WARNING DEFAULT IS TEMPORARY TERRIBLE HACKMEM"
+
+# NEVER BE HACKMEM!
+unset HACKMEM
+echo "WARNING DEFAULT IS WENHACK/HACKMEM *OFF*"
+echo "WARNING DEFAULT IS WENHACK/HACKMEM *OFF*"
+echo "WARNING DEFAULT IS WENHACK/HACKMEM *OFF*"
 echo
 
 while ($#argv)
@@ -297,14 +298,31 @@ if (! -e $config) then
   exit 13
 endif
 
+
+
+
+
+# if (`expr "$config" : ".*lbuf.*"`) then
+#   if (! $?HACKMEM) then
+#     echo
+#     echo "run.csh: ERROR '$config' looks like an lbuf config file"
+#     echo "run.csh: ERROR should be using hackmem flag, yes?"
+#     exit 13
+#   endif
+# endif
+
+
 if (`expr "$config" : ".*lbuf.*"`) then
-  if (! $?HACKMEM) then
+  if ($?HACKMEM) then
     echo
     echo "run.csh: ERROR '$config' looks like an lbuf config file"
-    echo "run.csh: ERROR should be using hackmem flag, yes?"
+    echo "run.csh: ERROR should NO LONGER be using hackmem flag, yes?"
     exit 13
   endif
 endif
+
+
+
 
 
 unset io_hack

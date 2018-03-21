@@ -88,7 +88,7 @@ def caveats():
 CAVEATS: BROKEN/DISABLED/HACKED (see FIXME in utest.py, isa.py)
 CAVEATS: BROKEN/DISABLED/HACKED (see FIXME in utest.py, isa.py)
 CAVEATS: BROKEN/DISABLED/HACKED (see FIXME in utest.py, isa.py)
-  lbuf tests still require WENHACK(!!!) and will probably break if it is disabled
+   Haha lbuf tests no longer require WENHACK
   'rshft/lshft' model wrong in 'isa.py'; wrote my own instead (utest.py/FIXME)
   'gte/lte' model broken(?) in 'isa.py'; wrote my own instead (utest.py/FIXME)
   'sel' - no test yet b/c needs 'd' input
@@ -354,11 +354,9 @@ def gen_output_file_cgra(tname, DBG=0):
     elif OPTIONS['trace']: run_csh = './run.csh -v -trace utest.vcd'
     GENERATED=True
 
-    # echo "./run.csh -hackmem -config $bsa -input $in -output $cout -delay $delay"
-    cmd = "%s -hackmem -config %s -input %s -output %s -delay %s"\
+    cmd = "%s -config %s -input %s -output %s -delay %s"\
           % (run_csh, config, input, output, delay)
 
-    DBG=0
     if VERBOSE: savelog = ''
     else:       savelog = ' > ' + logfile + ' 2>&1'
 
@@ -371,6 +369,7 @@ def gen_output_file_cgra(tname, DBG=0):
         if savelog != '': print "  " + savelog
         print ""
 
+    DBG=0
     # (cd $v; ./run.csh -hackmem -config $bsa -input $in -output $cout -delay $delay ) || exit -1
     bad_outcome = my_syscall('cd %s; %s%s' % (VERILATOR_DIR, cmd, savelog), 'CONT')
     # if not VERBOSE: my_syscall('egrep ^run.csh %s' % logfile)
