@@ -29,6 +29,7 @@ def bodysource(tests):
         top->eval();
         std::cout << "test_iter=" << i << ", op_a=" << test[0] << ", op_b=" << test[1] << ", expected_res=" << test[2] << ", actual_res=" << top->res << "\\n";
         assert(top->res == test[2]);
+        assert(top->res_p == test[3]);  // FIXME: Add res_p to reporting
     }}
 '''.format(ntests=len(tests))
 

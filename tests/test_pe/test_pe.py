@@ -29,7 +29,7 @@ ops += ['abs']
 # FIXME: op_d doesn't seem to be working
 # ops += ['sel']
 
-comparison_ops = ['eq', 'ge', 'le']
+comparison_ops = ['ge', 'le']
 
 signed_ops = ['min', 'max', 'le', 'ge']
 def pytest_generate_tests(metafunc):
@@ -61,6 +61,18 @@ def test_signed_op(signed_op, signed):
     compile(f'test_{signed_op}_complete', 'test_pe_comp_unq1', a.opcode, tests)
     run_verilator_test('test_pe_comp_unq1', f'sim_test_{signed_op}_complete', 'test_pe_comp_unq1')
     run_ncsim_test(signed_op, a.opcode, tests)
+
+def test_comparison_op(comparison_op, signed):
+    if comparison_op == "eq":
+        a = getattr(pe, comparison_op)()
+    else:
+        a = getattr(pe, comparison_op)(signed)
+
+    tests = complete(a, 4, 16)
+
+    compile(f'test_{comparison_op}_complete', 'test_pe_comp_unq1', a.opcode, tests)
+    run_verilator_test('test_pe_comp_unq1', f'sim_test_{comparison_op}_complete', 'test_pe_comp_unq1')
+    run_ncsim_test(comparison_op, a.opcode, tests)
 
 @pytest.mark.skip
 def test_const(const_value):

@@ -11,7 +11,7 @@ def random(func, n, width):
         y = randint(0,max)
         test = [x, y]
         result = func(*test)
-        test.append(result[0])
+        test.extend(list(result))
         tests.append(test)
     return tests
 
@@ -22,6 +22,6 @@ def complete(func, n, width):
         for j in range(n):
             test = [i, j]
             result = func(*test)
-            test.append(result[0])
+            test.extend(list(result))
             tests.append(test)
     return tests
