@@ -271,8 +271,8 @@ endmodule
 //;open(MEMINFO, ">$filename") or die "Couldn't open file $filename, $!";
 //;print MEMINFO "       <mode bith='1' bitl='0'>00</mode>\n";
 //;print MEMINFO "       <tile_en bith='2' bitl='2'>0</tile_en>\n";
-//;print MEMINFO "       <fifo_depth bith='15' bitl='3'>0</fifo_depth>\n";
-//;print MEMINFO "       <almost_full_count bith='19' bitl='16'>0</almost_full_count>\n";
+//;print MEMINFO "       <depth bith='15' bitl='3'>0</depth>\n";
+//;print MEMINFO "       <almost_count bith='19' bitl='16'>0</almost_count>\n";
 //;print MEMINFO "       <chain_enable bith='20' bitl='20'>0</chain_enable>\n";
 //; close MEMINFO;
 
