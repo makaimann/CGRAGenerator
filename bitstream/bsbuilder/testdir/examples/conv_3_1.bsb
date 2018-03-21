@@ -15,6 +15,10 @@ T41_add(wire,wire)         # add_340_347_348_PE
 T55_add(wire,const0_0)     # add_340_343_344_PE
 T56_mul(wire,const3_3)     # mul_3423_343_PE
 
+# LUT tiles for wen_lut's [25, 58]
+T25_lutF(const0,const0,const0)
+T58_lutF(const0,const0,const0)
+
 # MEM tiles
 T24_mem_10   # mem_1 fifo_depth=10
 T57_mem_10   # mem_2 fifo_depth=10
@@ -26,6 +30,11 @@ T21_in_s2t0 -> T21_out_s0t0
 T22_in_s2t0 -> T22_out_s0t0
 T23_in_s2t0 -> T23_out_s0t0
 T24_in_s2t0 -> T24_mem_in
+
+# wen_lut::mem_1
+T25_pe_out_b0 -> T25_out_s2t0_b0
+T24_in_s0t0_b0 -> T24_out_s2t0_b0
+T24_out_s2t0_b0 -> T24_wen
 
 # INPUT::mul_3507_351_PE
 T21_in_s2t0 -> T21_op1
@@ -63,6 +72,11 @@ T36_in_s1t0 -> T36_out_s0t0
 T24_mem_out -> T24_out_s5t0
 T57_in_s3t0 -> T57_out_s2t0
 T57_out_s2t0 -> T57_mem_in
+
+# wen_lut::mem_2
+T58_pe_out_b0 -> T58_out_s2t0_b0
+T57_in_s0t0_b0 -> T57_out_s2t0_b0
+T57_out_s2t0_b0 -> T57_wen
 
 # mem_1::mul_3465_347_PE
 T24_mem_out -> T24_out_s2t0

@@ -178,6 +178,10 @@ def main():
             if DBG: print ''
             continue
 
+        # lutF(wire,0,0)
+        if bs_lut(tileno,line,DBG-1):
+            if DBG: print ''
+            continue
 
         # T3_mem_64    # mem_1 fifo_depth=64 => 'mem_64'
         # T17_mem_64   # mem_2 fifo_depth=64 => 'mem_64'
@@ -326,8 +330,15 @@ def bs_connection(tileno, line, DBG=0):
               "'%s': wrong lhs tile '%s' should be -1 or %s\n" % (line, t, tileno)
     if DBG>1: print "# lhs '%s', rhs '%s', reg '%s'" % (lhs,rhs,reg)
 
+    # FIXME FIXME cgra_info.txt bug regfield crosses 32-bit boundary
+    # FIXME FIXME cgra_info.txt bug regfield crosses 32-bit boundary
+    # FIXME FIXME cgra_info.txt bug regfield crosses 32-bit boundary
+    # Cannot connect e.g. "T24_in_s0t0_b0 -> T24_out_s2t0_b0" b/c requires 2 config regs
+    # see reg_field_bug_hack() for deets
+    if (lhs == 'in_s0t0_b0') and (rhs == 'out_s2t0_b0'):
+        return reg_field_bug_hack(t)
+
     # Connect lhs to rhs
-    
     Tlhs = "T%d_%s" % (tileno,lhs)
     Trhs = "T%d_%s" % (tileno,rhs)
     cwt = cgra_info.connect_within_tile(tileno, Tlhs, Trhs, DBG-1)
@@ -370,9 +381,62 @@ def striptile(r):
 
     tileno = int(parse.group(1))
     r      = parse.group(2)
-    return(tileno,r)
+    return (tileno,r)
 
 
+def reg_field_bug_hack(tileno):
+    # FIXME FIXME cgra_info.txt bug
+    # Cannot connect e.g. "T24_in_s0t0_b0 -> T24_out_s2t0_b0" b/c requires
+    # two config regs b/c field crosses regs e.g.
+    #
+    # found snk out_0_BUS1_2_0
+    # found src in_0_BUS1_0_0
+    #   tile 24
+    #   feature address 0
+    #   sel 0
+    #   sel_width 3
+    #   configh 32
+    #   configl 30
+    #   configr 70
+    #   File "cgra_info.py", line 781, in encode_parms
+    #     assert regh==regl, 'select field crossed reg boundary!'
+    # AssertionError: select field crossed reg boundary!
+    
+    # <sb feature_address='0' bus='BUS1' row='0'>
+    #   <mux snk='out_0_BUS1_2_0' reg='1' configh='32' configl='30' configr='70'>
+    #     <src sel='0'>in_0_BUS1_0_0</src>
+
+    (configh,configl,sel) = (32,30,0)
+
+    c = cgra_info.gen_comment_conn(
+        configh, #parms['configh'],
+        configl, #parms['configl'],
+        tileno,
+        sel, #parms['sel'],
+        'in_0_BUS1_0_0', #canon2cgra(src),
+        'out_0_BUS1_2_0', #canon2cgra(snk))
+        )
+    
+    # reg 0, element 0, tile 'tileno' = 0x80000000 (top bit of 0x2)
+    (regno,elno) = (0,0)
+    addr = (regno << 24) | (elno << 16) | tileno
+    data = (sel << configl) & 0xFFFFFFFF
+    assert data == 0
+    comment = [c + ' (REG 00)'
+               , 'da99[(31, 30)] : REG_FIELD_HACK (bsbuilder.py) hand-written code above'
+               ]
+    addbs(addr, data, comment)
+
+    # reg 1, element 0, tile 'tileno' = 1 (top bit of 0x2)
+    (regno,elno) = (1,0)
+    addr = (regno << 24) | (elno << 16) | tileno
+    data = (sel << configl) >> 32
+    assert data == 0
+    comment = [c + ' (REG 01)'
+               , 'da99[(32, 32)] : REG_FIELD_HACK (bsbuilder.py) hand-written code above'
+               ]
+    addbs(addr, data, comment)
+    return True
 
 
 def parse_tile_decl(line):
@@ -664,8 +728,6 @@ op_data['and']     = 0x00000013
 op_data['xor']     = 0x00000014
 
 
-
-
 # A (data0) mode bits are 16,17; REG_CONST=0; REG_DELAY=3; REG_BYPASS=2
 op_data['const_a'] = (0 << 16)
 op_data['wire_a']  = (2 << 16)
@@ -675,6 +737,21 @@ op_data['reg_a']   = (3 << 16)
 op_data['const_b'] = (0 << 18)
 op_data['wire_b']  = (2 << 18)
 op_data['reg_b']   = (3 << 18)
+
+# C (bit0) mode bits are 24,25; REG_CONST=0; REG_DELAY=3; REG_BYPASS=2
+op_data['const_0'] = (0 << 24)
+op_data['wire_0']  = (2 << 24)
+op_data['reg_0']   = (3 << 24)
+
+# E (bit1) mode bits are 26,27; REG_CONST=0; REG_DELAY=3; REG_BYPASS=2
+op_data['const_1'] = (0 << 26)
+op_data['wire_1']  = (2 << 26)
+op_data['reg_1']   = (3 << 26)
+
+# F (bit2) mode bits are 28,29; REG_CONST=0; REG_DELAY=3; REG_BYPASS=2
+op_data['const_2'] = (0 << 28)
+op_data['wire_2']  = (2 << 28)
+op_data['reg_2']   = (3 << 28)
 
 
 def bs_mem(tileno, line, DBG=0):
@@ -758,6 +835,82 @@ def bs_op(tileno, line, DBG=0):
         ]
     addbs(addr, data, comment)
     return True
+
+def bs_lut(tileno, line, DBG=0):
+
+    # IN: lutF(const0,const0,const0)
+    # OUT: 
+    # 0000TTTT 0000000F reg=0x00 => set LUT for 0xF (right?)
+    # data[(7, 0)] : lut_value = 15
+    # 
+    # F300TTTT 00000000 reg=0xF3 => set bit0 for const 1'b0
+    # data[(0, 0)] : init `bit0` reg with const `0`
+    # 
+    # F400TTTT 00000000 reg=0xF4 => set bit1 for const 1'b0
+    # data[(0, 0)] : init `bit1` reg with const `0`
+    # 
+    # F500TTTT 00000000 reg=0xF5 => set bit2 for const 1'b0
+    # data[(0, 0)] : init `bit2` reg with const `0`
+    # 
+    # FF00TTTT 0000000E
+    # data[(5, 0)] : alu_op = lut ; 0xE
+    # data[(25, 24)] : bit0: REG_CONST ; 0x0
+    # data[(27, 26)] : bit1: REG_CONST ; 0x0
+    # data[(29, 28)] : bit2: REG_CONST ; 0x0
+
+    parse = re.search('lut([0-9a-fA-F])\s*\(\s*(\S+)\s*,\s*(\S+)\s*,\s*(\S+)\s*\)', line)
+    if not parse: return False
+
+    # print 'hey found a lut'
+
+    lutval = parse.group(1)       # 'F'
+    bit0   = parse.group(2)       # 'const0'
+    bit1   = parse.group(2)       # 'const0'
+    bit2   = parse.group(2)       # 'const0'
+
+    # op1    = parse.group(2)+"_a"  # 'reg_a' or 'wire_a' or 'const19_19$1_a' or '0'
+    # op2    = parse.group(3)+"_b"
+
+    assert (bit0,bit1,bit2) == ('const0','const0','const0'), \
+           'Sorry!  For now the only choices are (0,0,0)'
+
+    # load lut
+    lutval = int(lutval,16)
+    addr = "0000%04X" % tileno; data = lutval
+    comment = "# data[(7, 0)] : lut_value = %d" % lutval
+    addbs(addr, data, comment)
+
+    # bit0
+    addr = "F300%04X" % tileno; data = 0
+    comment = "data[(0, 0)] : init `bit0` reg with const `0`"
+    addbs(addr, data, comment)
+
+    # bit1
+    addr = "F400%04X" % tileno; data = 0
+    comment = "data[(0, 0)] : init `bit1` reg with const `0`"
+    addbs(addr, data, comment)
+
+    # bit0
+    addr = "F500%04X" % tileno; data = 0
+    comment = "data[(0, 0)] : init `bit2` reg with const `0`"
+    addbs(addr, data, comment)
+
+    # FF00TTTT 0000000E
+    # data[(5, 0)] : alu_op = lut ; 0xE
+    # data[(25, 24)] : bit0: REG_CONST ; 0x0
+    # data[(27, 26)] : bit1: REG_CONST ; 0x0
+    # data[(29, 28)] : bit2: REG_CONST ; 0x0
+
+    addr = 0xFF000000 | int(tileno); data = 0xE
+    comment = [
+        'data[(5, 0)] : alu_op = lut ; 0xE',
+        'data[(25, 24)] : bit0: REG_CONST ; 0x0',
+        'data[(27, 26)] : bit1: REG_CONST ; 0x0',
+        'data[(29, 28)] : bit2: REG_CONST ; 0x0']
+    addbs(addr, data, comment)
+
+    return True
+
 
 def regtranslate(op):
     if op[0:3]=='reg': return 'REG_DELAY'

@@ -669,8 +669,9 @@ def find_mux(tile, src, snk, DBG=0):
         for bb in tile.iter(box):
             for mux in bb.iter('mux'):
 
-                # Can't do single-bit wires (yet)
-                if re.search('_BUS1_', mux.attrib['snk']): continue
+                # Can't do single-bit wires (yet)  SI PODEMOS!
+                # if re.search('_BUS1_', mux.attrib['snk']):
+                # assert False, "Can't do single-bit wires (yet)"
 
                 # Look for sinks whose src is rdst
                 # if mux.attrib['snk'] == rdst:
@@ -1025,6 +1026,31 @@ def canon2global(name, DBG=0):
     # OUTPUT tile 15 (2,1) / in_BUS16_S2_T4 / wire_2_0_BUS16_S0_T4
     # OUTPUT tile 15 (2,1) / in_BUS16_S2_T4 / wire_2_0_BUS16_S0_T4
 
+def special_wirenames(d, name):
+    # not a wire; name is returned as 'd'
+    if d == 'op1'     :  newname = 'data0'
+    elif d == 'op2'   :  newname = 'data1'
+    elif d == 'pe_out':  newname = 'pe_out_res'
+
+    elif d == 'mem_in':  newname = 'wdata'
+    elif d == 'mem_out': newname = 'rdata'
+
+    elif d in [
+        "cg_en",
+        "bit0", "bit1", "bit2",
+        "data0", "data1",
+        "ren", "wen",
+        "waddr", "wdata",
+        "read_data"
+        ]:
+        newname = d
+
+    else:
+        assert False, "Could not identify wire '%s'" % name
+
+    return newname
+
+
 def canon2cgra(name, DBG=0):
     '''
     Converts canonical wirename to cgra wirename, e.g.
@@ -1036,20 +1062,19 @@ def canon2cgra(name, DBG=0):
     '''
     if DBG>1: print "converting", name
 
+    # First check to see if it's a single-bit signal e.g. T25_pe_out.0 or T25_out_s2t0.0
+    oldname = name # A secret tool that will help us later
+    bus1 = (name[-3:] == '_b0')
+    if bus1:
+        if DBG>1: print "Found single-bit wire '%s'" % name
+        name = name[0:-3]
+
     # E.g. 'T0_in_s1t2' => 'in_BUS16_S1_T2'
     (T,d,side,t) = parse_canon(name)
     # assert T != -1
     if DBG>1: print (T,d,side,t)
     if side == -1:
-        # not a wire; name is returned as 'd'
-        if d == 'op1'   :  newname = 'data0'
-        elif d == 'op2'   :  newname = 'data1'
-        elif d == 'pe_out':  newname = 'pe_out_res'
-
-        elif d == 'mem_in':  newname = 'wdata'
-        elif d == 'mem_out': newname = 'rdata'
-        else:
-            assert False, "Could not identify wire '%s'" % name
+        newname = special_wirenames(d,name) # e.g. op1, op2, wen, waddr...
 
     else:
         dnot = 'out';
@@ -1066,17 +1091,26 @@ def canon2cgra(name, DBG=0):
             if side>3: tb='bottom'
             if DBG>2: print "mem tile", tb, side
             if   (tb == 'top')    and (side == 1):
-                # newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (dnot,t)
-                newname = 'sb_wire_%s_1_BUS16_3_%d' % (dnot,t)
+                # implemented find_and_fix_ST_deficient_memwires.csh
+                # newname = 'sb_wire_%s_1_BUS16_3_%d' % (dnot,t)
+                newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (dnot,t)
             elif (tb == 'bottom') and (side == 7):
-                # newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (d,t)
-                newname = 'sb_wire_%s_1_BUS16_3_%d' % (d,t)
+                # implemented find_and_fix_ST_deficient_memwires.csh
+                # newname = 'sb_wire_%s_1_BUS16_3_%d' % (d,t)
+                newname = 'sb_wire_%s_1_BUS16_S3_T%d' % (d,t)
             else:
-                # newname = '%s_%d_BUS16_S%d_T%d' % (d,s/4,s%4,t)
-                # yes; sometimes; maybe; but better is:
                 newname = '%s_%d_BUS16_S%d_T%d' % (d,side/4,side%4,t)
 
-    if DBG: print "to_cgra: cgra name for '%s' is '%s'" % (name, newname)
+                # implemented find_and_fix_ST_deficient_memwires.csh
+                # # FIXME okay this is pretty awful idnit
+                # if bus1: newname = '%s_%d_BUS1_%d_%d' % (d,side/4,side%4,t)
+
+    if bus1:
+        if DBG: print "converting '%s' to single-bit name" % newname
+        newname = newname.replace("BUS16", "BUS1")
+        newname = newname.replace("pe_out_res", "pe_out_res_p")
+
+    if DBG: print "to_cgra: cgra name for '%s' is '%s'" % (oldname, newname)
     if DBG: print ''
 
     assert newname == oneworld(newname)
@@ -1098,9 +1132,6 @@ def canon2cgra(name, DBG=0):
             # > wire going from bottom to top (out of side 3 (N) wrt bottom (1))
             # > maps to in/ side3 if row even (top)
             # > or      out/side1 if row odd (bottom)
-
-            #         if is_mem_tile(T):
-            #             newname = '%s_%d_BUS16_S%d_T%d' % (d,s/4,s%4,t)
 
 
 

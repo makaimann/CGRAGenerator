@@ -7,6 +7,8 @@
 # PE tiles
 T21_mul(wire,const2__348)  # mul_347_348_349_PE
 
+# LUT tiles for wen_lut's []
+
 # MEM tiles
 
 # ROUTING

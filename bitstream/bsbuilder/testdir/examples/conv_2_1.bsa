@@ -45,6 +45,14 @@ FF000017 0002000B
 # data[(21, 20)] : @ tile (2, 4) connect wire 0 (in_BUS16_S0_T0) to out_BUS16_S2_T0
 # data[(23, 22)] : @ tile (2, 4) connect wire 3 (pe_out_res) to out_BUS16_S2_T1
 
+00000018 00000000
+# data[(32, 30)] : @ tile (2, 5) connect wire 0 (in_0_BUS1_0_0) to out_0_BUS1_2_0 (REG 00)
+# da99[(31, 30)] : REG_FIELD_HACK (bsbuilder.py) hand-written code above
+
+01000018 00000000
+# data[(32, 30)] : @ tile (2, 5) connect wire 0 (in_0_BUS1_0_0) to out_0_BUS1_2_0 (REG 01)
+# da99[(32, 32)] : REG_FIELD_HACK (bsbuilder.py) hand-written code above
+
 00020018 00300000
 # data[(21, 20)] : @ tile (2, 5) connect wire 3 (rdata) to out_0_BUS16_S2_T0
 
@@ -61,6 +69,30 @@ FF000017 0002000B
 00060018 00000000
 # data[(3, 0)] : @ tile (2, 5) connect wire 0 (in_0_BUS16_S2_T0) to wdata
 
+00090018 00000005
+# data[(3, 0)] : @ tile (2, 5) connect wire 5 (out_0_BUS1_S2_T0) to wen
+
+00000019 0000000F
+# # data[(7, 0)] : lut_value = 15
+
+F3000019 00000000
+# data[(0, 0)] : init `bit0` reg with const `0`
+
+F4000019 00000000
+# data[(0, 0)] : init `bit1` reg with const `0`
+
+F5000019 00000000
+# data[(0, 0)] : init `bit2` reg with const `0`
+
+FF000019 0000000E
+# data[(5, 0)] : alu_op = lut ; 0xE
+# data[(25, 24)] : bit0: REG_CONST ; 0x0
+# data[(27, 26)] : bit1: REG_CONST ; 0x0
+# data[(29, 28)] : bit2: REG_CONST ; 0x0
+
+00090019 00300000
+# data[(21, 20)] : @ tile (2, 6) connect wire 3 (pe_out_res_p) to out_BUS1_S2_T0
+
 0003001C 00000001
 # data[(1, 0)] : @ tile (2, 9) connect wire 1 (in_1_BUS16_S2_T0) to out_1_BUS16_S0_T0
 
@@ -68,10 +100,10 @@ FF000017 0002000B
 # data[(1, 0)] : @ tile (2, 13) connect wire 1 (in_1_BUS16_S2_T0) to out_1_BUS16_S0_T0
 
 00020024 00000000
-# data[(1, 0)] : @ tile (2, 17) connect wire 0 (sb_wire_out_1_BUS16_3_0) to out_0_BUS16_S0_T0
+# data[(1, 0)] : @ tile (2, 17) connect wire 0 (sb_wire_out_1_BUS16_S3_T0) to out_0_BUS16_S0_T0
 
 00030024 80000000
-# data[(31, 30)] : @ tile (2, 17) connect wire 2 (in_1_BUS16_S2_T0) to sb_wire_out_1_BUS16_3_0
+# data[(31, 30)] : @ tile (2, 17) connect wire 2 (in_1_BUS16_S2_T0) to sb_wire_out_1_BUS16_S3_T0
 
 00080028 00000002
 # data[(1, 0)] : @ tile (3, 2) connect wire 2 (in_BUS16_S3_T0) to out_BUS16_S0_T0
