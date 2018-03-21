@@ -100,8 +100,8 @@ source remove_genesis_wires.csh
 # should be
 #       <src sel='0'>in_1_BUS16_S0_T3</src>
 # 
-find_and_fix_ST_deficient_memwires.csh
-find_and_fix_ST_deficient_memwires.csh
+./find_and_fix_ST_deficient_memwires.csh
+./find_and_fix_ST_deficient_memwires.csh
 
 
 if [ `hostname` == "kiwi" ]; then
