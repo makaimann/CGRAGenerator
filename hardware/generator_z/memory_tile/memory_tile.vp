@@ -21,6 +21,7 @@
 //; my $sb_fs = parameter(Name=>'sb_fs', val=> "10000#10000#10000", doc=>'binary vector for modifying fanin of sb muxes');
 
 //; # for cb
+//; #ankitan - add more for virtualization
 //; my $cb_connections = parameter(Name=>'cb_connections', val=> "1111111111", doc=>'binary vector to specify tracks muxed by cb input to memory.length = num_tracks*2');
 
 //; # for layout 
