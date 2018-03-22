@@ -1,11 +1,12 @@
 import os
 import subprocess
 import inspect
+from bit_vector import BitVector
 
 __all__ = ['harness', 'compile']
 
 def to_string(val):
-    if isinstance(val, bool):
+    if isinstance(val, bool) or isinstance(val, BitVector) and val.num_bits == 1:
         return "1" if val else "0"
     else:
         return str(val)

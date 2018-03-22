@@ -8,6 +8,7 @@ import delegator
 import os
 
 def run_ncsim_test(op, opcode, tests, strategy):
+    return
     if os.environ.get("TRAVIS", True):
         # Skip on Travis because cadence tools not available
         # FIXME: Should check for cadence tools available instead
@@ -54,9 +55,9 @@ def test_op(op, strategy):
         n = 16
     else:
         n = 256
-    tests = strategy(a, n, 16)
+    tests = strategy(a._alu, n, 16)
 
-    compile(f'test_{op}_{strategy.__name__}', 'test_pe_comp_unq1', a.opcode, tests)
+    compile(f'test_{op}_{strategy.__name__}', 'test_pe_comp_unq1', a.opcode , tests)
     run_verilator_test('test_pe_comp_unq1', f'sim_test_{op}_{strategy.__name__}', 'test_pe_comp_unq1')
     run_ncsim_test(op, a.opcode, tests, strategy)
 
@@ -67,11 +68,11 @@ def test_signed_op(signed_op, signed, strategy):
         n = 16
     else:
         n = 256
-    tests = strategy(a, n, 16)
+    tests = strategy(a._alu, n, 16)
 
-    compile(f'test_{signed_op}_{strategy.__name__}', 'test_pe_comp_unq1', a.opcode, tests)
+    compile(f'test_{signed_op}_{strategy.__name__}', 'test_pe_comp_unq1', a.opcode | signed << 5, tests)
     run_verilator_test('test_pe_comp_unq1', f'sim_test_{signed_op}_{strategy.__name__}', 'test_pe_comp_unq1')
-    run_ncsim_test(signed_op, a.opcode | signed << 6, tests, strategy)
+    run_ncsim_test(signed_op, a.opcode | signed << 5, tests, strategy)
 
 def test_comparison_op(comparison_op, signed, strategy):
     a = getattr(pe, comparison_op)(signed)
@@ -79,12 +80,12 @@ def test_comparison_op(comparison_op, signed, strategy):
     if strategy is complete:
         n = 16
     else:
-        n = 256
-    tests = strategy(a, n, 16)
+        n = 16
+    tests = strategy(a._alu, n, 16)
 
-    compile(f'test_{comparison_op}_{strategy.__name__}', 'test_pe_comp_unq1', a.opcode, tests)
+    compile(f'test_{comparison_op}_{strategy.__name__}', 'test_pe_comp_unq1', a.opcode | signed << 5, tests)
     run_verilator_test('test_pe_comp_unq1', f'sim_test_{comparison_op}_{strategy.__name__}', 'test_pe_comp_unq1')
-    run_ncsim_test(comparison_op, a.opcode | signed << 6, tests, strategy)
+    run_ncsim_test(comparison_op, a.opcode | signed << 5, tests, strategy)
 
 # @pytest.mark.skip
 # def test_const(const_value, strategy):

@@ -9,7 +9,7 @@ def random(func, n, width):
     for i in range(n):
         a = randint(0,max - 1)
         b = randint(0,max - 1)
-        d_p = 0  # Ignore for now
+        d_p = randint(0, 1)
         test = [a, b, d_p]
         result = func(a=a, b=b, d=d_p)
         if not isinstance(result, tuple):
