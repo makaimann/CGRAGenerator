@@ -11,29 +11,9 @@ addons:
       - verilator
     # - build-essential
 
-install:
-  # - python --version
-  # - sudo apt-get install python3
-  # - python --version
-  - pip install --user -U pip
-  - pip install --user numpy
-
 script:
   # set -e => exit on failure. "You can sandwich the stuff in script with set -e and set +e."
   - set -e
-  #
-  #
-  # - cd testdir; make test_all
-  #
-  # BASIC TEST for new IO verilog: pointwise only 'pwv2_io.bs'
-  - pushd testdir
-  -   make SILENT=TRUE test_basic
-  -   make SILENT=TRUE test_unit
-  #   make SILENT=TRUE test_serpent_dev
-  -   make SILENT=TRUE test_serpent | tee serpent_results.tmp
-  # - make SILENT=TRUE test_all
-  - popd
-  - grep RESULT $TRAVIS_BUILD_DIR/testdir/serpent_results.tmp
 
   # Install python for testing infrastructure
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -47,6 +27,21 @@ script:
   # Install python dependencies
   - pip install pytest numpy delegator.py bit_vector
   - pip install git+git://github.com/phanrahan/pe.git
+  # End python dependencies
+
+  #
+  #
+  # - cd testdir; make test_all
+  #
+  # BASIC TEST for new IO verilog: pointwise only 'pwv2_io.bs'
+  - pushd testdir
+  -   make SILENT=TRUE test_basic
+  -   make SILENT=TRUE test_unit
+  #   make SILENT=TRUE test_serpent_dev
+  -   make SILENT=TRUE test_serpent | tee serpent_results.tmp
+  # - make SILENT=TRUE test_all
+  - popd
+  - grep RESULT $TRAVIS_BUILD_DIR/testdir/serpent_results.tmp
 
   # Run python based tests
   - cd $TRAVIS_BUILD_DIR/tests/test_pe
