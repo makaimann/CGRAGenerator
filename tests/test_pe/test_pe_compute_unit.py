@@ -70,9 +70,9 @@ def test_signed_op(signed_op, signed, strategy):
         n = 256
     tests = strategy(a._alu, n, 16)
 
-    compile(f'test_{signed_op}_{strategy.__name__}', 'test_pe_comp_unq1', a.opcode | signed << 5, tests)
+    compile(f'test_{signed_op}_{strategy.__name__}', 'test_pe_comp_unq1', a.opcode | signed << 6, tests)
     run_verilator_test('test_pe_comp_unq1', f'sim_test_{signed_op}_{strategy.__name__}', 'test_pe_comp_unq1')
-    run_ncsim_test(signed_op, a.opcode | signed << 5, tests, strategy)
+    run_ncsim_test(signed_op, a.opcode | signed << 6, tests, strategy)
 
 def test_comparison_op(comparison_op, signed, strategy):
     a = getattr(pe, comparison_op)(signed)
@@ -83,9 +83,9 @@ def test_comparison_op(comparison_op, signed, strategy):
         n = 16
     tests = strategy(a._alu, n, 16)
 
-    compile(f'test_{comparison_op}_{strategy.__name__}', 'test_pe_comp_unq1', a.opcode | signed << 5, tests)
+    compile(f'test_{comparison_op}_{strategy.__name__}', 'test_pe_comp_unq1', a.opcode | signed << 6, tests)
     run_verilator_test('test_pe_comp_unq1', f'sim_test_{comparison_op}_{strategy.__name__}', 'test_pe_comp_unq1')
-    run_ncsim_test(comparison_op, a.opcode | signed << 5, tests, strategy)
+    run_ncsim_test(comparison_op, a.opcode | signed << 6, tests, strategy)
 
 # @pytest.mark.skip
 # def test_const(const_value, strategy):
