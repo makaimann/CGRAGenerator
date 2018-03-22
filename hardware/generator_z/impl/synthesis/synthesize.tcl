@@ -125,7 +125,7 @@ set_map_only {gtech/GTECH_ADD_ABC gtech/GTECH_ADD_AB gtech/GTECH_MUX4 gtech/GTEC
 # Constraints                                           #
 #########################################################
 
-create_clock -name clk -period 5 -waveform {0 2.5} [get_ports clk]
+create_clock -name clk -period 5 -waveform {0 2.5} [get_ports clk*]
 set_input_delay 0.2 -clock clk [all_inputs]
 set_output_delay 0.2 -clock clk [all_outputs]
 

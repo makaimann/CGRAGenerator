@@ -133,13 +133,15 @@ endif
 # I GUESS 4x4 vs. 8x8 is implied by presence or absence of CGRA_GEN_USE_MEM (!!???)
 # I can't find anything else that does it :(
 
-unset HACKMEM
 
 # ALWAYS BE HACKMEM!
-set HACKMEM = 1
-      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
-      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
-      echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+
+# NEVER BE HACKMEM!
+unset HACKMEM
+echo "WARNING DEFAULT IS WENHACK/HACKMEM *OFF*"
+echo "WARNING DEFAULT IS WENHACK/HACKMEM *OFF*"
+echo "WARNING DEFAULT IS WENHACK/HACKMEM *OFF*"
+echo
 
 while ($#argv)
   # echo "Found switch '$1'"
@@ -150,7 +152,17 @@ while ($#argv)
       echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
       echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
       echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
+      echo
       breaksw
+
+    case '-no_hackmem':
+      unset HACKMEM
+      echo "WARNING TURNED OFF TEMPORARY TERRIBLE HACKMEM"
+      echo "WARNING TURNED OFF TEMPORARY TERRIBLE HACKMEM"
+      echo "WARNING TURNED OFF TEMPORARY TERRIBLE HACKMEM"
+      echo
+      breaksw
+
 
     case '-clean':
       exit 0;
@@ -286,14 +298,31 @@ if (! -e $config) then
   exit 13
 endif
 
+
+
+
+
+# if (`expr "$config" : ".*lbuf.*"`) then
+#   if (! $?HACKMEM) then
+#     echo
+#     echo "run.csh: ERROR '$config' looks like an lbuf config file"
+#     echo "run.csh: ERROR should be using hackmem flag, yes?"
+#     exit 13
+#   endif
+# endif
+
+
 if (`expr "$config" : ".*lbuf.*"`) then
-  if (! $?HACKMEM) then
+  if ($?HACKMEM) then
     echo
     echo "run.csh: ERROR '$config' looks like an lbuf config file"
-    echo "run.csh: ERROR should be using hackmem flag, yes?"
+    echo "run.csh: ERROR should NO LONGER be using hackmem flag, yes?"
     exit 13
   endif
 endif
+
+
+
 
 
 unset io_hack
@@ -371,6 +400,18 @@ if ($?VERBOSE) then
   tail $config
 endif
 
+# Quick check of goodness in config file
+unset bad_config
+set c = '[0-9a-fA-F]'
+set goodline = "$c$c$c$c$c$c$c$c $c$c$c$c$c$c$c$c"
+egrep -v "$goodline" $config > /tmp/tmp$$ && set bad_config
+if ($?bad_config) then
+  echo
+  echo "ERROR Config file looks bad, man. Bad line(s) include:"
+  cat /tmp/tmp$$ | sed 's/^/> /'
+  exit 13
+endif
+
 set vdir = ../../hardware/generator_z/top/genesis_verif
 if (! -e $vdir) then
   echo "ERROR: Could not find vfile directory"
@@ -383,6 +424,13 @@ endif
 echo ''
 echo '------------------------------------------------------------------------'
 echo "Building the verilator simulator executable..."
+
+if ($?SKIP_RUNCSH_BUILD) then
+  echo "OOPS MAYBE NOT; FOUND ENV VAR 'SKIP_RUNCSH_BUILD'"
+  echo "OOPS MAYBE NOT; FOUND ENV VAR 'SKIP_RUNCSH_BUILD'"
+  echo "OOPS MAYBE NOT; FOUND ENV VAR 'SKIP_RUNCSH_BUILD'"
+endif
+
 
   # (Temporary (I hope)) SRAM hack(s)
 
@@ -401,9 +449,9 @@ echo "Building the verilator simulator executable..."
   # Temporary wen/ren hacks.  
   if ($?HACKMEM) then
     # In memory_core_unq1.v, change:
-    #   assign wen = (`$ENABLE_CHAIN`)?chain_wen_in:xwen;
+    #   assign wen_in_int = (`$ENABLE_CHAIN`)?chain_wen_in:xwen;
     # To:
-    #   assign wen = WENHACK
+    #   assign wen_in_int = WENHACK
 
     unset ERR
     egrep '^assign wen_in_int = .*' $vdir/memory_core_unq1.v || set ERR
@@ -497,6 +545,23 @@ RUN_SIM:
 echo '------------------------------------------------------------------------'
 echo "run.csh: Run the simulator..."
 echo ''
+
+# Check WENHACK status
+    # In memory_core_unq1.v, look for:
+    #   assign wen_in_int = WENHACK
+    set vdir = ../../hardware/generator_z/top/genesis_verif
+    egrep '^assign.*WENHACK' $vdir/memory_core_unq1.v && set WENHACKED
+    if ($?WENHACKED) then
+      echo 'WARNING Looks like WENHACK is ON'
+      echo 'WARNING Looks like WENHACK is ON'
+      echo 'WARNING Looks like WENHACK is ON'
+    else
+      echo 'WARNING Looks like WENHACK is OFF'
+      echo 'WARNING Looks like WENHACK is OFF'
+      echo 'WARNING Looks like WENHACK is OFF'
+    endif
+
+
 if ($?VERBOSE) echo '  First prepare input and output files...'
 
   # Prepare an input file

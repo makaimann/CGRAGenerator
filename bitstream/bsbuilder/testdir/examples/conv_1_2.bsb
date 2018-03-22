@@ -12,6 +12,8 @@ T22_add(wire,wire)         # add_305_313_314_PE
 T40_mul(reg,const5__308)   # mul_307_308_309_PE
 T41_add(wire,const0__304)  # add_305_309_310_PE
 
+# LUT tiles for wen_lut's []
+
 # MEM tiles
 
 # ROUTING

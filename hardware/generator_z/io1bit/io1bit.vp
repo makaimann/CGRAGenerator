@@ -10,7 +10,8 @@ clk,
 reset,
 pad,
 p2f,
-f2p,
+f2p_16,
+f2p_1,
 config_addr,
 config_data,
 tile_id
@@ -21,7 +22,8 @@ tile_id
   input  reset;
   inout  pad;
   output p2f;
-  input f2p;
+  input f2p_16;
+  input f2p_1;
   input [31:0] config_data;
   input [31:0] config_addr;
   input [15:0] tile_id;
@@ -49,24 +51,27 @@ tile_id
   end
 
   reg io_bit;
+  reg out_bus;
   always @(posedge clk or posedge reset) begin
     if (reset==1'b1) begin
        io_bit = 1'b0;
+       out_bus = 1'b0;
     end else begin
        if (config_en_pe==1'b1) begin
          io_bit = config_data[0];
+         out_bus = config_data[1];
        end
     end
   end
 
-  //assign pad = (io_bit==1'b1)?f2p:1'bz;
+  //assign pad = (io_bit==1'b1)?((out_bus==1'b0)?f2p_16:f2p_1):1'bz;
   //assign p2f = pad;
 
 // mname = `mname` = `$self->mname()`
 //; if (mname eq "io1bit_unq1" || mname eq "io1bit_unq2") {
   assign p2f = pad;
 //; } else {
-  assign pad = f2p;
+  assign pad = (out_bus==1'b0)?f2p_16:f2p_1;
 //; }
 
 
