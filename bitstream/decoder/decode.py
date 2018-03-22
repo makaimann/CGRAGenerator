@@ -27,7 +27,9 @@ OP_IN = {}
 OP_IN['a'] = "data0"
 OP_IN['b'] = "data1"
 OP_IN['c'] = "data2"
-#OP_IN['d'] = "data3" # NOPE
+OP_IN['d'] = "bit0" # Right?
+OP_IN['e'] = "bit1" # Right?
+OP_IN['f'] = "bit2" # Right?
 
 def get_default_cgra_info_filename():
     '''
@@ -488,12 +490,12 @@ def pe_decode(RR, DDDDDDDD):
 
     if (RR == "00"):
         # print "# data[(15, 0)] : init `%s` reg with const `%d`" % (k,int(dstring,16))
-        print "# data[(8, 0)] : lut_value = %d" % int(DDDDDDDD)
+        print "# data[(8, 0)] : lut_value = %d" % int(DDDDDDDD,16)
         return
 
     # Only other valid option is "FF" (load opcode)
     if (RR != "FF"):
-        err = "ERROR decode.py: Unknown PE register code '%s'"
+        err = "ERROR decode.py: Unknown PE register code '%s'" % RR
         print err
         sys.stdout.flush()
         sys.stderr.write("\n\n%s" % err);
