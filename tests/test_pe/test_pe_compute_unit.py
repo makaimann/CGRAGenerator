@@ -57,7 +57,10 @@ def test_op(op, strategy):
         n = 256
     tests = strategy(a._alu, n, 16)
 
-    compile(f'test_{op}_{strategy.__name__}', 'test_pe_comp_unq1', a.opcode , tests)
+    opcode = a.opcode
+    if op == 'abs':
+        opcode |= 1 << 6
+    compile(f'test_{op}_{strategy.__name__}', 'test_pe_comp_unq1', opcode , tests)
     run_verilator_test('test_pe_comp_unq1', f'sim_test_{op}_{strategy.__name__}', 'test_pe_comp_unq1')
     run_ncsim_test(op, a.opcode, tests, strategy)
 
