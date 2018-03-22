@@ -277,33 +277,33 @@ tile_id
 //;         if ($i==0||$i==2) {
       assign  out_`$row`_`$bus`_`$i`_`$j` = sb_wire_out_`$row`_`$bus`_`$i`_`$j`;
       assign  sb_wire_in_`$row`_`$bus`_`$i`_`$j` = in_`$row`_`$bus`_`$i`_`$j`;
-//;           $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "out_${row}_${bus}_S${i}_${j}";
-//;           $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "in_${row}_${bus}_S${i}_${j}"; 
+//;           $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "out_${row}_${bus}_S${i}_T${j}";
+//;           $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"}  =  "in_${row}_${bus}_S${i}_T${j}"; 
 //;         } else {
 //;           if ($i==1) {
 //;             if ($row == ($mem_tile_height-1)) {
       assign  out_`$row`_`$bus`_`$i`_`$j` = sb_wire_out_`$row`_`$bus`_`$i`_`$j`;
       assign  sb_wire_in_`$row`_`$bus`_`$i`_`$j` = in_`$row`_`$bus`_`$i`_`$j`;
-//;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "out_${row}_${bus}_S${i}_${j}";
-//;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "in_${row}_${bus}_S${i}_${j}"; 
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "out_${row}_${bus}_S${i}_T${j}";
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"}  =  "in_${row}_${bus}_S${i}_T${j}"; 
 //;             } else {
 //;               my $opposite_side = $i + int($sides*0.5);
 //;               if ($opposite_side > ($sides-1)) {$opposite_side -= $sides;}
       assign  sb_wire_in_`$row`_`$bus`_`$i`_`$j` = sb_wire_out_`$row+1`_`$bus`_`$opposite_side`_`$j`;
       assign  sb_wire_in_`$row+1`_`$bus`_`$opposite_side`_`$j` = sb_wire_out_`$row`_`$bus`_`$i`_`$j`;
-//;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "sb_wire_in_".(${row}+1)."_${bus}_S${opposite_side}_${j}";
-//;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "sb_wire_out_".(${row}+1)."_${bus}_S${opposite_side}_${j}";
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} =  "sb_wire_in_".(${row}+1)."_${bus}_S${opposite_side}_T${j}";
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"}  = "sb_wire_out_".(${row}+1)."_${bus}_S${opposite_side}_T${j}";
 //;             }
 //;           }
 //;           if ($i==3) {
 //;             if ($row == 0) {
       assign  out_`$row`_`$bus`_`$i`_`$j` = sb_wire_out_`$row`_`$bus`_`$i`_`$j`;
       assign  sb_wire_in_`$row`_`$bus`_`$i`_`$j` = in_`$row`_`$bus`_`$i`_`$j`;
-//;           $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "out_${row}_${bus}_S${i}_${j}";
-//;           $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "in_${row}_${bus}_S${i}_${j}";
+//;           $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "out_${row}_${bus}_S${i}_T${j}";
+//;           $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"}  =  "in_${row}_${bus}_S${i}_T${j}";
 //;             } else {
-//;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "sb_wire_out_${row}_${bus}_S${i}_${j}";
-//;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "sb_wire_in_${row}_${bus}_S${i}_${j}";
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "sb_wire_out_${row}_${bus}_S${i}_T${j}";
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"}  =  "sb_wire_in_${row}_${bus}_S${i}_T${j}";
 //;             }
 //;           }
 //;         }
