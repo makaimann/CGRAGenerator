@@ -1,3 +1,4 @@
+import pytest
 import os
 import subprocess
 import inspect
@@ -11,6 +12,7 @@ def to_string(val):
     else:
         return str(val)
 
+@pytest.mark.skip("Not a test")
 def testsource(tests):
     source = '''
     unsigned int tests[{}][{}] = {{

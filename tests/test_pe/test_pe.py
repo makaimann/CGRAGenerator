@@ -4,13 +4,11 @@ from verilator import testsource, run_verilator_test
 
 
 ops  = ['or_', 'and_', 'xor']
-# ops += ['inv']
-# ops += ['lshr', 'lshl']
-# ops += ['ashr']
-# ops += ['add', 'sub']
+ops += ['lshr', 'lshl']
+ops += ['add', 'sub']
 # ops += ['mul0', 'mul1', 'mul2']
-# ops += ['abs']
-# ops += ['sel']
+ops += ['abs']
+ops += ['sel']
 
 comparison_ops = ['ge', 'le']
 
@@ -32,9 +30,9 @@ def pytest_generate_tests(metafunc):
 def test_op(op, strategy):
     bit2_mode = 0
     bit1_mode = 0
-    bit0_mode = 0
-    data1_mode = 0
-    data0_mode = 0
+    bit0_mode = 0x2
+    data1_mode = 0x2  # BYPASS
+    data0_mode = 0x2  # BYPASS
     flag_sel = 0
     irq_en = 0
     acc_en = 0
@@ -65,9 +63,9 @@ def test_op(op, strategy):
             unsigned int* test = tests[i];
             top->data0 = test[0];
             top->data1 = test[1];
-            // top->op_d_p = test[2];
+            top->bit0 = test[2];
             top->eval();
-            printf("[opcode=%x, Test Iteration %d] Inputs: data0=%x, data1=%x, \\n", {_op.opcode}, i, test[0], test[1]);
+            printf("[cfg_d=%x, opcode=%x, Test Iteration %d] Inputs: data0=%x, data1=%x, bit0=%x\\n", top->cfg_d, {_op.opcode}, i, test[0], test[1], test[2]);
             printf("    expected_res=%x, actual_res=%x\\n", test[3], top->res);
             printf("    expected_res_p=%x, actual_res_p=%x\\n", test[4], top->res_p);
             assert(top->res == test[3]);
@@ -91,15 +89,27 @@ void step(Vtest_pe_unq1* top) {{
     top->eval();
 }}
 
+void reset(Vtest_pe_unq1* top) {{
+    top->rst_n = 1;
+    top->eval();
+    top->rst_n = 0;
+    top->eval();
+    top->rst_n = 1;
+    top->eval();
+}}
+
 int main(int argc, char **argv, char **env) {{
     Verilated::commandArgs(argc, argv);
     Vtest_pe_unq1* top = new Vtest_pe_unq1;
 
     {test}
 
+
+    top->clk_en = 1;
     top->cfg_d = {cfg_d};
     top->cfg_en = 1;
     top->cfg_a = {cfg_a};
+    reset(top);
     step(top);
 
     {body}
