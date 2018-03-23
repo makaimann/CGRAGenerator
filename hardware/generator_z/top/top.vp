@@ -677,7 +677,8 @@ assign config_data = config_data_in;
 //;		 if(($s % 2) eq 0) {$io1_track = ($h_new - 2) % $io1bit_num_tracks;}
 //;		 else {$io1_track = ($w_new - 2) % $io1bit_num_tracks;}
       .p2f(wire_`$h`_`$w`_BUS1_S`$s`_T`$io1_track`),
-      .f2p(wire_`$h_new`_`$w_new`_BUS1_S`$opposite_side`_T`$io1_track`),
+      .f2p_16(wire_`$h_new`_`$w_new`_BUS1_S`$opposite_side`_T`$io1_track`),
+      .f2p_1(wire_`$h_new+$h_delta`_`$w_new+$w_delta`_BUS1_S`$opposite_side`_T`$io1_track`),
       .pad(pad_S`$opposite_side`_T`$io_count`),
       .tile_id(16'h`$tile_addr_hex`)
     );

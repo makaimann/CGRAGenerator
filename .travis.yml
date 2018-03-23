@@ -17,6 +17,7 @@ install:
   # - python --version
   - pip install --user -U pip
   - pip install --user numpy
+  - pip install --user bit_vector
 
 script:
   # set -e => exit on failure. "You can sandwich the stuff in script with set -e and set +e."
@@ -45,7 +46,7 @@ script:
   - conda info -a
 
   # Install python dependencies
-  - pip install pytest numpy delegator.py
+  - pip install pytest numpy delegator.py bit_vector
   - pip install git+git://github.com/leonardt/pe.git
 
   # Run python based tests

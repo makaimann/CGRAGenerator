@@ -9,6 +9,9 @@ if ("$1" == "--help") then
   exit
 endif
 
+# Other switches (e.g. '-v') get passed straight through to utest.py, see below.
+
+
 set scriptpath = `readlink -f $0`
 set scriptpath = $scriptpath:h
 

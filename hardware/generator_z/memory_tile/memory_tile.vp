@@ -21,6 +21,7 @@
 //; my $sb_fs = parameter(Name=>'sb_fs', val=> "10000#10000#10000", doc=>'binary vector for modifying fanin of sb muxes');
 
 //; # for cb
+//; #ankitan - add more for virtualization
 //; my $cb_connections = parameter(Name=>'cb_connections', val=> "1111111111", doc=>'binary vector to specify tracks muxed by cb input to memory.length = num_tracks*2');
 
 //; # for layout 
@@ -276,33 +277,33 @@ tile_id
 //;         if ($i==0||$i==2) {
       assign  out_`$row`_`$bus`_`$i`_`$j` = sb_wire_out_`$row`_`$bus`_`$i`_`$j`;
       assign  sb_wire_in_`$row`_`$bus`_`$i`_`$j` = in_`$row`_`$bus`_`$i`_`$j`;
-//;           $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "out_${row}_${bus}_${i}_${j}";
-//;           $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "in_${row}_${bus}_${i}_${j}"; 
+//;           $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "out_${row}_${bus}_S${i}_T${j}";
+//;           $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"}  =  "in_${row}_${bus}_S${i}_T${j}"; 
 //;         } else {
 //;           if ($i==1) {
 //;             if ($row == ($mem_tile_height-1)) {
       assign  out_`$row`_`$bus`_`$i`_`$j` = sb_wire_out_`$row`_`$bus`_`$i`_`$j`;
       assign  sb_wire_in_`$row`_`$bus`_`$i`_`$j` = in_`$row`_`$bus`_`$i`_`$j`;
-//;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "out_${row}_${bus}_${i}_${j}";
-//;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "in_${row}_${bus}_${i}_${j}"; 
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "out_${row}_${bus}_S${i}_T${j}";
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"}  =  "in_${row}_${bus}_S${i}_T${j}"; 
 //;             } else {
 //;               my $opposite_side = $i + int($sides*0.5);
 //;               if ($opposite_side > ($sides-1)) {$opposite_side -= $sides;}
       assign  sb_wire_in_`$row`_`$bus`_`$i`_`$j` = sb_wire_out_`$row+1`_`$bus`_`$opposite_side`_`$j`;
       assign  sb_wire_in_`$row+1`_`$bus`_`$opposite_side`_`$j` = sb_wire_out_`$row`_`$bus`_`$i`_`$j`;
-//;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "sb_wire_in_".(${row}+1)."_${bus}_${opposite_side}_${j}";
-//;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "sb_wire_out_".(${row}+1)."_${bus}_${opposite_side}_${j}";
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} =  "sb_wire_in_".(${row}+1)."_${bus}_S${opposite_side}_T${j}";
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"}  = "sb_wire_out_".(${row}+1)."_${bus}_S${opposite_side}_T${j}";
 //;             }
 //;           }
 //;           if ($i==3) {
 //;             if ($row == 0) {
       assign  out_`$row`_`$bus`_`$i`_`$j` = sb_wire_out_`$row`_`$bus`_`$i`_`$j`;
       assign  sb_wire_in_`$row`_`$bus`_`$i`_`$j` = in_`$row`_`$bus`_`$i`_`$j`;
-//;           $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "out_${row}_${bus}_${i}_${j}";
-//;           $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "in_${row}_${bus}_${i}_${j}";
+//;           $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "out_${row}_${bus}_S${i}_T${j}";
+//;           $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"}  =  "in_${row}_${bus}_S${i}_T${j}";
 //;             } else {
-//;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "sb_wire_out_${row}_${bus}_${i}_${j}";
-//;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"} = "sb_wire_in_${row}_${bus}_${i}_${j}";
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"out_${i}_${j}"} = "sb_wire_out_${row}_${bus}_S${i}_T${j}";
+//;               $rename_hash->{ "sb_".$row."_".$bus }{"in_${i}_${j}"}  =  "sb_wire_in_${row}_${bus}_S${i}_T${j}";
 //;             }
 //;           }
 //;         }
@@ -323,7 +324,7 @@ tile_id
 //; my $num_tracks_1b = $bus_num_tracks_hash{ $control_busname };
 //; my $cb_1b = generate('cb', 'cb_ctl', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>0, feedthrough_outputs=>$cb_connections);
 //; my $cb_cg = generate('cb', 'cb1b_cg', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>1, feedthrough_outputs=>$cb_connections, default_value=>'1');
-//; my @mem_inputs = ("BUS16#wdata","BUS16#waddr","BUS1#ren","BUS1#wen");
+//; my @mem_inputs = ("BUS16#wdata","BUS16#addr","BUS1#ren","BUS1#wen");
 //; my @non_mem_inputs = ("BUS1#cg_en");
 //; my $input_count=0;
 //; my $num_tracks;
@@ -472,7 +473,7 @@ tile_id
       .config_en(config_en_mem),
       .data_in(wdata),
       .data_out(rdata),
-      .addr_in(waddr),
+      .addr_in(addr),
       .wen_in(wen),
       .ren_in(ren),
       .valid_out(valid),

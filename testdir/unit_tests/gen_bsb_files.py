@@ -19,18 +19,18 @@ import random
 
 # 8x8 grid w/ io pads
 # Input from PE tile 11, output to mem tile T14
-MEM_TEMPLATE='''
-  #DELAY DEPTH,DEPTH
-  #
-  self.in -> T11_in_s2t0
-  T11_in_s2t0 -> T11_out_s0t0
-  T12_in_s2t0 -> T12_out_s0t0
-  T13_in_s2t0 -> T13_out_s0t0
-  T14_in_s2t0 -> T14_mem_in
-  T14_mem_DEPTH # (fifo_depth=DEPTH)
-  T14_mem_out -> T14_out_s1t1
-  T14_in_s7t1 -> T14_out_s5t1 -> self.out
-'''
+# MEM_TEMPLATE='''
+#   #DELAY DEPTH,DEPTH
+#   #
+#   self.in -> T11_in_s2t0
+#   T11_in_s2t0 -> T11_out_s0t0
+#   T12_in_s2t0 -> T12_out_s0t0
+#   T13_in_s2t0 -> T13_out_s0t0
+#   T14_in_s2t0 -> T14_mem_in
+#   T14_mem_DEPTH # (fifo_depth=DEPTH)
+#   T14_mem_out -> T14_out_s1t1
+#   T14_in_s7t1 -> T14_out_s5t1 -> self.out
+# '''
 
 # 16x16 grid w/ io pads
 # Input must come in to T21_s2t0, output from T36_s0t0
@@ -46,6 +46,12 @@ MEM_TEMPLATE='''
   T24_in_s2t0 -> T24_mem_in
   T24_mem_DEPTH # (fifo_depth=DEPTH)
   T24_mem_out -> T24_out_s0t0
+  #
+  # mem in T24, wen_lut in adjoining tile T25
+  T25_lutF(const0,const0,const0)
+  T25_pe_out_b0 -> T25_out_s2t0_b0
+  T24_in_s0t0_b0 -> T24_out_s2t0_b0
+  T24_out_s2t0_b0 -> T24_wen
   #
   T25_in_s2t0 -> T25_out_s0t0
   T26_in_s2t0 -> T26_out_s0t0

@@ -62,7 +62,6 @@ BINARY_OPS=[
     'sub',
     'gte',
     'lte',
-    'eq',
     # 'sel', # FIXME needs one-bit working
     'rshft',
     'lshft',
@@ -89,7 +88,7 @@ def caveats():
 CAVEATS: BROKEN/DISABLED/HACKED (see FIXME in utest.py, isa.py)
 CAVEATS: BROKEN/DISABLED/HACKED (see FIXME in utest.py, isa.py)
 CAVEATS: BROKEN/DISABLED/HACKED (see FIXME in utest.py, isa.py)
-  'eq' spec and/or model is wrong: wrote my own 'eq' to reflect verilog (utest.py)
+   Haha lbuf tests no longer require WENHACK
   'rshft/lshft' model wrong in 'isa.py'; wrote my own instead (utest.py/FIXME)
   'gte/lte' model broken(?) in 'isa.py'; wrote my own instead (utest.py/FIXME)
   'sel' - no test yet b/c needs 'd' input
@@ -246,7 +245,6 @@ GOLD['abs']   = pe.isa.abs()
 signed = False
 GOLD['gte']   = pe.isa.ge(signed)
 GOLD['lte']   = pe.isa.le(signed)
-GOLD['eq']    = pe.isa.eq()
 
 GOLD['sel']   = pe.isa.sel()
 GOLD['rshft'] = pe.isa.lshr()
@@ -258,14 +256,9 @@ GOLD['xor']   = pe.isa.xor()
 GOLD['lbuf09']   = (lambda a, b: [a,0])
 GOLD['lbuf10']   = (lambda a, b: [a,0])
 
-# Busted ops include, abs, mul, eq
+# Busted ops include, abs, mul
 GOLD['abs']   = (lambda a, b: [abs(a),0])
 GOLD['mul']   = (lambda a, b: [a * b,0])
-
-# Spec says 'eq' result is same as 'add'
-# GOLD['eq']    = GOLD['add']
-# FIXME But verilog is different than spec!
-GOLD['eq']    = (lambda a, b: [b, a==b])
 
 # FIXME gold model shifts are wrong
 GOLD['rshft'] = (lambda a, b: [a >> (b&0xF), 0])
@@ -361,11 +354,9 @@ def gen_output_file_cgra(tname, DBG=0):
     elif OPTIONS['trace']: run_csh = './run.csh -v -trace utest.vcd'
     GENERATED=True
 
-    # echo "./run.csh -hackmem -config $bsa -input $in -output $cout -delay $delay"
-    cmd = "%s -hackmem -config %s -input %s -output %s -delay %s"\
+    cmd = "%s -config %s -input %s -output %s -delay %s"\
           % (run_csh, config, input, output, delay)
 
-    DBG=0
     if VERBOSE: savelog = ''
     else:       savelog = ' > ' + logfile + ' 2>&1'
 
@@ -378,6 +369,7 @@ def gen_output_file_cgra(tname, DBG=0):
         if savelog != '': print "  " + savelog
         print ""
 
+    DBG=0
     # (cd $v; ./run.csh -hackmem -config $bsa -input $in -output $cout -delay $delay ) || exit -1
     bad_outcome = my_syscall('cd %s; %s%s' % (VERILATOR_DIR, cmd, savelog), 'CONT')
     # if not VERBOSE: my_syscall('egrep ^run.csh %s' % logfile)
@@ -526,7 +518,7 @@ Usage:
 
 Where:
    <testname> = "all" (default) or one of
-                {add,sub,abs,gte,lte,eq,sel,rshft,lshft,mul,or,and,xor}
+                {add,sub,abs,gte,lte,sel,rshft,lshft,mul,or,and,xor}
                 {lbuf09,lbuf10}
 
    --repeat <nr>  nr = any integer or "forever" DEFAULT=1

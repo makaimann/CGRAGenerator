@@ -61,8 +61,17 @@ foreach b ($bmarks)
   set tswitch = ''
   if ($?TRACE) set tswitch = "-trace $b.vcd"
 
+
+   # NO MORE HACKMEM!
+   # ./run.csh $tswitch -hackmem -config $bsa -input $input -output $out -delay $delay \
+
+
   setenv SERPENT_HACK
-  (cd $v; ./run.csh $tswitch -hackmem -config $bsa -input $input -output $out -delay $delay )
+  (\
+   cd $v; \
+   ./run.csh $tswitch -no_hackmem -config $bsa -input $input -output $out -delay $delay \
+  ) || exit 13
+
 
   echo "FINAL COMPARE FOR SUMMARY"
   ./compare_images.csh $b $out examples/${b}_halide_out.raw\

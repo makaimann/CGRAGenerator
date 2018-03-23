@@ -123,12 +123,7 @@ localparam PE_LTE_MIN_OP = 6'h5;
 //;   result => '(op_a lte op_b)?op_a:op_b',
 //;   predicate => 'op_a lte op_b'
 //; };
-localparam PE_EQ_OP      = 6'h6;
-//; $pecomp_info_hash->{ 'eq' } = {
-//;   opcode => '06',
-//;   result => 'op_a+op_b',
-//;   predicate => 'op_a === op_b'
-//; };
+
 
 localparam PE_SEL_OP     = 6'h8;
 //; $pecomp_info_hash->{ 'sel' } = {
@@ -326,7 +321,7 @@ logic                 mult_c_out;
 //; if ($debug) {
 //Enumeration to help with waveforms during simulation
 enum {
-Add_Op, Sub_Op, Abs_Op, GteMax_Op, LteMin_Op, Eq_Op,
+Add_Op, Sub_Op, Abs_Op, GteMax_Op, LteMin_Op, 
 Sel_Op, Rshft_Op, Lshft_Op, Mult0_Op, Mult1_Op, Mult2_Op, Relu_Op, Or_Op,
 And_Op, Xor_Op, Cntr_Op, Div_Op, InvalidOp
 } pe_oper;
@@ -338,7 +333,6 @@ always_comb begin
     PE_ABS_OP     : pe_oper = Abs_Op;
     PE_GTE_MAX_OP : pe_oper = GteMax_Op;
     PE_LTE_MIN_OP : pe_oper = LteMin_Op;
-    PE_EQ_OP      : pe_oper = Eq_Op;
     PE_SEL_OP     : pe_oper = Sel_Op;
     PE_RSHFT_OP   : pe_oper = Rshft_Op;
     PE_LSHFT_OP   : pe_oper = Lshft_Op;
@@ -571,11 +565,7 @@ always_comb begin : proc_alu
         res_w       = res_p_w ? op_a : op_b;
 //; }
       end
-    PE_EQ_OP: begin
-        res_p_w = cmpr_eq;
-        res_w   = op_b;
-      end
-    PE_SEL_OP: begin
+      PE_SEL_OP: begin
         res_w = op_d_p ? op_a : op_b;
       end
 //; }

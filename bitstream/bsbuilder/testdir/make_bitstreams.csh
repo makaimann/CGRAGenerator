@@ -89,7 +89,7 @@ foreach b ($bmarks)
 
   echo "  cmp $tmp/$bsa examples/$bsa"
   ls -l examples/$bsa $tmp/$bsa
-  cmp examples/$bsa $tmp/$bsa || set result = 'FAILED'
+  cmp $tmp/$bsa examples/$bsa || set result = 'FAILED'
 
 
   if ($?VERBOSE) then
