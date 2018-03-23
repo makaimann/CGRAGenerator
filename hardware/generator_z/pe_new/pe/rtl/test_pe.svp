@@ -43,6 +43,7 @@
 //;                               Val=> 1, Min=>1, Step=>1, Max=>16,
 //;                               Doc=>"Total number of registers");
 //;
+
 //; my $use_reg_file = ($reg_cnt > 1);
 //;
 //; my $filename = "PE".$self->mname();
