@@ -145,11 +145,7 @@ def to_or_from(nodename):
     #   lb_conv1_2_stencil_update_stream$mem_1.rdata
     #   lb_conv1_2_stencil_update_stream$mem_1.wdata
     #   lb_conv1_2_stencil_update_stream$reg_0_1.out
-    #   
-    #   bitand_153_151_154.in0
-    #   bitand_153_151_154.in1
-    #   pt_hw_output_1_stencil.in.0.0 ??
-    #   
+
     #     # Special cases for i/o nodes: up is down and down is up
     #     if re.search("io16in.*\.out$", nodename): return "from"
     #     if re.search("io16.*\.in$",    nodename): return "to"
@@ -160,8 +156,7 @@ def to_or_from(nodename):
         # print "FOO I think conn goes FROM %s" % nodename
         return "from"
 
-    # Sometimes it's 'in0' and sometimes it's 'in.0' I guess
-    parse = re.search("\.in(\.)?\d+$", nodename)
+    parse = re.search("\.in\.\d+$", nodename)
     if parse:
         # connections go FROM output TO input
         return "to"
@@ -178,9 +173,7 @@ def to_or_from(nodename):
 
     # print "FOO I don't know what '%s' is" % nodename
     # return "unknown"
-    errmsg = "\nERROR I don't know what '%s' is\n\n" % nodename
-    sys.stderr.write(errmsg)
-    assert False, errmsg
+    sys.stderr.write("FOO I don't know what '%s' is" % nodename)
     sys.exit(13)
 
 
