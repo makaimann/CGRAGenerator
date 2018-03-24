@@ -3,6 +3,7 @@ import os
 import subprocess
 import inspect
 from bit_vector import BitVector
+from testvectors import test_input, test_output
 
 __all__ = ['harness', 'compile']
 
@@ -10,7 +11,7 @@ def to_string(val):
     if isinstance(val, bool) or isinstance(val, BitVector) and val.num_bits == 1:
         return "1" if val else "0"
     else:
-        return str(val)
+        return str(BitVector(val, num_bits=16)._value)
 
 @pytest.mark.skip("Not a test")
 def testsource(tests):
@@ -19,7 +20,7 @@ def testsource(tests):
 '''.format(len(tests), len(tests[0]))
 
     for test in tests:
-        testvector = ', '.join([to_string(t) for t in test])
+        testvector = ', '.join([to_string(t.value) for t in test])
         source += '''\
         {{ {} }}, 
 '''.format(testvector)
@@ -30,20 +31,32 @@ def testsource(tests):
     return source
 
 def bodysource(tests):
-    return '''
+    body = """\
     for(int i = 0; i < {ntests}; i++) {{
         unsigned int* test = tests[i];
-        top->op_a = test[0];
-        top->op_b = test[1];
-        top->op_d_p = test[2];
+""".format(ntests=len(tests))
+    inputs = []
+    for i, val in enumerate(tests[0]):
+        if isinstance(val, test_input):
+            inputs.append(val)
+            body += "        top->{key} = test[{i}];\n".format(key=val.name, i=i)
+
+    input_printf_string = "\"[opcode=%x, Test Iteration %d] Inputs: {inputs}\\n\", ".format(inputs=", ".join("{name}=%x".format(name=val.name) for val in inputs))
+    input_printf_string += "top->op_code, i, "
+    input_printf_string += ", ".join("test[{i}]".format(i=i) for i in range(len(inputs)))
+
+    output_string = ""
+    for i, output in enumerate(tests[0]):
+        if isinstance(output, test_output):
+            output_string += "        printf(\"    expected_{name}=%x, actual_{name}=%x\\n\", test[{i}], top->{name});\n".format(name=output.name, i=i)
+            output_string += "        assert(top->{name} == test[{i}]);\n".format(name=output.name, i=i)
+
+    return body + '''
         top->eval();
-        printf("[opcode=%x, Test Iteration %d] Inputs: op_a=%x, op_b=%x, op_d_p=%x\\n", top->op_code, i, test[0], test[1], test[2]);
-        printf("    expected_res=%x, actual_res=%x\\n", test[3], top->res);
-        printf("    expected_res_p=%x, actual_res_p=%x\\n", test[4], top->res_p);
-        assert(top->res == test[3]);
-        assert(top->res_p == test[4]);
+        printf({input_printf_string});
+{output_string}
     }}
-'''.format(ntests=len(tests))
+'''.format(input_printf_string=input_printf_string, output_string=output_string)
 
 def harness(top_name, opcode, tests):
 

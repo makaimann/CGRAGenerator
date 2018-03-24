@@ -1,36 +1,27 @@
 from random import randint
-from itertools import product
+import itertools
+from collections import OrderedDict, namedtuple
 
 __all__ = ['random', 'complete']
 
-def random(func, n, width):
-    max = 1 << width
+test_input = namedtuple('test_input', ['name', 'value'])
+test_output = namedtuple('test_output', ['name', 'value'])
+
+def random(func, n, args, outputs):
     tests = []
     for i in range(n):
-        a = randint(0,max - 1)
-        b = randint(0,max - 1)
-        d_p = randint(0, 1)
-        test = [a, b, d_p]
-        result = func(a=a, b=b, d=d_p)
-        if not isinstance(result, tuple):
-            result = [result]
-        else:
-            result = list(result)
-        test.extend(result)
+        _args = OrderedDict([(k, v()) for k, v in args.items()])
+        result = func(**_args)
+        test = [test_input(k, v) for k, v in _args.items()] + list(outputs(result))
         tests.append(test)
     return tests
 
-def complete(func, n, width):
+def complete(func, args, outputs):
     tests = []
-    for a in range(n):
-        for b in range(n):
-            for d_p in range(2):
-                test = [a, b, d_p]
-                result = func(a=a, b=b, d=d_p)
-                if not isinstance(result, tuple):
-                    result = [result]
-                else:
-                    result = list(result)
-                test.extend(result)
-                tests.append(test)
+    keys = [k for k in args.keys()]
+    for arg_vals in itertools.product(*(value for value in args.values())):
+        _args = OrderedDict([(k, v) for k, v in zip(keys, arg_vals)])
+        result = func(**_args)
+        test = [test_input(k, v) for k, v in _args.items()] + list(outputs(result))
+        tests.append(test)
     return tests

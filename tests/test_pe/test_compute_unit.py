@@ -1,11 +1,13 @@
 import pytest
 import subprocess
 import pe
-from testvectors import complete, random
+from testvectors import complete, random, test_output
 from verilator import compile, run_verilator_test
 import ncsim
 import delegator
 import os
+from random import randint
+from collections import OrderedDict
 
 def run_ncsim_test(op, opcode, tests, strategy):
     return
@@ -48,14 +50,32 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("strategy", [complete, random])
 
 
+def get_tests(pe, strategy, signed=False):
+    if strategy is complete:
+        width = 4
+        N = 1 << width
+        tests = complete(pe._alu, OrderedDict([
+            ("op_a", range(0, N) if not signed else range(- N // 2, N // 2)),
+            ("op_b", range(0, N) if not signed else range(- N // 2, N // 2)),
+            ("op_d_p", range(0, 2))
+        ]), lambda result: (test_output("res", result[0]), test_output("res_p", result[1])))
+    elif strategy is random:
+        n = 256
+        width = 16
+        N = 1 << width
+        tests = random(pe._alu, n, OrderedDict([
+            ("op_a", lambda : randint(0, N) if not signed else randint(- N // 2, N // 2 - 1)),
+            ("op_b", lambda : randint(0, N) if not signed else randint(- N // 2, N // 2 - 1)),
+            ("op_d_p", lambda : randint(0, 1))
+        ]), lambda result: (test_output("res", result[0]), test_output("res_p", result[1])))
+    else:
+        raise NotImplementedError()
+    return tests
+
 def test_op(op, strategy):
     a = getattr(pe, op)()
 
-    if strategy is complete:
-        n = 16
-    else:
-        n = 256
-    tests = strategy(a._alu, n, 16)
+    tests = get_tests(a, strategy)
 
     opcode = a.opcode
     if op == 'abs':
@@ -67,11 +87,7 @@ def test_op(op, strategy):
 def test_signed_op(signed_op, signed, strategy):
     a = getattr(pe, signed_op)(signed)
 
-    if strategy is complete:
-        n = 16
-    else:
-        n = 256
-    tests = strategy(a._alu, n, 16)
+    tests = get_tests(a, strategy, signed)
 
     compile(f'test_{signed_op}_{strategy.__name__}', 'test_pe_comp_unq1', a.opcode | signed << 6, tests)
     run_verilator_test('test_pe_comp_unq1', f'sim_test_{signed_op}_{strategy.__name__}', 'test_pe_comp_unq1')
@@ -80,11 +96,7 @@ def test_signed_op(signed_op, signed, strategy):
 def test_comparison_op(comparison_op, signed, strategy):
     a = getattr(pe, comparison_op)(signed)
 
-    if strategy is complete:
-        n = 16
-    else:
-        n = 16
-    tests = strategy(a._alu, n, 16)
+    tests = get_tests(a, strategy)
 
     compile(f'test_{comparison_op}_{strategy.__name__}', 'test_pe_comp_unq1', a.opcode | signed << 6, tests)
     run_verilator_test('test_pe_comp_unq1', f'sim_test_{comparison_op}_{strategy.__name__}', 'test_pe_comp_unq1')
