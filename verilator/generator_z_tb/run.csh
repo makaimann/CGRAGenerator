@@ -510,25 +510,35 @@ endif
 # How about skip verilator build if:
 # 0. Running on travis AND
 # 1. obj_dir/Vtop exists
-# 2. hackmem is in place
+# 2. hackmem is in place ==> NO MORE HACKMEM
 
 if (! $?TRAVIS_BUILD_DIR) goto BUILD_SIM
-if (-e obj_dir/Vtop) then
-  echo Found existing obj_dir/Vtop
-  set vdir = ../../hardware/generator_z/top/genesis_verif
-  if (-e $vdir/memory_core_unq1.v) then 
-    echo Found $vdir/memory_core_unq1.v
-    unset foundhack
-    egrep 'assign.*WENHACK' $vdir/memory_core_unq1.v && set foundhack
-    if ($?foundhack) then
-      echo Found memhack
-      echo Found Vtop and memhack = skipping verilator build
-      goto RUN_SIM
-    else
-      echo No memhack, must rebuild
+# ELSE
+  if (-e obj_dir/Vtop) then
+    echo Found existing obj_dir/Vtop
+
+
+
+  #   set vdir = ../../hardware/generator_z/top/genesis_verif
+  #   if (-e $vdir/memory_core_unq1.v) then 
+  #     echo Found $vdir/memory_core_unq1.v
+  #     unset foundhack
+  #     egrep 'assign.*WENHACK' $vdir/memory_core_unq1.v && set foundhack
+  #     if ($?foundhack) then
+  #       echo Found memhack
+  #       echo Found Vtop and memhack = skipping verilator build
+  #       goto RUN_SIM
+  #     else
+  #       echo No memhack, must rebuild
+  #     endif
+
+    echo Found Vtop = skipping verilator build
+    goto RUN_SIM
+
     endif
   endif
-endif
+
+
 
 BUILD_SIM:
 if ($?tracefile) then

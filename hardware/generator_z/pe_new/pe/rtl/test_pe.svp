@@ -40,9 +40,10 @@
 //; my $use_c_input = ($use_add > 1) or ($mult_mode > 1) or ($lut_inps > 3);
 //;
 //; my $reg_cnt  = parameter(Name=>'reg_cnt',
-//;                               Val=> 4, Min=>1, Step=>1, Max=>16,
+//;                               Val=> 1, Min=>1, Step=>1, Max=>16,
 //;                               Doc=>"Total number of registers");
 //;
+
 //; my $use_reg_file = ($reg_cnt > 1);
 //;
 //; my $filename = "PE".$self->mname();
