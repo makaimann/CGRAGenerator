@@ -748,18 +748,30 @@ assign config_data = config_data_in;
  	assign	wire_`$h`_`$w`_BUS16_S`$s`_T`$track` = fanout_`$h`_`$w`_BUS16_S`$s`_T0;
 //;    }
 //;    }
-//;   if ($tile_type eq "io1") {
-//;     print INFO "  <tile type='$tile_config->{ $tile_type }{ 'type' }' tile_addr='0x$tile_addr_hex' row='$h' col='$w' tracks='BUS1:1 BUS16:0'";
-//;   } elsif ($tile_type eq "io16") {
-//;     print INFO "  <tile type='$tile_config->{ $tile_type }{ 'type' }' tile_addr='0x$tile_addr_hex' row='$h' col='$w' tracks='BUS1:0 BUS16:1'";
-//;   } else {
-//;     print INFO "  <tile type='$tile_config->{ $tile_type }{ 'type' }' tile_addr='0x$tile_addr_hex' row='$h' col='$w' tracks='";
-//;     foreach my $bus (sort keys %bus_num_tracks_hash) {
-//;       print INFO "$bus:$bus_num_tracks_hash{$bus} ";
+//;   
+//;   
+//;   # cgra_info/io1bit tiles
+//;   { 
+//;     # <tile type='io1bit' tile_addr='0x2' row='0' col='2' tracks='BUS1:1 BUS16:0' name='pad_S0_T0'>
+//;     my $ty = "$tile_config->{ $tile_type }{ 'type' }";
+//;     my $ta = "0x$tile_addr_hex";
+//;     my $tr = "";
+//;
+//;     if ($tile_type eq "io1") {
+//;       $tr = "BUS1:1 BUS16:0";
+//;     } elsif ($tile_type eq "io16") {
+//;       $tr = "BUS1:0 BUS16:1";
+//;     } else {
+//;       foreach my $bus (sort keys %bus_num_tracks_hash) {
+//;         $tr = $tr . "$bus:$bus_num_tracks_hash{$bus} ";
+//;       }
 //;     }
-//;     print INFO "'";
+//;     print INFO "  <tile type='$ty' tile_addr='$ta' row='$h' col='$w' tracks='$tr'>\n";
 //;   }
-//;   print INFO ">\n";
+
+//;   
+//;   
+//;   # cgra_info/empty tiles
 //;   if ($tile_type ne "empty") {
 //;     open (INP, "<TILE".$inst_obj->mname()) or die "Couldn't open file TILE$inst_obj->mname(), $!";
 //;     while (<INP>) {
