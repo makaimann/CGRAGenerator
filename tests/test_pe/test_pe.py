@@ -1,36 +1,40 @@
 import pe
-from testvectors import complete, random
-from verilator import testsource, run_verilator_test
+from testvectors import complete, random, test_input, test_output
+from verilator import testsource, bodysource, run_verilator_test
+from collections import OrderedDict
+from random import randint
+import pytest
+import os
 
 
 ops  = ['or_', 'and_', 'xor']
 ops += ['lshr', 'lshl']
 ops += ['add', 'sub']
 # ops += ['mul0', 'mul1', 'mul2']
-ops += ['abs']
-ops += ['sel']
+# ops += ['abs']
+# ops += ['sel']
 
 comparison_ops = ['ge', 'le']
 
 signed_ops = ['min', 'max', 'le', 'ge']
 
-def bodysource(tests, opcode, flag_sel, lut_code):
-    return f'''
-    for(int i = 0; i < {len(tests)}; i++) {{
-        unsigned int* test = tests[i];
-        top->data0 = test[0];
-        top->data1 = test[1];
-        top->bit0 = test[2];
-        top->bit1 = test[3];
-        top->bit2 = test[4];
-        top->eval();
-        printf("[lut_code=%x, opcode=%x, flag_sel=%x, Test Iteration %d] Inputs: data0=%x, data1=%x, bit0=%x, bit1=%x, bit2=%x\\n", {lut_code}, {opcode}, {flag_sel}, i, test[0], test[1], test[2], test[3], test[4]);
-        printf("    expected_res=%x, actual_res=%x\\n", test[5], top->res);
-        printf("    expected_res_p=%x, actual_res_p=%x\\n", test[6], top->res_p);
-        assert(top->res == test[5]);
-        assert(top->res_p == test[6]);
-    }}
-'''
+# def bodysource(tests, opcode, flag_sel, lut_code):
+#     return f'''
+#     for(int i = 0; i < {len(tests)}; i++) {{
+#         unsigned int* test = tests[i];
+#         top->data0 = test[0];
+#         top->data1 = test[1];
+#         top->bit0 = test[2];
+#         top->bit1 = test[3];
+#         top->bit2 = test[4];
+#         top->eval();
+#         printf("[lut_code=%x, opcode=%x, flag_sel=%x, Test Iteration %d] Inputs: data0=%x, data1=%x, bit0=%x, bit1=%x, bit2=%x\\n", {lut_code}, {opcode}, {flag_sel}, i, test[0], test[1], test[2], test[3], test[4]);
+#         printf("    expected_res=%x, actual_res=%x\\n", test[5], top->res);
+#         printf("    expected_res_p=%x, actual_res_p=%x\\n", test[6], top->res_p);
+#         assert(top->res == test[5]);
+#         assert(top->res_p == test[6]);
+#     }}
+# '''
 
 
 def compile_harness(name, test, body, lut_code, cfg_d):
@@ -98,6 +102,7 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("const_value", range(16))
     if 'comparison_op' in metafunc.fixturenames:
         metafunc.parametrize("comparison_op", comparison_ops)
+    if 'signed' in metafunc.fixturenames:
         metafunc.parametrize("signed", [True, False])
     if 'strategy' in metafunc.fixturenames:
         metafunc.parametrize("strategy", [complete, random])
@@ -107,7 +112,15 @@ def pytest_generate_tests(metafunc):
 
     if 'lut_code' in metafunc.fixturenames:
         metafunc.parametrize("lut_code", range(0, 16))
-def test_op(strategy, op, flag_sel):
+
+@pytest.fixture
+def worker_id(request):
+    if hasattr(request.config, 'slaveinput'):
+        return request.config.slaveinput['slaveid']
+    else:
+        return 'master'
+
+def test_op(strategy, op, flag_sel, signed, worker_id):
     if flag_sel == 0x14:
         return  # Skip lut, tested separately
     bit2_mode = 0x2  # BYPASS
@@ -117,7 +130,8 @@ def test_op(strategy, op, flag_sel):
     data0_mode = 0x2  # BYPASS
     irq_en = 0
     acc_en = 0
-    signed = 0
+    if flag_sel in [0x4, 0x5, 0x6, 0x7, 0xA, 0xB, 0xC, 0xD] and not signed:  # Flag modes with N, V are signed only
+        return
     lut_code = 0x00
     _op = getattr(pe, op)(flag_sel).lut(lut_code)
     cfg_d = bit2_mode << 28 | \
@@ -132,17 +146,36 @@ def test_op(strategy, op, flag_sel):
             _op.opcode
 
     if strategy is complete:
+        width = 4
+        N = 1 << width
+        tests = complete(_op, OrderedDict([
+            ("data0", range(0, N) if not signed else range(- N // 2, N // 2)),
+            ("data1", range(0, N) if not signed else range(- N // 2, N // 2)),
+            ("bit0", range(0, 2)),
+            ("bit1", range(0, 2)),
+            ("bit2", range(0, 2)),
+        ]), lambda result: (test_output("res", result[0]), test_output("res_p", result[1])))
+    elif strategy is random:
         n = 16
-    else:
-        n = 256
-    tests = strategy(_op, n, 16)
+        width = 16
+        N = 1 << width
+        tests = random(_op, n, OrderedDict([
+            ("data0", lambda : randint(0, N) if not signed else randint(- N // 2, N // 2 - 1)),
+            ("data1", lambda : randint(0, N) if not signed else randint(- N // 2, N // 2 - 1)),
+            ("bit0", lambda : randint(0, 1)),
+            ("bit1", lambda : randint(0, 1)),
+            ("bit2", lambda : randint(0, 1))
+        ]), lambda result: (test_output("res", result[0]), test_output("res_p", result[1])))
 
-    body = bodysource(tests, _op.opcode, flag_sel, lut_code)
+    body = bodysource(tests)
     test = testsource(tests)
 
-    compile_harness(f'build/sim_test_lut_{strategy.__name__}.cpp', test, body, lut_code, cfg_d)
+    build_directory = "build_{}".format(worker_id)
+    if not os.path.exists(build_directory):
+        os.makedirs(build_directory)
+    compile_harness(f'{build_directory}/sim_test_pe_{strategy.__name__}.cpp', test, body, lut_code, cfg_d)
 
-    run_verilator_test('test_pe_unq1', f'sim_test_lut_{strategy.__name__}', 'test_pe_unq1')
+    run_verilator_test('test_pe_unq1', f'sim_test_pe_{strategy.__name__}', 'test_pe_unq1', build_directory)
 
 # def test_lut(strategy, lut_code):
 #     op = "add"

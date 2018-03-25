@@ -41,8 +41,8 @@ def bodysource(tests):
             inputs.append(val)
             body += "        top->{key} = test[{i}];\n".format(key=val.name, i=i)
 
-    input_printf_string = "\"[opcode=%x, Test Iteration %d] Inputs: {inputs}\\n\", ".format(inputs=", ".join("{name}=%x".format(name=val.name) for val in inputs))
-    input_printf_string += "top->op_code, i, "
+    input_printf_string = "\"[Test Iteration %d] Inputs: {inputs}\\n\", ".format(inputs=", ".join("{name}=%x".format(name=val.name) for val in inputs))
+    input_printf_string += "i, "
     input_printf_string += ", ".join("test[{i}]".format(i=i) for i in range(len(inputs)))
 
     output_string = ""
@@ -94,10 +94,10 @@ def compile(name, top_name, opcode, tests):
 
 
 
-def run_verilator_test(verilog_file_name, driver_name, top_module):
+def run_verilator_test(verilog_file_name, driver_name, top_module, build_dir="build"):
     (_, filename, _, _, _, _) = inspect.getouterframes(inspect.currentframe())[1]
     file_path = os.path.dirname(filename)
-    build_dir = os.path.join(file_path, 'build')
+    build_dir = os.path.join(file_path, build_dir)
     # print("========== BEGIN: Using verilator to generate test files =====")
     assert not subprocess.call('verilator -I../rtl -Wno-fatal --cc {} --exe {}.cpp --top-module {}'.format(verilog_file_name, driver_name, top_module), cwd=build_dir, shell=True)
     # print("========== DONE:  Using verilator to generate test files =====")
