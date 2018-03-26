@@ -130,6 +130,8 @@
 //;       type => 'io1bit',
 //;       tile_height => 1,
 //;       tile_width => 1,
+//;       pad_name => 'none',  # E.g. 'pad_S0_T0' = MSB on E side
+//;       bit_pos => -1,       # E.g. 0 for LSB within group, 15 for MSB
 //; };
 //; $tile_config->{ 'io16' } = {
 //;       type => 'io16bit',
@@ -676,6 +678,8 @@ assign config_data = config_data_in;
 //;		 my $io1_track = 0;
 //;		 if(($s % 2) eq 0) {$io1_track = ($h_new - 2) % $io1bit_num_tracks;}
 //;		 else {$io1_track = ($w_new - 2) % $io1bit_num_tracks;}
+//;              $tile_config->{ 'io1' }{ 'pad_name' } = "pad_S${opposite_side}_T${io_count}"; # For cgra_info
+//;              $tile_config->{ 'io1' }{ 'bit_pos' }  = 15 - ($io_count % 16);                # For cgra_info
       .p2f(wire_`$h`_`$w`_BUS1_S`$s`_T`$io1_track`),
       .f2p_16(wire_`$h_new`_`$w_new`_BUS1_S`$opposite_side`_T`$io1_track`),
       .f2p_1(wire_`$h_new+$h_delta`_`$w_new+$w_delta`_BUS1_S`$opposite_side`_T`$io1_track`),
@@ -756,19 +760,23 @@ assign config_data = config_data_in;
 //;     my $ty = "$tile_config->{ $tile_type }{ 'type' }";
 //;     my $ta = "0x$tile_addr_hex";
 //;     my $tr = "";
-//;
+//;     my $pn = "";
 //;     if ($tile_type eq "io1") {
 //;       $tr = "BUS1:1 BUS16:0";
+//;       my $pad_name = $tile_config->{ 'io1' }{ 'pad_name' };
+//;       $pn = " name='$pad_name'";
 //;     } elsif ($tile_type eq "io16") {
 //;       $tr = "BUS1:0 BUS16:1";
 //;     } else {
+//;       # FIXME Won't this break if there is ever jmore than one key??
 //;       foreach my $bus (sort keys %bus_num_tracks_hash) {
 //;         $tr = $tr . "$bus:$bus_num_tracks_hash{$bus} ";
 //;       }
 //;     }
-//;     print INFO "  <tile type='$ty' tile_addr='$ta' row='$h' col='$w' tracks='$tr'>\n";
+//;     print INFO "  <tile type='$ty' tile_addr='$ta' row='$h' col='$w' tracks='$tr'$pn>\n";
+//;     my $bitnum = $tile_config->{ 'io1' }{ 'bit_pos' };
+//;     if ($tile_type eq "io1") { print INFO "    <io_bit>$bitnum</io_bit><!-- LSB=0 -->\n"; }
 //;   }
-
 //;   
 //;   
 //;   # cgra_info/empty tiles
