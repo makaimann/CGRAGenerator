@@ -653,8 +653,13 @@ assign config_data = config_data_in;
       .gout(global_wire_l2h_0_`${w}`_`${h}`),
       .tile_id(16'h`$tile_addr_hex`)
     );
+//; #
+//; #
 //;    } elsif ($tile_type eq "empty") {
+//; #
+//; #
 //;    } elsif ($tile_type eq "io1") {
+
     `$inst_obj->instantiate()` 
     (
       .clk(clk),
@@ -680,15 +685,22 @@ assign config_data = config_data_in;
 //;		 else {$io1_track = ($w_new - 2) % $io1bit_num_tracks;}
 //;              $tile_config->{ 'io1' }{ 'pad_name' } = "pad_S${opposite_side}_T${io_count}"; # For cgra_info
 //;              $tile_config->{ 'io1' }{ 'bit_pos' }  = 15 - ($io_count % 16);                # For cgra_info
-      .p2f(wire_`$h`_`$w`_BUS1_S`$s`_T`$io1_track`),
+      .p2f(wire_`$h`_`$w`_BUS1_S`$s`_T0),
       .f2p_16(wire_`$h_new`_`$w_new`_BUS1_S`$opposite_side`_T`$io1_track`),
       .f2p_1(wire_`$h_new+$h_delta`_`$w_new+$w_delta`_BUS1_S`$opposite_side`_T`$io1_track`),
       .pad(pad_S`$opposite_side`_T`$io_count`),
       .tile_id(16'h`$tile_addr_hex`)
     );
+    // Fanout for p2f
+//;      for(my $track = 1; $track < $io1bit_num_tracks; $track++) { 
+    assign wire_`$h`_`$w`_BUS1_S`$s`_T`$track` = wire_`$h`_`$w`_BUS1_S`$s`_T0;
+//;      }
+//; #
+//; #
 //;    } elsif ($tile_type eq "io16") {
 //;       my $s = $io_side;
 //; my $bus_width = $inst_obj -> get_param('width');
+
     wire [`$bus_width-1`:0] fanout_`$h`_`$w`_BUS16_S`$s`_T0;
     `$inst_obj->instantiate()` 
     (
@@ -745,14 +757,13 @@ assign config_data = config_data_in;
 //;         }
 //;       }
 //;       $str=~s/,$//;
-       .f2p_out({`$str`})
+      .f2p_out({`$str`})
     );
-       //Fanout for p2f_out
-//;    for(my $track = 0; $track < $io16bit_num_tracks; $track++) { 
- 	assign	wire_`$h`_`$w`_BUS16_S`$s`_T`$track` = fanout_`$h`_`$w`_BUS16_S`$s`_T0;
+    //Fanout for p2f_out
+//;      for(my $track = 0; $track < $io16bit_num_tracks; $track++) { 
+    assign wire_`$h`_`$w`_BUS16_S`$s`_T`$track` = fanout_`$h`_`$w`_BUS16_S`$s`_T0;
+//;      }
 //;    }
-//;    }
-//;   
 //;   
 //;   # cgra_info/io1bit tiles
 //;   { 
@@ -798,7 +809,7 @@ assign config_data = config_data_in;
 //;   print INFO "  </tile>\n";
 //;   }
 //; }
-
+//; #
 //; #####################################################
 //; # Create global wire merge and distribute structure
 //; #####################################################
@@ -833,7 +844,7 @@ assign config_data = config_data_in;
 //;     }
 //;     $next_h++;
 //;   }
-//;   foreach my $w (keys(%wire_hash)) {
+//;   foreach my $w (sort keys(%wire_hash)) {
 //;     if ($incr!=1) {
     wire `$w`;
 //;     }
