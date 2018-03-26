@@ -387,6 +387,7 @@ wire stall;
 //assign config_addr = config_addr_in;
 //assign config_data = config_data_in;
 //; my $global_controller_obj = generate("global_controller", "global_controller", dummy_value => 0);
+//; my $jtag_ifc_path = $self -> define_param(IFC => $global_controller_obj -> get_param('IFC'));
 //; my $cfg_addr_width = $global_controller_obj -> get_subinst('jtag_controller') -> get_param ('SYSCLK_CFG_ADDR_WIDTH');
 //; my $cfg_bus_width = $global_controller_obj -> get_subinst('jtag_controller') -> get_param ('SYSCLK_CFG_BUS_WIDTH');
 //; my $cfg_op_width = $global_controller_obj -> get_subinst('jtag_controller') -> get_param ('SYSCLK_CFG_OPCODE_WIDTH');

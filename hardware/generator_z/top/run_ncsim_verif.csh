@@ -78,14 +78,14 @@ Genesis2.pl -parse -generate -top test_top -hierarchy top.xml -input\
 # git checkout ../pe_new/pe/rtl/test_pe.svp
 # echo
 
-echo
-echo HACKWARNING Swapping stub in place of DW_tap
-echo HACKWARNING Swapping stub in place of DW_tap
-echo HACKWARNING Swapping stub in place of DW_tap
-echo cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
-ls ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
-cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
-echo
+#echo
+#echo HACKWARNING Swapping stub in place of DW_tap
+#echo HACKWARNING Swapping stub in place of DW_tap
+#echo HACKWARNING Swapping stub in place of DW_tap
+#echo cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
+#ls ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
+#cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
+#echo
 
 source clean_up_cgra_inputs.csh
 source remove_genesis_wires.csh

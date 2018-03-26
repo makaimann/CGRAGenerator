@@ -26,7 +26,7 @@
 //; # get ifc object from the design
 //; my $design_name = $self->get_top_param('DesignName');
 //; my @design_objs  = $self->search_subinst(SNameRegex=>$design_name);
-//; my $design_obj = @design_objs[0];
+//; my $design_obj = @design_objs[1];
 //; my $ifc_obj = $design_obj->get_param('IFC');
 //; my $ref_clk = parameter(Name=>'ReferenceClkName', Val=>'Clk');
 //; 
