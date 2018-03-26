@@ -333,8 +333,8 @@ reset_in,
 // VERILATOR_PORT7
 // VERILATOR_PORT8
 // -------------------------------------
-config_addr_in,
-config_data_in,
+//config_addr_in,
+//config_data_in,
 tdi,
 tdo,
 tms,
@@ -347,8 +347,8 @@ trst_n
 
   input clk_in;
   input reset_in;
-  input [31:0] config_addr_in;
-  input [31:0] config_data_in;
+  //input [31:0] config_addr_in;
+  //input [31:0] config_data_in;
   input tdi;
   input tms;
   input tck;
@@ -380,24 +380,27 @@ trst_n
 
 //; ###################################################################################
 
-wire [31:0] config_addr;
-wire [31:0] config_data;
 wire clk;
 wire reset;
 wire stall;
 //CONFIG_HACK. ONCE GC IS DONE SEND ADDR AND DATA IN THROUGH JTAG
-assign config_addr = config_addr_in;
-assign config_data = config_data_in;
+//assign config_addr = config_addr_in;
+//assign config_data = config_data_in;
 //; my $global_controller_obj = generate("global_controller", "global_controller", dummy_value => 0);
+//; my $cfg_addr_width = $global_controller_obj -> get_subinst('jtag_controller') -> get_param ('SYSCLK_CFG_ADDR_WIDTH');
+//; my $cfg_bus_width = $global_controller_obj -> get_subinst('jtag_controller') -> get_param ('SYSCLK_CFG_BUS_WIDTH');
+//; my $cfg_op_width = $global_controller_obj -> get_subinst('jtag_controller') -> get_param ('SYSCLK_CFG_OPCODE_WIDTH');
+wire [`$cfg_addr_width+$cfg_op_width-1`:0] config_addr;
+wire [`$cfg_bus_width-1`:0] config_data;
     `$global_controller_obj->instantiate()` 
     (
       .clk_in(clk_in),
       .clk_out(clk),
       .reset_in(reset_in),
       .reset_out(reset),
-      .config_addr_out(),//config_addr),
+      .config_addr_out(config_addr),
       .config_data_in(),//config_data_in),
-      .config_data_out(),//config_data),
+      .config_data_out(config_data),
       .tdi(tdi),
       .tdo(tdo),
       .tms(tms),
