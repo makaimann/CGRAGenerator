@@ -11,7 +11,7 @@ ops  = ['or_', 'and_', 'xor']
 ops += ['lshr', 'lshl']
 ops += ['add', 'sub']
 # ops += ['mul0', 'mul1', 'mul2']
-# ops += ['abs']
+ops = ['abs']
 # ops += ['sel']
 
 comparison_ops = ['ge', 'le']
