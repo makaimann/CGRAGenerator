@@ -121,7 +121,7 @@ def worker_id(request):
         return 'master'
 
 def test_op(strategy, op, flag_sel, signed, worker_id):
-    if flag_sel == 0x14:
+    if flag_sel == 0xE:
         return  # Skip lut, tested separately
     bit2_mode = 0x2  # BYPASS
     bit1_mode = 0x2  # BYPASS
@@ -173,42 +173,51 @@ def test_op(strategy, op, flag_sel, signed, worker_id):
     build_directory = "build_{}".format(worker_id)
     if not os.path.exists(build_directory):
         os.makedirs(build_directory)
-    compile_harness(f'{build_directory}/sim_test_pe_{strategy.__name__}.cpp', test, body, lut_code, cfg_d)
+    compile_harness(f'{build_directory}/sim_test_pe_{op}_{strategy.__name__}.cpp', test, body, lut_code, cfg_d)
 
-    run_verilator_test('test_pe_unq1', f'sim_test_pe_{strategy.__name__}', 'test_pe_unq1', build_directory)
+    run_verilator_test('test_pe_unq1', f'sim_test_pe_{op}_{strategy.__name__}', 'test_pe_unq1', build_directory)
 
-# def test_lut(strategy, lut_code):
-#     op = "add"
-#     flag_sel = 0x14
-#     bit2_mode = 0x2  # BYPASS
-#     bit1_mode = 0x2  # BYPASS
-#     bit0_mode = 0x2  # BYPASS
-#     data1_mode = 0x2  # BYPASS
-#     data0_mode = 0x2  # BYPASS
-#     irq_en = 0
-#     acc_en = 0
-#     signed = 0
-#     _op = getattr(pe, op)(flag_sel).lut(lut_code)
-#     cfg_d = bit2_mode << 28 | \
-#             bit1_mode << 26 | \
-#             bit0_mode << 24 | \
-#             data1_mode << 18 | \
-#             data0_mode << 16 | \
-#             flag_sel << 12 | \
-#             irq_en << 10 | \
-#             acc_en << 9 | \
-#             signed << 6 | \
-#             _op.opcode
-# 
-#     if strategy is complete:
-#         n = 16
-#     else:
-#         n = 256
-#     tests = strategy(_op, n, 16)
-# 
-#     body = bodysource(tests, _op.opcode, lut_code)
-#     test = testsource(tests)
-# 
-#     compile_harness(f'build/sim_test_lut_{strategy.__name__}.cpp', test, body, lut_code, cfg_d)
-# 
-#     run_verilator_test('test_pe_unq1', f'sim_test_lut_{strategy.__name__}', 'test_pe_unq1')
+def test_lut(strategy, signed, lut_code, worker_id):
+    op = "add"
+    flag_sel = 0xE  # Lut output
+    bit2_mode = 0x2  # BYPASS
+    bit1_mode = 0x2  # BYPASS
+    bit0_mode = 0x2  # BYPASS
+    data1_mode = 0x2  # BYPASS
+    data0_mode = 0x2  # BYPASS
+    irq_en = 0
+    acc_en = 0
+    _op = getattr(pe, op)(flag_sel).lut(lut_code)
+    cfg_d = bit2_mode << 28 | \
+            bit1_mode << 26 | \
+            bit0_mode << 24 | \
+            data1_mode << 18 | \
+            data0_mode << 16 | \
+            flag_sel << 12 | \
+            irq_en << 10 | \
+            acc_en << 9 | \
+            signed << 6 | \
+            _op.opcode
+
+    if strategy is complete:
+        width = 4
+        N = 1 << width
+        tests = complete(_op, OrderedDict([
+            ("data0", range(-1, 1)),  # For now we'll verify that data0/data1
+            ("data1", range(-1, 1)),  # don't affect the output
+            ("bit0", range(0, 2)),
+            ("bit1", range(0, 2)),
+            ("bit2", range(0, 2)),
+        ]), lambda result: (test_output("res", result[0]), test_output("res_p", result[1])))
+    elif strategy is random:
+        return # We just test the LUT completely
+
+    body = bodysource(tests)
+    test = testsource(tests)
+
+    build_directory = "build_{}".format(worker_id)
+    if not os.path.exists(build_directory):
+        os.makedirs(build_directory)
+    compile_harness(f'{build_directory}/sim_test_pe_lut_{strategy.__name__}.cpp', test, body, lut_code, cfg_d)
+
+    run_verilator_test('test_pe_unq1', f'sim_test_pe_lut_{strategy.__name__}', 'test_pe_unq1', build_directory)
