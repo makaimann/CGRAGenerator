@@ -19,7 +19,7 @@
 // are closer to software than to hardware. There is therefore no real need
 // in a genesis type parameterization.
 ////////////////////////////////////////////////////////////////////////////////
-//; my $num_tracks = $self->$get_top_param('num_tracks');
+//; my $num_tracks = $self->get_top_param('num_tracks');
 
 
 program automatic `mname`(
