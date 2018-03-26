@@ -72,15 +72,11 @@ int main(int argc, char **argv, char **env) {{
     top->cfg_d = {lut_code};
     top->cfg_a = 0x00;  // lut_code
     step(top);
-    step(top);
 
     top->cfg_d = {cfg_d};
     top->cfg_a = 0xFF;  // opcode
     step(top);
-    step(top);
     top->cfg_en = 0;
-
-    step(top);
 
     {body}
 
