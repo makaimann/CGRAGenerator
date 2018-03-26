@@ -34,7 +34,7 @@ program automatic `mname`(
    // some variables to control the test
    //int                           seed;
    //int                           rnd0;
-   //int 				 fd;
+   int 				 fd;
    
    // Instantiate a jtag driver
    //; my $jtag_drvr_obj = generate_base('JTAGDriver', 'jdrv');
