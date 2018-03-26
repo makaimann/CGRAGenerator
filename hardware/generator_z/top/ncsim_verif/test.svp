@@ -20,7 +20,8 @@
 // in a genesis type parameterization.
 ////////////////////////////////////////////////////////////////////////////////
 //; my $num_tracks = $self->get_top_param('num_tracks');
-
+//; my $config_bs = parameter(NAME => 'config_bs', val => '../../../bitstream/examples/pw2_sixteen.bsa', DOC => "Bitstream to configure CGRA");
+//; my $input_file = parameter(NAME => 'input', val => '.../../../verilator/generator_z_tb/io/conv_bw_in.png', DOC => "Input image to use for test");
 
 program automatic `mname`(
 	interface ifc,//JTAG Interface

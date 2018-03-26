@@ -69,7 +69,7 @@ module `mname`();
     * *************************************************************************/
    //; # We use generate_base when there is for sure just one of X
    //; my $dut_obj = generate_base($design_name, 'dut');
-   //; my $dut_ifc_path = $dut_obj->get_subinst('global_controller')->get_param('IFC');
+   //; my $dut_ifc_path = $dut_obj->get_param('IFC');
    //; my $dut_ifc = clone($dut_ifc_path, 'dut_ifc');
    `$dut_ifc->instantiate` (.Clk(Clk), .Reset(Reset));
 
