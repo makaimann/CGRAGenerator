@@ -1,7 +1,7 @@
 //; my $filename = "REGMODE".$self->mname();
 //; open(REGINFO, ">$filename") or die "Couldn't open file $filename, $!";
 //; my $reg_cnt  = parameter(Name=>'reg_cnt',
-//;                               Val=> 4, Min=>1, Step=>1, Max=>16,
+//;                               Val=> 1, Min=>1, Step=>1, Max=>16,
 //;                               Doc=>"Total number of registers");
 //;
 //; my $use_reg_file = ($reg_cnt > 1);
