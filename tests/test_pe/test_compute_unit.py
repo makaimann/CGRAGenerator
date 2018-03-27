@@ -28,7 +28,7 @@ ops  = ['or_', 'and_', 'xor']
 ops += ['lshr', 'lshl']
 # ops += ['ashr']
 ops += ['add', 'sub']
-# ops += ['mul0', 'mul1', 'mul2']
+ops += ['mul0', 'mul1', 'mul2']
 ops += ['abs']
 ops += ['sel']
 
