@@ -134,13 +134,11 @@ endif
 # I can't find anything else that does it :(
 
 
-# ALWAYS BE HACKMEM!
-
 # NEVER BE HACKMEM!
 unset HACKMEM
-echo "WARNING DEFAULT IS WENHACK/HACKMEM *OFF*"
-echo "WARNING DEFAULT IS WENHACK/HACKMEM *OFF*"
-echo "WARNING DEFAULT IS WENHACK/HACKMEM *OFF*"
+echo "NO MORE HACKMEM 03/2018"
+echo "NO MORE HACKMEM 03/2018"
+echo "NO MORE HACKMEM 03/2018"
 echo
 
 while ($#argv)
@@ -148,6 +146,8 @@ while ($#argv)
   switch ("$1")
 
     case '-hackmem':
+      echo 'ERROR (run.csh) "-hackmem" no longer allowed (1803)' ; exit 13
+
       set HACKMEM = 1
       echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
       echo "WARNING USING TEMPORARY TERRIBLE HACKMEM"
@@ -156,11 +156,14 @@ while ($#argv)
       breaksw
 
     case '-no_hackmem':
-      unset HACKMEM
-      echo "WARNING TURNED OFF TEMPORARY TERRIBLE HACKMEM"
-      echo "WARNING TURNED OFF TEMPORARY TERRIBLE HACKMEM"
-      echo "WARNING TURNED OFF TEMPORARY TERRIBLE HACKMEM"
-      echo
+      echo 'ERROR (run.csh) "-no_hackmem" no longer allowed (1803)' ; exit 13
+
+#       unset HACKMEM
+#       echo "WARNING TURNED OFF TEMPORARY TERRIBLE HACKMEM"
+#       echo "WARNING TURNED OFF TEMPORARY TERRIBLE HACKMEM"
+#       echo "WARNING TURNED OFF TEMPORARY TERRIBLE HACKMEM"
+#       echo
+
       breaksw
 
 
@@ -441,54 +444,51 @@ endif
   if ($?CGRA_GEN_USE_MEM) then
      cp ./sram_stub.v $vdir/sram_512w_16b.v
      ls -l $vdir/sram*
-#  else
-#     echo "NOT USING MEMORY.  TURNING OFF HACKMEM.  It causes trouble."
-#     unset HACKMEM
   endif
 
-  # Temporary wen/ren hacks.  
-  if ($?HACKMEM) then
-    # In memory_core_unq1.v, change:
-    #   assign wen_in_int = (`$ENABLE_CHAIN`)?chain_wen_in:xwen;
-    # To:
-    #   assign wen_in_int = WENHACK
-
-    unset ERR
-    egrep '^assign wen_in_int = .*' $vdir/memory_core_unq1.v || set ERR
-    if ($?ERR) then
-      echo
-      echo "run.csh: ERROR looks like WENHACK would FAIL"
-      exit 13
-    endif
-
-    # ls -l $vdir
-    mv $vdir/memory_core_unq1.v $tmpdir/memory_core_unq1.v.orig
-    cat $tmpdir/memory_core_unq1.v.orig \
-      | sed 's/^assign wen_in_int = .*/assign wen_in_int = WENHACK;/' \
-      > $vdir/memory_core_unq1.v
-
-    # old
-    #  | sed 's/^assign wen = .*/assign wen = WENHACK;/' \
-
-
-
-    # No longer doing:
-    #  | sed 's/assign int_ren = .*/assign int_ren = 1;/' \
-    #  | sed 's/assign int_wen = .*/assign int_wen = 1;/' \
-    #  | sed 's/assign wen = .*/assign wen = 1;/' \
-
-    echo
-    echo '------------------------------------------------------------------------'
-    echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
-    echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
-    echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
-    echo diff $tmpdir/memory_core_unq1.v.orig $vdir/memory_core_unq1.v
-    diff $tmpdir/memory_core_unq1.v.orig $vdir/memory_core_unq1.v
-    echo '------------------------------------------------------------------------'
-    echo
-    echo
-
-  endif
+#   # Temporary wen/ren hacks.  
+#   if ($?HACKMEM) then
+#     # In memory_core_unq1.v, change:
+#     #   assign wen_in_int = (`$ENABLE_CHAIN`)?chain_wen_in:xwen;
+#     # To:
+#     #   assign wen_in_int = WENHACK
+# 
+#     unset ERR
+#     egrep '^assign wen_in_int = .*' $vdir/memory_core_unq1.v || set ERR
+#     if ($?ERR) then
+#       echo
+#       echo "run.csh: ERROR looks like WENHACK would FAIL"
+#       exit 13
+#     endif
+# 
+#     # ls -l $vdir
+#     mv $vdir/memory_core_unq1.v $tmpdir/memory_core_unq1.v.orig
+#     cat $tmpdir/memory_core_unq1.v.orig \
+#       | sed 's/^assign wen_in_int = .*/assign wen_in_int = WENHACK;/' \
+#       > $vdir/memory_core_unq1.v
+# 
+#     # old
+#     #  | sed 's/^assign wen = .*/assign wen = WENHACK;/' \
+# 
+# 
+# 
+#     # No longer doing:
+#     #  | sed 's/assign int_ren = .*/assign int_ren = 1;/' \
+#     #  | sed 's/assign int_wen = .*/assign int_wen = 1;/' \
+#     #  | sed 's/assign wen = .*/assign wen = 1;/' \
+# 
+#     echo
+#     echo '------------------------------------------------------------------------'
+#     echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
+#     echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
+#     echo WARNING REWROTE memory_core_unq1.v BECAUSE TEMPORARY TERRIBLE MEMHACK
+#     echo diff $tmpdir/memory_core_unq1.v.orig $vdir/memory_core_unq1.v
+#     diff $tmpdir/memory_core_unq1.v.orig $vdir/memory_core_unq1.v
+#     echo '------------------------------------------------------------------------'
+#     echo
+#     echo
+# 
+#   endif
 
 echo 'Note: No more IO hacks;'
 echo 'pixels must arrive via pad_S2_T[8:15] aka wire_2_1_BUS16_S0_T0'
