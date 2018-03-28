@@ -12,7 +12,7 @@ ops += ['lshr', 'lshl']
 ops += ['add', 'sub']
 ops += ['mul0', 'mul1', 'mul2']
 ops += ['abs']
-# ops += ['sel']
+ops += ['sel']
 
 comparison_ops = ['ge', 'le']
 
