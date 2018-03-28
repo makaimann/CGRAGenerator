@@ -830,29 +830,29 @@ assign irq = |({irq_data,irq_bit} & irq_en);
 
 //; if($reg_inputs) {
 //; $read_data_hash->{'op_code'} = {
-//;   src => 'FF',
+//;   src => 'CF',
 //;   data => 'op_code',
 //;   name => 'op_code'
 //; };
 //; $read_data_hash->{'inp_code'} = {
-//;   src => 'FE',
+//;   src => 'CE',
 //;   data => 'inp_code',
 //;   name => 'inp_code'
 //; };
 //; $read_data_hash->{'op_a'} = {
-//;   src => 'F0',
+//;   src => 'A0',
 //;   data => 'op_a_reg',
 //;   name => 'reg_a'
 //; };
 //; $read_data_hash->{'op_b'} = {
-//;   src => 'F1',
+//;   src => 'A1',
 //;   data => 'op_b_reg',
 //;   name => 'reg_b'
 //; };
 //; if($use_reg_file) {
 //; for (my $i = 1, my $j=0; $i < $reg_cnt; $i++, $j++) {
 //; $read_data_hash->{"op_regfile${i}"} = {
-//;   src => "D${j}",
+//;   src => "B${j}",
 //;   data => 'op_b_reg',
 //;   name => "regfile[${i}]"
 //; };
@@ -860,24 +860,24 @@ assign irq = |({irq_data,irq_bit} & irq_en);
 //; }
 //; if($use_c_input) {
 //; $read_data_hash->{'op_c'} = {
-//;   src => 'F2',
+//;   src => 'A2',
 //;   data => 'op_c_reg',
 //;   name => 'reg_c'
 //; };
 //; }
 //; $read_data_hash->{'op_d'} = {
-//;   src => 'F3',
+//;   src => 'A3',
 //;   data => 'op_d_p_reg',
 //;   name => 'reg_d'
 //; };
 //; if($use_lut && ($lut_inps == 3)) {
 //; $read_data_hash->{'op_e'} = {
-//;   src => 'F4',
+//;   src => 'A4',
 //;   data => 'op_e_p_reg',
 //;   name => 'reg_e'
 //; };
 //; $read_data_hash->{'op_f'} = {
-//;   src => 'F5',
+//;   src => 'A5',
 //;   data => 'op_f_p_reg',
 //;   name => 'reg_f'
 //; };
