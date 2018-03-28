@@ -78,6 +78,7 @@
 //; my $rename_hash;
 module `mname` (
 clk_in,
+unstall,
 config_addr,
 config_data,
 //;   for my $bus (sort keys %bus_width_hash) {
@@ -98,6 +99,7 @@ tile_id
 );
 //; my $config_bits_used = 0;
   input clk_in;
+  input unstall;
   input [31:0] config_addr;
   input [31:0] config_data;
 
@@ -119,7 +121,7 @@ tile_id
   input reset;
 
   wire ___genesis_wire_`${global_signal_count}`_`${bus_config}`_`${all_segments_for_all_tiles}`_`${sides}`_`${feedthrough_outputs}`_`${registered_outputs}`_`${is_bidi}`_`${sb_fs}`_`${cb_connections}`_`${has_constant}`_`${reg_inputs}`_`${reg_out}`_`${use_add}`_`${use_cntr}`_`${use_bool}`_`${use_shift}`_`${mult_mode}`_`${use_div}`_`${is_msb}`_`${en_double}`_`${lut_inps}`;
-  wire clk;
+//; # wire clk;
 //; #############################################################
 //; # Generate PE enables
 //; #############################################################
@@ -253,7 +255,7 @@ tile_id
 //;   }
   `$cb->instantiate()`
   (
-    .clk(clk),
+    .clk(clk_in),
     .reset(reset),
     .out(`$pe_input_name`),
 //; my $k=0;
@@ -342,7 +344,8 @@ tile_id
 //;   my $sb_wide = generate('sb', 'sb_wide', width => $wide_bus_width, num_tracks => $bus_num_tracks_hash{'BUS16'}, sides => $sides, feedthrough_outputs=>$bus_feedthrough_outputs, registered_outputs=>$bus_registered_outputs, pe_output_count=>(scalar @wide_outputs), is_bidi=>$is_bidi, sb_fs=>$sb_fs);
   `$sb_wide->instantiate()`
   (
-    .clk(clk),
+    .clk(clk_in),
+    .clk_en(cg_en),
     .reset(reset),
 //;  foreach my $pe_output (@wide_outputs) {
     .pe_output_`$output_count`(pe_out_`$pe_output`),
@@ -404,8 +407,10 @@ tile_id
 //;   my $sb_1b = generate('sb', 'sb_1b', width => 1, num_tracks => $bus_num_tracks_hash{'BUS1'}, sides => $sides, feedthrough_outputs=>$bus_feedthrough_outputs, registered_outputs=>$bus_registered_outputs, pe_output_count=>(scalar @bit1_outputs), is_bidi=>$is_bidi, sb_fs=>$sb_fs);
   `$sb_1b->instantiate()`
   (
-    .clk(clk),
+    .clk(clk_in),
+    .clk_en(cg_en),
     .reset(reset),
+    .unstall(unstall),
 //;  foreach my $pe_output (@bit1_outputs) {
     .pe_output_`$output_count`(pe_out_`$pe_output`),
 //;    $rename_hash->{ 'sb_1bit' }{'pe_output_'.$output_count} = "pe_out_".$pe_output;
@@ -478,9 +483,11 @@ tile_id
 
 
 
-
-  assign clk = clk_in & cg_en;
-
+/****************************************
+ * Clock gating should go inside each unit in order to unstall certain register
+ * assign clk = clk_in & cg_en;
+ *
+ ****************************************/
 
 
 
@@ -499,9 +506,9 @@ tile_id
 `$pe->instantiate()`
  (
 //;if($use_lut || $reg_inputs || $reg_out) {
-  .clk(clk),
+  .clk(clk_in),
   .rst_n(~reset),
-  .clk_en(1'b1),
+  .clk_en(cg_en),
 //;}
 //; if($use_lut || $reg_inputs) {
   .cfg_d(config_data[31:0]),
