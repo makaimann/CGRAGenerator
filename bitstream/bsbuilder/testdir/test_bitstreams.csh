@@ -69,7 +69,7 @@ foreach b ($bmarks)
   setenv SERPENT_HACK
   (\
    cd $v; \
-   ./run.csh $tswitch -no_hackmem -config $bsa -input $input -output $out -delay $delay \
+   ./run.csh $tswitch -config $bsa -input $input -output $out -delay $delay \
   ) || exit 13
 
 

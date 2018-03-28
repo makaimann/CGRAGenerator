@@ -50,7 +50,9 @@
 //; open(PEINFO, ">$filename") or die "Couldn't open file $filename, $!";
 //; my $pe_info_hash;
 //; my $opcode_alu_bitl = 0;
-//; my $opcode_alu_bith = 6;
+//; my $opcode_alu_bith = 5;
+//; my $opcode_signed_bitl = 6;
+//; my $opcode_signed_bith = 6;
 //; my $opcode_flip_bitl = 8;
 //; my $opcode_flip_bith = 8;
 //; my $opcode_acc_en_bitl = 9;
@@ -210,7 +212,7 @@ assign nc_op_code = op_code;
 //;   bith => 15,
 //; };
 
-//; my $op_b_r = generate_base('test_opt_reg_file', 'test_opt_reg_file');
+//; my $op_b_r = generate_base('test_opt_reg_file', 'test_opt_reg_file', "reg_cnt"=>$reg_cnt);
 
 logic                 op_b_ld;
 logic [DataWidth-1:0] op_b_val;
@@ -498,13 +500,44 @@ logic V;
   .res_p    (comp_res_p)
 );
 
-//; $pe_info_hash->{ '1_pe_comp' } = {
+//; $pe_info_hash->{ '1_comp' } = {
 //;   address => '0xff',
 //;   bitl => $opcode_alu_bitl,
 //;   bith => $opcode_alu_bith,
 //;   mname => $pe_comp->mname()
 //; };
 
+//; $pe_info_hash->{ '1_opcode' }->{'1_signed'} = {
+//;   address => '0xff',
+//;   bitl => $opcode_signed_bitl, 
+//;   bith => $opcode_signed_bith
+//; };
+//; if ($use_flip){
+//; $pe_info_hash->{ '1_opcode' }->{'2_flip'} = {
+//;   address => '0xff',
+//;   bitl => $opcode_flip_bitl, 
+//;   bith => $opcode_flip_bith 
+//; };
+//; }
+//; if ($use_acc){
+//; $pe_info_hash->{ '1_opcode' }->{'3_acc_en'} = {
+//;   address => '0xff',
+//;   bitl => $opcode_acc_en_bitl,
+//;   bith => $opcode_acc_en_bith,
+//; };
+//; }
+//; if ($en_debug){
+//; $pe_info_hash->{ '1_opcode' }->{'4_irq_en'} = {
+//;   address => '0xff',
+//;   bitl => $opcode_irq_en_bitl,
+//;   bith => $opcode_irq_en_bith,
+//; };
+//; }
+//; $pe_info_hash->{ '1_opcode' }->{'5_flag_sel'} = {
+//;   address => '0xff',
+//;   bitl => $opcode_flag_sel_bitl, 
+//;   bith => $opcode_flag_sel_bith,
+//; };
 //; $pe_info_hash->{ '2_predicate' } = {
 //;   address => '0xff',
 //;   bitl => $opcode_flag_sel_bitl,
@@ -878,7 +911,7 @@ end
 //;foreach my $feature (sort keys %$pe_info_hash)  {
 //;  my $value = $pe_info_hash->{$feature};
 //;################### PEs
-//;  if ($feature=~m/1_pe_comp/) {
+//;  if ($feature=~m/1_comp/) {
 //;    print PEINFO "        <opcode reg_address='$value->{'address'}' bith='$value->{'bith'}' bitl='$value->{'bitl'}'>\n";
 //;    my $filename = "PECOMP".$value->{'mname'};
 //;    open (INP, "<$filename") or die "Couldn't open file $filename, $!";
@@ -888,6 +921,16 @@ end
 //;    }
 //;    close INP;
 //;    print PEINFO "        </opcode>\n"
+//;  }
+//;################### Opcodes
+//;  if ($feature=~m/1_opcode/) {
+//;    foreach my $opcode_name (sort keys %$value)  {
+//;    my $op = $value->{$opcode_name};
+//;    print PEINFO "        <opcode reg_address='$op->{'address'}' bith='$op->{'bith'}' bitl='$op->{'bitl'}'>";
+//;    $opcode_name =~ s/^.{2}//s;
+//;    print PEINFO "$opcode_name";
+//;    print PEINFO "</opcode>\n"
+//;    }
 //;  }
 //;################### Predicate
 //;  if ($feature=~m/2_predicate/) {
@@ -915,6 +958,7 @@ end
 //;    close INP;
 //;    print PEINFO "        </mux>\n";
 //;
+//; if($use_reg_file) {
 //;    my $filename = "REGFILE".$value->{'mname'};
 //;    if (open (INP, "<$filename")) { # or die "Couldn't open file $filename, $!";
 //;    while (<INP>) {
@@ -928,6 +972,7 @@ end
 //;    }
 //;    }
 //;    close INP;
+//;  }
 //;  }
 //;# if ($feature=~m/4_init/) {
 //;#   print PEINFO "        <reg reg_address='$value->{'address'}' bith='$value->{'bith'}' bitl='$value->{'bitl'}'>reg_$value->{'out'}</reg>\n";

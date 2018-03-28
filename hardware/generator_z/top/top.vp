@@ -130,6 +130,8 @@
 //;       type => 'io1bit',
 //;       tile_height => 1,
 //;       tile_width => 1,
+//;       pad_name => 'none',  # E.g. 'pad_S0_T0' = MSB on E side
+//;       bit_pos => -1,       # E.g. 0 for LSB within group, 15 for MSB
 //; };
 //; $tile_config->{ 'io16' } = {
 //;       type => 'io16bit',
@@ -651,8 +653,13 @@ assign config_data = config_data_in;
       .gout(global_wire_l2h_0_`${w}`_`${h}`),
       .tile_id(16'h`$tile_addr_hex`)
     );
+//; #
+//; #
 //;    } elsif ($tile_type eq "empty") {
+//; #
+//; #
 //;    } elsif ($tile_type eq "io1") {
+
     `$inst_obj->instantiate()` 
     (
       .clk(clk),
@@ -676,15 +683,24 @@ assign config_data = config_data_in;
 //;		 my $io1_track = 0;
 //;		 if(($s % 2) eq 0) {$io1_track = ($h_new - 2) % $io1bit_num_tracks;}
 //;		 else {$io1_track = ($w_new - 2) % $io1bit_num_tracks;}
-      .p2f(wire_`$h`_`$w`_BUS1_S`$s`_T`$io1_track`),
+//;              $tile_config->{ 'io1' }{ 'pad_name' } = "pad_S${opposite_side}_T${io_count}"; # For cgra_info
+//;              $tile_config->{ 'io1' }{ 'bit_pos' }  = 15 - ($io_count % 16);                # For cgra_info
+      .p2f(wire_`$h`_`$w`_BUS1_S`$s`_T0),
       .f2p_16(wire_`$h_new`_`$w_new`_BUS1_S`$opposite_side`_T`$io1_track`),
       .f2p_1(wire_`$h_new+$h_delta`_`$w_new+$w_delta`_BUS1_S`$opposite_side`_T`$io1_track`),
       .pad(pad_S`$opposite_side`_T`$io_count`),
       .tile_id(16'h`$tile_addr_hex`)
     );
+    // Fanout for p2f
+//;      for(my $track = 1; $track < $io1bit_num_tracks; $track++) { 
+    assign wire_`$h`_`$w`_BUS1_S`$s`_T`$track` = wire_`$h`_`$w`_BUS1_S`$s`_T0;
+//;      }
+//; #
+//; #
 //;    } elsif ($tile_type eq "io16") {
 //;       my $s = $io_side;
 //; my $bus_width = $inst_obj -> get_param('width');
+
     wire [`$bus_width-1`:0] fanout_`$h`_`$w`_BUS16_S`$s`_T0;
     `$inst_obj->instantiate()` 
     (
@@ -741,25 +757,40 @@ assign config_data = config_data_in;
 //;         }
 //;       }
 //;       $str=~s/,$//;
-       .f2p_out({`$str`})
+      .f2p_out({`$str`})
     );
-       //Fanout for p2f_out
-//;    for(my $track = 0; $track < $io16bit_num_tracks; $track++) { 
- 	assign	wire_`$h`_`$w`_BUS16_S`$s`_T`$track` = fanout_`$h`_`$w`_BUS16_S`$s`_T0;
+    //Fanout for p2f_out
+//;      for(my $track = 0; $track < $io16bit_num_tracks; $track++) { 
+    assign wire_`$h`_`$w`_BUS16_S`$s`_T`$track` = fanout_`$h`_`$w`_BUS16_S`$s`_T0;
+//;      }
 //;    }
-//;    }
-//;   if ($tile_type eq "io1") {
-//;     print INFO "  <tile type='$tile_config->{ $tile_type }{ 'type' }' tile_addr='0x$tile_addr_hex' row='$h' col='$w' tracks='BUS1:1 BUS16:0'";
-//;   } elsif ($tile_type eq "io16") {
-//;     print INFO "  <tile type='$tile_config->{ $tile_type }{ 'type' }' tile_addr='0x$tile_addr_hex' row='$h' col='$w' tracks='BUS1:0 BUS16:1'";
-//;   } else {
-//;     print INFO "  <tile type='$tile_config->{ $tile_type }{ 'type' }' tile_addr='0x$tile_addr_hex' row='$h' col='$w' tracks='";
-//;     foreach my $bus (sort keys %bus_num_tracks_hash) {
-//;       print INFO "$bus:$bus_num_tracks_hash{$bus} ";
+//;   
+//;   # cgra_info/io1bit tiles
+//;   { 
+//;     # <tile type='io1bit' tile_addr='0x2' row='0' col='2' tracks='BUS1:1 BUS16:0' name='pad_S0_T0'>
+//;     my $ty = "$tile_config->{ $tile_type }{ 'type' }";
+//;     my $ta = "0x$tile_addr_hex";
+//;     my $tr = "";
+//;     my $pn = "";
+//;     if ($tile_type eq "io1") {
+//;       $tr = "BUS1:1 BUS16:0";
+//;       my $pad_name = $tile_config->{ 'io1' }{ 'pad_name' };
+//;       $pn = " name='$pad_name'";
+//;     } elsif ($tile_type eq "io16") {
+//;       $tr = "BUS1:0 BUS16:1";
+//;     } else {
+//;       # FIXME Won't this break if there is ever jmore than one key??
+//;       foreach my $bus (sort keys %bus_num_tracks_hash) {
+//;         $tr = $tr . "$bus:$bus_num_tracks_hash{$bus} ";
+//;       }
 //;     }
-//;     print INFO "'";
+//;     print INFO "  <tile type='$ty' tile_addr='$ta' row='$h' col='$w' tracks='$tr'$pn>\n";
+//;     my $bitnum = $tile_config->{ 'io1' }{ 'bit_pos' };
+//;     if ($tile_type eq "io1") { print INFO "    <io_bit>$bitnum</io_bit><!-- LSB=0 -->\n"; }
 //;   }
-//;   print INFO ">\n";
+//;   
+//;   
+//;   # cgra_info/empty tiles
 //;   if ($tile_type ne "empty") {
 //;     open (INP, "<TILE".$inst_obj->mname()) or die "Couldn't open file TILE$inst_obj->mname(), $!";
 //;     while (<INP>) {
@@ -769,16 +800,19 @@ assign config_data = config_data_in;
 //;   	if ($tile_type eq "io1") {
 //;	  my $io1_track = 0;
 //;	  my $side = $inst_obj->get_param('side');
-//;       if(($side % 2) eq 0) {$io1_track = ($h - 2) % $io1bit_num_tracks;}
+//;       if (($side % 2) eq 0) {$io1_track = ($h - 2) % $io1bit_num_tracks;}
 //;	  else {$io1_track = ($w - 2) % $io1bit_num_tracks;}
-//;	  print INFO "        <input>in_1BIT_S${side}_T$io1_track</input>\n";
-//;	  print INFO "        <output>out_1BIT_S${side}_T$io1_track</output>\n";
+//;	  print INFO "    <input>in_1BIT_S${side}_T$io1_track</input>\n";
+//;       # Output fans out to all tracks
+//;       for (my $track=0; $track < $io1bit_num_tracks; $track +=1) { 
+//;	      print INFO "    <output>out_1BIT_S${side}_T$track</output>\n";
+//;       }
 //;	}
 //;   }
 //;   print INFO "  </tile>\n";
 //;   }
 //; }
-
+//; #
 //; #####################################################
 //; # Create global wire merge and distribute structure
 //; #####################################################
@@ -813,7 +847,7 @@ assign config_data = config_data_in;
 //;     }
 //;     $next_h++;
 //;   }
-//;   foreach my $w (keys(%wire_hash)) {
+//;   foreach my $w (sort keys(%wire_hash)) {
 //;     if ($incr!=1) {
     wire `$w`;
 //;     }
