@@ -188,7 +188,7 @@ config_en
 //;       if ($registered[$j]==1) {
   reg [`$width-1`:0] out_`$i`_`$j`_id1;
   reg out_`$i`_`$j`_le;
-  assign out_`$i`_`$j`_le = clk_en | (un_stall & config_ungate[`$config_ungate_r`])   
+  assign out_`$i`_`$j`_le = clk_en | (unstall & config_ungate[`$config_ungate_r`]); 
   always @(posedge clk) begin
     if (out_`$i`_`$j`_le)
       out_`$i`_`$j`_id1 <= out_`$i`_`$j`_i;
