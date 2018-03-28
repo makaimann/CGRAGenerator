@@ -78,8 +78,8 @@ endmodule
 
 //;print TILEINFO "    <io_group>$io_group</io_group>\n";
 //;print TILEINFO "    <tri feature_address='0' reg_address='0' bitl='0' bith='0'>\n";
-//;print TILEINFO "        <src sel='0'>in</src>  <!--input-->\n";
-//;print TILEINFO "        <src sel='1'>out</src> <!--output-->\n";
+//;print TILEINFO "        <direction sel='0'>in</direction>  <!--input-->\n";
+//;print TILEINFO "        <direction sel='1'>out</direction> <!--output-->\n";
 //;print TILEINFO "    </tri>\n";
 //;print TILEINFO "    <mux feature_address='0' reg_address='0' bitl='1' bith='1'>\n";
 //;print TILEINFO "        <src sel='0'>16</src> <!-- 16 bit mode -->\n";
