@@ -114,11 +114,11 @@ config_en
 //;    $config_bit_count = ($registered_count * $sides);
 
 //; if ($config_bit_count>0) { 
-//;     my $config_reg_width = int(ceil($config_bit_count/16.0)*16);
+//;     my $config_reg_width = int(ceil($config_bit_count/32.0)*32);
 
   reg [`$config_reg_width-1`:0] config_ungate;
   
-  //; my $config_addrs_needed = int(ceil($config_bit_count / 16.0));
+  //; my $config_addrs_needed = int(ceil($config_bit_count / 32.0));
   always @(posedge clk or posedge reset) begin
     if (reset==1'b1) begin
 
@@ -130,7 +130,7 @@ config_en
       if (config_en==1'b1) begin
          case (config_addr[31:24])
   //; for (my $j=0; $j<$config_addrs_needed; $j=$j+1) {
-           8'c`$j`: config_ungate[`($j+1)*16-1`:`$j*16`] <= config_data;
+           8'c`$j`: config_ungate[`($j+1)*32-1`:`$j*32`] <= config_data;
   //; }
            default: ;
          endcase
