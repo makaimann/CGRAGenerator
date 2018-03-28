@@ -37,27 +37,51 @@ program automatic `mname`(
    int 				 fd;
    int 				 config_file;
    int				 input_file;
-   
+   int				 status;
+   int				 i;
+   logic [31:0]			 config_data;
+   logic [31:0]			 config_addr;
+   logic [7:0]			 pads_in_char;
    // Instantiate a jtag driver
    //; my $jtag_drvr_obj = generate_base('JTAGDriver', 'jdrv');
    `$jtag_drvr_obj->instantiate`;
-   jtag_regfile_trans_t jtag_ofst_trans, jtag_rslt_trans;      
+   jtag_regfile_trans_t jtag_config_trans;      
    task run_test;
       begin
 	 jdrv.ReadID(jtag_ofst_trans);
-	 
+	//Begin CGRA configuration
+ 	 
 	 // initialization of structs:
-	 jtag_ofst_trans.domain = sc_domain;
-	 jtag_ofst_trans.addr = 31'd1;
-	 jtag_ofst_trans.op = write;
-	 jtag_ofst_trans.data_out = '0;
+	 jtag_config_trans.domain = sc_domain;
+	 jtag_config_trans.addr = 31'd1;
+	 jtag_config_trans.data_out = '0;
 	 
-	 jtag_rslt_trans.domain = sc_domain;
-	 jtag_rslt_trans.addr = 31'd200;
-	 jtag_rslt_trans.op = read;
-	 jtag_rslt_trans.data_in = 0;
-
-	 @(posedge ifc.Clk);
+	//PARAMETRIZE THESE
+	 while( !feof(config_file) ) begin
+		@(posedge ifc.Clk);
+		status = $fscanf(config_file,"%x %x", config_addr,config_data);
+		jtag_config_trans.data_in = config_data;
+		jtag_config_trans.addr = config_addr[28:0];
+		jtag_config_trans.op = config_addr[31:29];
+		jdrv.Send(jtag_config_trans);
+		pads_S0 = 0;
+		pads_S1 = 0;
+		pads_S2 = 0;
+		pads_S3 = 0;
+	 end
+	
+	 //HERE WE SHOULD PROBABLY SWITCH TO THE FAST CLK. WILL DO LATER
+	 $display("Finished Configuration!");
+	 //NOW WE CAN APPLY THE INPUTS TO THE PADS
+	 while( !feof(input_file) )being
+		@(posedge ifc.Clk);
+		pads_in_char = $fgetc(input_file);
+		pads_S2[7:0] =8'b0;
+		//REVERSE THE BITS
+		for(i=0; i<8; i++)
+			pads_S2[15-i] = pads_in_char[i];	
+	 end 
+	 /*@(posedge ifc.Clk);
 	 jtag_ofst_trans.data_in = 25;
 	 jtag_ofst_trans.done = 0;
 	 jdrv.Send(jtag_ofst_trans);
@@ -71,7 +95,7 @@ program automatic `mname`(
 	 jdrv.Send(jtag_rslt_trans);
 	 jtag_rslt_trans = jdrv.GetResult();
 	 $fdisplay(fd,"%t: %m: Trans 2 (Read):  Address to GC=%d, Data to GC=%d, Data out from GC=%d",  
-		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_rslt_trans.data_out);
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_rslt_trans.data_out);*/
 	 
       end
    endtask // run_test
