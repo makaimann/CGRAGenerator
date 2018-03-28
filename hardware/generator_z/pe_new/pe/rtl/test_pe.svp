@@ -212,7 +212,7 @@ assign nc_op_code = op_code;
 //;   bith => 15,
 //; };
 
-//; my $op_b_r = generate_base('test_opt_reg_file', 'test_opt_reg_file');
+//; my $op_b_r = generate_base('test_opt_reg_file', 'test_opt_reg_file', "reg_cnt"=>$reg_cnt);
 
 logic                 op_b_ld;
 logic [DataWidth-1:0] op_b_val;
@@ -958,6 +958,7 @@ end
 //;    close INP;
 //;    print PEINFO "        </mux>\n";
 //;
+//; if($use_reg_file) {
 //;    my $filename = "REGFILE".$value->{'mname'};
 //;    if (open (INP, "<$filename")) { # or die "Couldn't open file $filename, $!";
 //;    while (<INP>) {
@@ -971,6 +972,7 @@ end
 //;    }
 //;    }
 //;    close INP;
+//;  }
 //;  }
 //;# if ($feature=~m/4_init/) {
 //;#   print PEINFO "        <reg reg_address='$value->{'address'}' bith='$value->{'bith'}' bitl='$value->{'bitl'}'>reg_$value->{'out'}</reg>\n";
