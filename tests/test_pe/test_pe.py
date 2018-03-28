@@ -11,7 +11,7 @@ ops  = ['or_', 'and_', 'xor']
 ops += ['lshr', 'lshl']
 ops += ['add', 'sub']
 ops += ['mul0', 'mul1', 'mul2']
-ops = ['abs']
+ops += ['abs']
 # ops += ['sel']
 
 comparison_ops = ['ge', 'le']
@@ -126,10 +126,12 @@ def test_op(strategy, op, flag_sel, signed, worker_id):
     data0_mode = 0x2  # BYPASS
     irq_en = 0
     acc_en = 0
+    if op == "abs" and not signed:  # Skip abs in unsigned mode
+        return
     if flag_sel in [0x4, 0x5, 0x6, 0x7, 0xA, 0xB, 0xC, 0xD] and not signed:  # Flag modes with N, V are signed only
         return
     lut_code = 0x00
-    _op = getattr(pe, op)(flag_sel).lut(lut_code)
+    _op = getattr(pe, op)().flag(flag_sel).lut(lut_code).signed(signed)
     cfg_d = bit2_mode << 28 | \
             bit1_mode << 26 | \
             bit0_mode << 24 | \
@@ -156,8 +158,8 @@ def test_op(strategy, op, flag_sel, signed, worker_id):
         width = 16
         N = 1 << width
         tests = random(_op, n, OrderedDict([
-            ("data0", lambda : randint(0, N) if not signed else randint(- N // 2, N // 2 - 1)),
-            ("data1", lambda : randint(0, N) if not signed else randint(- N // 2, N // 2 - 1)),
+            ("data0", lambda : randint(0, N - 1) if not signed else randint(- N // 2, N // 2 - 1)),
+            ("data1", lambda : randint(0, N - 1) if not signed else randint(- N // 2, N // 2 - 1)),
             ("bit0", lambda : randint(0, 1)),
             ("bit1", lambda : randint(0, 1)),
             ("bit2", lambda : randint(0, 1))
@@ -183,7 +185,7 @@ def test_lut(strategy, signed, lut_code, worker_id):
     data0_mode = 0x2  # BYPASS
     irq_en = 0
     acc_en = 0
-    _op = getattr(pe, op)(flag_sel).lut(lut_code)
+    _op = getattr(pe, op)().flag(flag_sel).lut(lut_code)
     cfg_d = bit2_mode << 28 | \
             bit1_mode << 26 | \
             bit0_mode << 24 | \
