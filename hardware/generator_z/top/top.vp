@@ -386,8 +386,6 @@ trst_n
 
 wire [31:0] config_addr;
 wire [31:0] config_data;
-wire config_read;
-wire config_write;
 wire clk;
 wire reset;
 wire stall;
