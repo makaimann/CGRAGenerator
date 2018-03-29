@@ -148,6 +148,10 @@
 //; # Done Generator Configuration
 //; #####################################################
 //; 
+//; #####################################################
+//; # OR every read_data output from tile
+//; #####################################################
+//;my $read_data = '';
 //; 
 //; #####################################################
 //; #Populate bus track hash
@@ -382,6 +386,8 @@ trst_n
 
 wire [31:0] config_addr;
 wire [31:0] config_data;
+wire config_read;
+wire config_write;
 wire clk;
 wire reset;
 wire stall;
@@ -622,12 +628,20 @@ assign config_data = config_data_in;
       .tile_id(16'h`$tile_addr_hex`)
     );
 //;    } elsif ($tile_type eq "pe") {
+    wire [31:0] read_data_`$tile_id`;
+//;  if ($read_data eq '') {
+//;    $read_data = "read_data_$tile_id";
+//;  } else {
+//;    $read_data = $read_data . "| read_data_$tile_id";
+//;  }
     `$inst_obj->instantiate()` 
     (
       .clk_in(clk),
       .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
+      .config_read(config_read),
+      .config_write(config_write),
 //;     for my $bus (sort keys %bus_num_tracks_hash) {
 //;       my $num_tracks = $bus_num_tracks_hash { $bus };
 //;       my $bus_width = $bus_width_hash { $bus };
@@ -655,7 +669,8 @@ assign config_data = config_data_in;
       .gin_`${i}`(global_wire_h2l_1_`${i}`_`(int(floor((${w}-2)/2))+2)`_`(int(floor((${h}-2)/2))+2)`),
 //;   }
       .gout(global_wire_l2h_0_`${w}`_`${h}`),
-      .tile_id(16'h`$tile_addr_hex`)
+      .tile_id(16'h`$tile_addr_hex`),
+      .read_data(read_data_`$tile_id`)
     );
 //; #
 //; #
@@ -928,4 +943,5 @@ assign config_data = config_data_in;
 //; }
 //; print INFO "</CGRA>\n";
 //; close INFO;
+    assign read_data = `$read_data`;
 endmodule

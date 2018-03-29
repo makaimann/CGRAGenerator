@@ -107,19 +107,16 @@ read_data
       end
     end
   end
-//; }
-
 //; # ############################################
 //; # Setup register for SB register load configuration
 //; # ############################################
 //;    $config_bit_count = ($registered_count * $sides);
 
-//; if ($config_bit_count>0) { 
 //;     my $config_reg_width = int(ceil($config_bit_count/32.0)*32);
 
   reg [`$config_reg_width-1`:0] config_ungate;
   
-  //; my $config_addrs_needed = int(ceil($config_bit_count / 32.0));
+  //; my $config_ungate_addrs_needed = int(ceil($config_bit_count / 32.0));
   always @(posedge clk or posedge reset) begin
     if (reset==1'b1) begin
 
@@ -130,13 +127,25 @@ read_data
     end else begin
       if (config_en==1'b1) begin
          case (config_addr[31:24])
-  //; for (my $j=0; $j<$config_addrs_needed; $j=$j+1) {
-           8'c`$j`: config_ungate[`($j+1)*32-1`:`$j*32`] <= config_data;
+  //; for (my $j=$config_addrs_needed; $j<$config_addrs_needed + $config_ungate_addrs_needed; $j=$j+1) {
+           8'd`$j`: config_ungate[`($j - $config_addrs_needed +1)*32-1`:`($j - $config_addrs_needed)*32`] <= config_data;
   //; }
            default: ;
          endcase
       end
     end
+  end
+
+  always @ (*) begin
+    case (config_addr[31:24])    
+  //; for (my $j=0; $j<$config_addrs_needed; $j=$j+1) {
+         8'd`$j`: read_data = config_sb[`($j+1)*32-1`:`$j*32`];
+  //; }
+  //; for (my $j=$config_addrs_needed; $j<$config_addrs_needed + $config_ungate_addrs_needed; $j=$j+1) {
+         8'd`$j`: read_data = config_ungate[`($j - $config_addrs_needed +1)*32-1`:`($j - $config_addrs_needed)*32`];
+  //; }
+        default : read_data = 'h0;
+    endcase
   end
 //; }
 
@@ -204,6 +213,7 @@ read_data
 //;  }
 //; }
 //; close SBINFO;
+
 endmodule
 
 //;# generate corresponding testbench
