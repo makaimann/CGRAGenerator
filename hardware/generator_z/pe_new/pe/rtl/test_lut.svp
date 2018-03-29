@@ -19,7 +19,7 @@ module  `mname`  #(
 //; if ($lut_inps > 2) {
   input  `$c_in_decl`        op_c_in,
 //;}
-
+  output logic [31:0] read_data,
   output logic [DataWidth-1:0] res
 );
 
@@ -48,6 +48,7 @@ generate
 //;} else {
     assign res[ggg] = lut[{op_b_in[ggg], op_a_in[ggg]}];
 //;}
+    assign read_data = lut;
   end
 endgenerate
 

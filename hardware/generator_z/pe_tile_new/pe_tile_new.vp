@@ -78,9 +78,10 @@
 //; my $rename_hash;
 module `mname` (
 clk_in,
-unstall,
 config_addr,
 config_data,
+config_read,
+config_write,
 //;   for my $bus (sort keys %bus_width_hash) {
 //;     my $num_tracks = $bus_num_tracks_hash { $bus };
 //;     for(my $i=0; $i<$sides; $i++) {
@@ -95,14 +96,15 @@ gin_`${i}`,
 //;   }
 gout,
 reset,
-tile_id
+tile_id,
+read_data
 );
 //; my $config_bits_used = 0;
   input clk_in;
-  input unstall;
   input [31:0] config_addr;
   input [31:0] config_data;
-
+  input config_read;
+  input config_write;
 //;   for my $bus (sort keys %bus_num_tracks_hash) {
 //;     my $num_tracks = $bus_num_tracks_hash { $bus };
 //;     my $bus_width = $bus_width_hash { $bus };
@@ -119,6 +121,7 @@ tile_id
   output reg gout;
   input [15:0] tile_id;
   input reset;
+  output [31:0] read_data;
 
   wire ___genesis_wire_`${global_signal_count}`_`${bus_config}`_`${all_segments_for_all_tiles}`_`${sides}`_`${feedthrough_outputs}`_`${registered_outputs}`_`${is_bidi}`_`${sb_fs}`_`${cb_connections}`_`${has_constant}`_`${reg_inputs}`_`${reg_out}`_`${use_add}`_`${use_cntr}`_`${use_bool}`_`${use_shift}`_`${mult_mode}`_`${use_div}`_`${is_msb}`_`${en_double}`_`${lut_inps}`;
 //; # wire clk;
@@ -139,21 +142,8 @@ tile_id
         end
      end
    end
-//; }
-//; $tile_info_hash->{ 'pe' } = {
-//;   address => $intra_tile_addr
-//; };
-
-//;$intra_tile_addr+=1;
-
-  // Note: verilator complains because some bits (opcode[31:16]) go unused...
-  // For now, I will fix it with a verilator directive
-  // FIXME owner please verify that unused bits are correct behavior and
-  // FIXME maybe add a comment to that effect...?
-
-  /* verilator lint_off UNUSED */
+//; } else {
   reg [31:0] opcode;
-  /* verilator lint_on UNUSED */
 
   always @(posedge clk_in or posedge reset) begin
     if (reset) begin
@@ -167,6 +157,14 @@ tile_id
 //; $tile_info_hash->{ 'opcode' } = {
 //;   address => $intra_tile_addr
 //; };
+//;}
+//; $tile_info_hash->{ 'pe' } = {
+//;   address => $intra_tile_addr
+//; };
+  logic [31:0] read_data_pe;
+//;$intra_tile_addr+=1;
+
+  
 //; #############################################################
 //; # Generate CBs and corresponding config enables
 //; #############################################################
@@ -226,6 +224,7 @@ tile_id
        end
     end
   end
+  logic [31:0] read_data_cb_`$pe_input_name`;
 //; $tile_info_hash->{ 'cb_'.$pe_input_name } = {
 //;   address => $intra_tile_addr
 //; };
@@ -285,7 +284,10 @@ tile_id
 //;   }
     .config_addr(config_addr),
     .config_data(config_data),
-    .config_en(config_en_cb_`$pe_input_name`)
+    .config_read(config_read),
+    .config_write(config_write),
+    .config_en(config_en_cb_`$pe_input_name`),
+    .read_data(read_data_cb_`$pe_input_name`)
   );
 //; $tile_info_hash->{ 'cb_'.$pe_input_name }{'bus'} = $pe_input_bus;
 //; $tile_info_hash->{ 'cb_'.$pe_input_name }{'mname'} = $cb->mname();
@@ -312,6 +314,7 @@ tile_id
        end
     end
   end
+  logic [31:0] read_data_sb_wide;
 //; $tile_info_hash->{ 'sb_wide' } = {
 //;   address => $intra_tile_addr
 //; };
@@ -362,7 +365,10 @@ tile_id
 //; }
     .config_addr(config_addr),
     .config_data(config_data),
-    .config_en(config_en_sb_wide)
+    .config_read(config_read),
+    .config_write(config_write),
+    .config_en(config_en_sb_wide),
+    .read_data(read_data_sb_wide)
   );
 //; $tile_info_hash->{ 'sb_wide' }{'bus'} = 'BUS16';
 //; $tile_info_hash->{ 'sb_wide' }{'mname'} = $sb_wide->mname();
@@ -389,6 +395,7 @@ tile_id
        end
     end
   end
+  logic [31:0] read_data_sb_1bit;
 //; $tile_info_hash->{ 'sb_1bit' } = {
 //;   address => $intra_tile_addr
 //; };
@@ -410,7 +417,6 @@ tile_id
     .clk(clk_in),
     .clk_en(cg_en),
     .reset(reset),
-    .unstall(unstall),
 //;  foreach my $pe_output (@bit1_outputs) {
     .pe_output_`$output_count`(pe_out_`$pe_output`),
 //;    $rename_hash->{ 'sb_1bit' }{'pe_output_'.$output_count} = "pe_out_".$pe_output;
@@ -426,7 +432,10 @@ tile_id
 //; }
     .config_addr(config_addr),
     .config_data(config_data),
-    .config_en(config_en_sb_1bit)
+    .config_read(config_read),
+    .config_write(config_write),
+    .config_en(config_en_sb_1bit),
+    .read_data(read_data_sb_1bit)
   );
 //; $tile_info_hash->{ 'sb_1bit' }{'bus'} = 'BUS1';
 //; $tile_info_hash->{ 'sb_1bit' }{'mname'} = $sb_1b->mname();
@@ -532,16 +541,33 @@ tile_id
 //; foreach my $port (@bit1_outputs) {
 //;   $count = $count + 1;
 //;   if ($count==(scalar @bit1_outputs)) {
-  .`$port`(pe_out_`$port`)
+  .`$port`(pe_out_`$port`),
 //;  } else {
   .`$port`(pe_out_`$port`),
 //;  }
+  .read_data(read_data_pe)
 //; }
 );
 //; $tile_info_hash->{ 'pe' }{'mname'} = $pe->mname();
 //;
 //;
-//;
+//;#######################################################################
+//;## MUX for read_data output 
+//;##
+//;#######################################################################
+
+always_comb begin
+    case (config_addr[23:16])
+//; foreach my $key (sort { $tile_info_hash->{$a}{'address'} cmp $tile_info_hash->{$b}{'address'} } keys(%$tile_info_hash))  {
+//;   if($key ne 'gout') {
+      8'd`$tile_info_hash->{$key}->{'address'}` : read_data = read_data_`$key`;
+//;   }
+//; }
+        default : read_data = 'd0;
+    endcase
+end
+
+
 //;#######################################################################
 //;## Generate tile connectivity, and pe info
 //;##
