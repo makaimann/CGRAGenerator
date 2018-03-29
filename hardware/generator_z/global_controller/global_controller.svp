@@ -1,12 +1,10 @@
 //; use POSIX;
-//; my $jtag_obj = generate("jtag", "jtag_controller");
+//; my $cfg_bus_width = parameter(NAME => 'cfg_bus_width', VAL => 32, DOC => 'Width of config_data');
+//; my $cfg_addr_width = parameter(NAME => 'cfg_addr_width', VAL => 32, DOC => 'Width of config_addr');
+//; my $cfg_op_width = parameter(NAME => 'cfg_op_width', VAL => 5, DOC => 'Width of config_op');
+//; my $jtag_obj = generate("jtag", "jtag_controller", SYSCLK_CFG_BUS_WIDTH => $cfg_bus_width, SYSCLK_CFG_ADDR_WIDTH => $cfg_addr_width, SYSCLK_CFG_OP_WIDTH =>$cfg_op_width);
 //; my $jtag_ifc_path = $self -> define_param(IFC => $jtag_obj -> get_param('IFC'));
 //; my $jtag_ifc = clone($jtag_ifc_path, 'jtag_ifc');
-//; my $cfg_bus_width = $jtag_obj -> get_param('SYSCLK_CFG_BUS_WIDTH');
-//; my $cfg_addr_width = $jtag_obj -> get_param('SYSCLK_CFG_ADDR_WIDTH');
-//; my $cfg_op_width = $jtag_obj -> get_param('SYSCLK_CFG_OPCODE_WIDTH');
-//; my $addr_width = $cfg_addr_width + $cfg_op_width; #address and op concatenated in port
-//; my $dummy_value = parameter(Name=>'dummy_value', val=> 0, doc=>'dummy value. placeholder.'); 
 
 module `mname` (
 clk_in, reset_in,
@@ -35,20 +33,23 @@ trst_n
 
   output reg read;
   output reg write;
-  output reg [`$addr_width-1`:0] config_addr_out;
+  output reg [`$cfg_addr_width-1`:0] config_addr_out;
   output reg [`$cfg_bus_width-1`:0] config_data_out;
   output reg clk_out;
   output reg reset_out;
   output reg cgra_stalled;
   output tdo;
 
-  wire [`$addr_width-1`:0] config_addr_jtag_out;
+  wire [`$cfg_addr_width-1`:0] config_addr_jtag_out;
   wire [`$cfg_bus_width-1`:0] config_data_jtag_out;
-  reg [`$cfg_bus_width-1`:0] config_data_jtag_in;
   wire [`$cfg_op_width-1`:0] op;
+  reg [`$cfg_bus_width-1`:0] config_data_jtag_in;
   reg clk;
   reg clk_domain;
   reg sys_clk_activated;
+  //Extra flops to cross clock boundary
+  reg sys_clk_act_sync_1;
+  reg sys_clk_act_sync_2;
   //separate op out from address field
 `$jtag_ifc -> instantiate` (.Clk(clk), .Reset(reset_in));
 `$jtag_obj -> instantiate` (.ifc(`$jtag_ifc->iname()`),
@@ -72,6 +73,7 @@ trst_n
       assign tdo = `$jtag_ifc->iname()`.tdo;
       assign config_data_jtag_out = `$jtag_ifc->iname()`.config_data_to_gc;
       assign config_addr_jtag_out = `$jtag_ifc->iname()`.config_addr_to_gc;
+      assign op = `$jtag_ifc->iname()`.config_op_to_gc;
  
   //OPCODES
   parameter NOP = `$cfg_op_width`'d0;
@@ -93,7 +95,8 @@ trst_n
   parameter sys_clk_on = `$cfg_op_width`'d15;
   parameter wr_rd_delay_reg = `$cfg_op_width`'d16;
   parameter rd_rd_delay_reg = `$cfg_op_width`'d17;
-  parameter r
+  parameter wr_delay_sel_reg = `$cfg_op_width`'d18;
+  parameter rd_delay_sel_reg = `$cfg_op_width`'d19;
   //STATES FOR IGNORING INCOMING INSTRUCTIONS
   parameter ready = 2'd0;
   parameter reading = 2'd1;
@@ -105,23 +108,24 @@ trst_n
   logic all_stalled_tck;
   logic all_stalled_tck_rise;
   logic all_stalled_tck_fall;
-  logic tck_delay_sel;
 
   logic all_stalled_sys;
   logic all_stalled_sys_rise;
   logic all_stalled_sys_fall;
-  logic sys_delay_sel;
+
+  //delay_sel[1] specifies delay for all_stalled_tck
+  //delay_sel[0] specifices delay for all_stalled_sys
+  logic [1:0] delay_sel;
 
   logic clk_switch_request;
   logic [`$cfg_bus_width-1`:0] TST;
   logic [`$cfg_bus_width-1`:0] counter;
   logic [`$cfg_bus_width-1`:0] rd_delay_reg;
   logic [5:0] clk_switch_counter;
-  assign op = config_addr_jtag_out[`$addr_width-1`:`$addr_width-$cfg_op_width`];
   always_comb begin
     	clk_domain = (sys_clk_activated) ? clk_in : tck;//Are we running the GC/CGRA on sys clk or test clk?
-	all_stalled_tck = tck_delay_sel ? all_stalled_tck_fall : all_stalled_tck_rise;
-	all_stalled_sys = sys_delay_sel ? all_stalled_sys_fall : all_stalled_sys_rise;
+	all_stalled_tck = delay_sel[1] ? all_stalled_tck_fall : all_stalled_tck_rise;
+	all_stalled_sys = delay_sel[0] ? all_stalled_sys_fall : all_stalled_sys_rise;
 	clk = ((all_stalled_tck & !sys_clk_activated) | (all_stalled_sys & sys_clk_activated )) ? 0 : clk_domain; //Are we stalling both GC and CGRA during clk domain switch?
 	clk_out = clk;
    	reset_out = (state==resetting) ? 1 : reset_in;
@@ -163,10 +167,10 @@ trst_n
 
   always @ (posedge clk_in or posedge reset_in) begin 
 	if (reset_in==1) begin
-		all_stalled_sys <= 1;
+		all_stalled_sys_rise <= 1;
 	end
 	else if (sys_clk_act_sync_2 == 1)
-		all_stalled_sys <= 0;
+		all_stalled_sys_rise <= 0;
   end
 
   //FALLING EDGE SYS CLK. In case we need to delay the clock gating signal by an extra half cycle
@@ -187,8 +191,7 @@ trst_n
 		config_addr_out <= 0;
 		config_data_out <= 0;
 		config_data_jtag_in <= 0;
-		sys_delay_sel <= 0;
-		tck_delay_sel <= 0;
+		delay_sel <= 2'b0;
 		read <= 0;
 		write <= 0;
     	end
@@ -197,7 +200,7 @@ trst_n
     		if (state==ready) begin
     			case(op)
 			NOP: begin
-				config_addr_out <= {op,config_addr_out[`$cfg_addr_width-1`:0]};
+				config_addr_out <= config_addr_out;
 				config_data_out <= config_data_out;
 				config_data_jtag_in <= config_data_jtag_in;	
 				read <= 0;
@@ -272,8 +275,18 @@ trst_n
 				read <= 0;
 				write <= 0;
 			end
+			wr_delay_sel_reg: begin
+				delay_sel <= config_data_jtag_out[1:0];
+				read <= 0;
+				write <= 0;
+			end
+			rd_delay_sel_reg: begin
+				config_data_jtag_in <= {`$cfg_bus_width-2`'b0,delay_sel};
+				read <= 0;
+				write = 0;
+			end
 			default: begin
-				config_addr_out <= {NOP,config_addr_out[`$cfg_addr_width-1`:0]};
+				config_addr_out <= config_addr_out;
 				config_data_out <= config_data_out;
 				config_data_jtag_in <= config_data_jtag_in;	
 				read <= 0;
@@ -283,7 +296,7 @@ trst_n
 		end
 		//Counter for any state that needs to block incoming instructions
 		else begin
-			config_addr_out <= {NOP,config_addr_out[`$cfg_addr_width-1`:0]};
+			config_addr_out <= config_addr_out;
 			if (counter > 0) begin
 				counter <= counter-1;
 			end
