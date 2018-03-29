@@ -46,7 +46,7 @@
 // ACTUAL GENESIS2 PARAMETERIZATIONS
 //; # Now, let's decide upon the parameters of the configuration bus:
 //; my $sc_cfg_bus_width =  $self->define_param(SYSCLK_CFG_BUS_WIDTH => 16);
-//; my $sc_cfg_addr_width =  $self->define_param(SYSCLK_CFG_ADDR_WIDTH => 31);
+//; my $sc_cfg_addr_width =  $self->define_param(SYSCLK_CFG_ADDR_WIDTH => 32);
 //; my $sc_cfg_op_width = $self->define_param(SYSCLK_CFG_OPCODE_WIDTH => 5);
 //; my $IDCODE = $self->define_param(IDCODE => 1);
 //; my $io_list = $self->force_param(IO_LIST => 
