@@ -283,7 +283,7 @@ trst_n
 			rd_delay_sel_reg: begin
 				config_data_jtag_in <= {`$cfg_bus_width-2`'b0,delay_sel};
 				read <= 0;
-				write = 0;
+				write <= 0;
 			end
 			default: begin
 				config_addr_out <= config_addr_out;
