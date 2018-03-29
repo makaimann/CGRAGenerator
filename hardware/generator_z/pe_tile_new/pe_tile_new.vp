@@ -135,7 +135,7 @@ read_data
      if (reset) begin
         config_en_pe = 1'b0;
      end else begin
-        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
           config_en_pe = 1'b1;
         end else begin
           config_en_pe = 1'b0;
@@ -217,7 +217,7 @@ read_data
     if (reset) begin
        config_en_cb_`$pe_input_name` = 1'b0;
     end else begin
-       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
          config_en_cb_`$pe_input_name` = 1'b1;
        end else begin
          config_en_cb_`$pe_input_name` = 1'b0;
@@ -284,8 +284,6 @@ read_data
 //;   }
     .config_addr(config_addr),
     .config_data(config_data),
-    .config_read(config_read),
-    .config_write(config_write),
     .config_en(config_en_cb_`$pe_input_name`),
     .read_data(read_data_cb_`$pe_input_name`)
   );
@@ -307,7 +305,7 @@ read_data
     if (reset) begin
        config_en_sb_wide = 1'b0;
     end else begin
-       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
          config_en_sb_wide = 1'b1;
        end else begin
          config_en_sb_wide = 1'b0;
@@ -365,8 +363,6 @@ read_data
 //; }
     .config_addr(config_addr),
     .config_data(config_data),
-    .config_read(config_read),
-    .config_write(config_write),
     .config_en(config_en_sb_wide),
     .read_data(read_data_sb_wide)
   );
@@ -388,7 +384,7 @@ read_data
     if (reset) begin
        config_en_sb_1bit = 1'b0;
     end else begin
-       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
          config_en_sb_1bit = 1'b1;
        end else begin
          config_en_sb_1bit = 1'b0;
@@ -432,8 +428,6 @@ read_data
 //; }
     .config_addr(config_addr),
     .config_data(config_data),
-    .config_read(config_read),
-    .config_write(config_write),
     .config_en(config_en_sb_1bit),
     .read_data(read_data_sb_1bit)
   );
@@ -557,14 +551,18 @@ read_data
 //;#######################################################################
 
 always_comb begin
-    case (config_addr[23:16])
-//; foreach my $key (sort { $tile_info_hash->{$a}{'address'} cmp $tile_info_hash->{$b}{'address'} } keys(%$tile_info_hash))  {
-//;   if($key ne 'gout') {
-      8'd`$tile_info_hash->{$key}->{'address'}` : read_data = read_data_`$key`;
-//;   }
-//; }
-        default : read_data = 'd0;
-    endcase
+    if (config_read && (config_addr[15:0]==tile_id)) begin
+        case (config_addr[23:16])
+    //; foreach my $key (sort { $tile_info_hash->{$a}{'address'} cmp $tile_info_hash->{$b}{'address'} } keys(%$tile_info_hash))  {
+    //;   if($key ne 'gout') {
+          8'd`$tile_info_hash->{$key}->{'address'}` : read_data = read_data_`$key`;
+    //;   }
+    //; }
+          default : read_data = 'd0;
+        endcase
+    end 
+    else
+        read_data = 'd0;
 end
 
 
