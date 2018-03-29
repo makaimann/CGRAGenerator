@@ -14,7 +14,7 @@
 //;open(SBINFO, ">$filename") or die "Couldn't open file $filename, $!";
 
 module `mname` (
-clk, clk_en, reset, unstall,
+clk, clk_en, reset, 
 //; for(my $i=0; $i<$pe_output_count; $i++) {
 pe_output_`$i`,
 //; }
@@ -31,13 +31,13 @@ config_addr,
 //; #config addr 0 (LSB) corresponds to the 32 bit chunk configuring driven outputs
 //; #config addresses increase for 32 bit chunks till the register output config bits 
 config_data,
-config_en
+config_en,
+read_data
 );
 
   input  clk;
   input  clk_en;
   input  reset;
-  input  unstall;
   input  config_en;
   input [31:0] config_data;
 
@@ -60,11 +60,12 @@ config_en
   input [`$width-1`:0] in_`$i`_`$j`;
   //;  }
   //; }
+  output [31:0] read_data;
 
   wire ___genesis_wire_`${width}`_`${num_tracks}`_`${feedthrough_outputs}`_`${sides}`_`${registered_outputs}`_`${pe_output_count}`_`${is_bidi}`_`${sb_fs}`;
 
 //; # #################################################
-//; # Setup register for SB register load configuration
+//; # Setup register for SB mux configuration
 //; # #################################################
 
 //; my @feedthrough = split('',$feedthrough_outputs);
@@ -109,7 +110,7 @@ config_en
 //; }
 
 //; # ############################################
-//; # Setup register for SB mux configuration
+//; # Setup register for SB register load configuration
 //; # ############################################
 //;    $config_bit_count = ($registered_count * $sides);
 
@@ -188,7 +189,7 @@ config_en
 //;       if ($registered[$j]==1) {
   reg [`$width-1`:0] out_`$i`_`$j`_id1;
   reg out_`$i`_`$j`_le;
-  assign out_`$i`_`$j`_le = clk_en | (unstall & config_ungate[`$config_ungate_r`]); 
+  assign out_`$i`_`$j`_le = clk_en | (config_ungate[`$config_ungate_r`]); 
   always @(posedge clk) begin
     if (out_`$i`_`$j`_le)
       out_`$i`_`$j`_id1 <= out_`$i`_`$j`_i;
