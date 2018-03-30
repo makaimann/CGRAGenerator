@@ -136,19 +136,6 @@ read_data
     end
   end
 
-  always @ (*) begin
-    case (config_addr[31:24])    
-  //; for (my $j=0; $j<$config_addrs_needed; $j=$j+1) {
-         8'd`$j`: read_data = config_sb[`($j+1)*32-1`:`$j*32`];
-  //; }
-  //; for (my $j=$config_addrs_needed; $j<$config_addrs_needed + $config_ungate_addrs_needed; $j=$j+1) {
-         8'd`$j`: read_data = config_ungate[`($j - $config_addrs_needed +1)*32-1`:`($j - $config_addrs_needed)*32`];
-  //; }
-        default : read_data = 'h0;
-    endcase
-  end
-//; }
-
 //; # ###############################################
 //; # Setup all outputs (feedthrough/non-feedthrough)
 //; # ###############################################
@@ -214,6 +201,28 @@ read_data
 //; }
 //; close SBINFO;
 
+
+//; my $count = 0;
+  always @ (*) begin
+    case (config_addr[31:24])    
+  //; for (my $j=0; $j<$config_addrs_needed; $j=$j+1) {
+         8'd`$count`: read_data = config_sb[`($j+1)*32-1`:`$j*32`];
+  //; $count++;
+  //; }
+  //; for (my $j=0; $j<$config_ungate_addrs_needed; $j=$j+1) {
+         8'd`$count`: read_data = config_ungate[`($j+1)*32-1`:`($j)*32`];
+//;   $count++;
+//;   }
+//; for(my $i=0; $i<$sides; $i++) {
+//;   for(my $j=0; $j<$number_of_outputs; $j++) {
+         8'd`$count` : read_data = out_`$i`_`$j`_id1;
+//;     $count++;
+//;   }
+//; }
+        default : read_data = 'h0;
+    endcase
+  end
+//; }
 endmodule
 
 //;# generate corresponding testbench
