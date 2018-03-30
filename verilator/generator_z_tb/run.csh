@@ -105,6 +105,7 @@ if ($#argv == 1) then
     echo "        -delay <ncy_delay_in>,<ncy_delay_out>"
     echo "       [-trace   <trace_filename.vcd>]"
     echo "        -nclocks <max_ncycles e.g. '100K' or '5M' or '3576602'>"
+    echo "        -build  # (overrides SKIP_RUNCSH_BUILD)""
     echo
     echo "Defaults:"
     echo "    $0 top_tb.cpp \"
@@ -177,6 +178,7 @@ while ($#argv)
 
 
 
+########################################################################
     # DEPRECATED SWITCHES
     case '-4x4':
     case '-8x8':
@@ -191,6 +193,9 @@ while ($#argv)
 #     case -egregious_conv21_hack:
 #       set EGREGIOUS_CONV21_HACK
 #       breaksw
+########################################################################
+
+
 
     case '-gen':
       set GENERATE = '-gen'; breaksw;
@@ -200,6 +205,12 @@ while ($#argv)
 
     case '-nogen':
       set GENERATE = '-nogen'; breaksw;
+
+    case '-build':
+    case '-rebuild':
+        unsetenv SKIP_RUNCSH_BUILD; breaksw
+
+
 
     case '-config':
       set config = "$2"; shift; breaksw
@@ -410,7 +421,7 @@ set goodline = "$c$c$c$c$c$c$c$c $c$c$c$c$c$c$c$c"
 egrep -v "$goodline" $config > /tmp/tmp$$ && set bad_config
 if ($?bad_config) then
   echo
-  echo "ERROR Config file looks bad, man. Bad line(s) include:"
+  echo "ERROR Config file '$config' looks bad, man. Bad line(s) include:"
   cat /tmp/tmp$$ | sed 's/^/> /'
   exit 13
 endif
@@ -552,6 +563,10 @@ endif
 
 RUN_SIM:
 
+
+
+
+
 echo '------------------------------------------------------------------------'
 echo "run.csh: Run the simulator..."
 echo ''
@@ -590,9 +605,9 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
       echo "  io/myconvert.csh $input $tmpdir/input.raw"
       echo
       echo -n "  "
-      io/myconvert.csh $input $tmpdir/input.raw
+      io/myconvert.csh $input $tmpdir/input.raw || exit 13
     else
-      io/myconvert.csh -q $input $tmpdir/input.raw
+      io/myconvert.csh -q $input $tmpdir/input.raw || exit 13
     endif
     set in = "-input $tmpdir/input.raw"
 
@@ -652,6 +667,18 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
     # Clean up config file for verilator use
     grep -v '#' $config | grep . > $tmpdir/tmpconfig
     set config = $tmpdir/tmpconfig
+  endif
+
+  # Quick check of goodness in config file (again)
+  unset bad_config
+  set c = '[0-9a-fA-F]'
+  set goodline = "$c$c$c$c$c$c$c$c $c$c$c$c$c$c$c$c"
+  egrep -v "$goodline" $config > /tmp/tmp$$ && set bad_config
+  if ($?bad_config) then
+    echo
+    echo "ERROR Config file '$config' looks bad, man. Bad line(s) include:"
+    cat /tmp/tmp$$ | sed 's/^/> /'
+    exit 13
   endif
 
   if ($?VERBOSE) then
