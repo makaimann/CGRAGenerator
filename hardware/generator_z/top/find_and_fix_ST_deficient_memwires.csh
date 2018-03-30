@@ -5,7 +5,6 @@ egrep '(in|out)_[01]_BUS(1|16)_[0-9]' cgra_info.txt > /tmp/tmp$$
 set nlines = `cat /tmp/tmp$$ | wc -l`
 if ($nlines == 0) then
   echo Congratulations, no ST errors found
-  ls -l cgra_info.txt cgra_info.txt.pre_st_fix
   exit 0
 endif
 
