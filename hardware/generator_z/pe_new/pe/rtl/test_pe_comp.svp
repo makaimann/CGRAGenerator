@@ -524,11 +524,11 @@ always_comb begin : proc_alu
         res_p_w     = op_a[DATA_MSB];
 //;     }
 
+        res_w       = diff_sign ? op_a : add_res[0];
 //; if($en_ovfl) {
         ovfl        = res_w[DATA_MSB];
 //;}
 
-        res_w       = diff_sign ? op_a : add_res[0];
 //;   }
     end
 //; }

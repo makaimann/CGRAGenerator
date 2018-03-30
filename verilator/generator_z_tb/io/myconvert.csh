@@ -17,7 +17,7 @@ set output = $2
 set tmpdir = /tmp/myconvert.$$; mkdir $tmpdir
 set tmp = $tmpdir/tmp.pgm
 
-convert $input -depth 8 pgm:$tmp
+convert $input -depth 8 pgm:$tmp || exit 13
 # head -2 $tmp | tail -1
 
 set nbytes = `head -2 $tmp | tail -1 | awk '{print $1 * $2}'`
