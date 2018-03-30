@@ -779,6 +779,7 @@ end
 logic irq_data;
 logic irq_bit;
 
+logic [31:0] read_data_debug_data;
 //; my $debug_d = generate_base('test_debug_reg', 'test_debug_data');
 `$debug_d->mname()` #(.DataWidth(DataWidth)) `$debug_d->iname()`
 (
@@ -789,9 +790,11 @@ logic irq_bit;
 
   .data_in   (res),
 
-  .debug_irq (irq_data)
+  .debug_irq (irq_data),
+  .read_data (read_data_debug_data)
 );
 
+logic [31:0] read_data_debug_bit;
 //; my $debug_b = clone($debug_d, 'test_debug_bit');
 `$debug_b->mname()` #(.DataWidth(1)) `$debug_b->iname()`
 (
@@ -802,7 +805,8 @@ logic irq_bit;
 
   .data_in   (res_p),
 
-  .debug_irq (irq_bit)
+  .debug_irq (irq_bit),
+  .read_data (read_data_debug_bit)
 );
 
 logic [1:0] irq_en;
@@ -897,6 +901,18 @@ assign irq = |({irq_data,irq_bit} & irq_en);
 //;   src => 'C1',
 //;   data => 'res_p',
 //;   name => 'pe_out_res_p'
+//; };
+//; }
+//; if($en_debug) {
+//; $read_data_hash->{'debug_data'} = {
+//;   src => 'E0',
+//;   data => 'read_data_debug_data',
+//;   name => 'debug_data'
+//; };
+//; $read_data_hash->{'debug_bit'} = {
+//;   src => 'E1',
+//;   data => 'read_data_debug_bit',
+//;   name => 'debug_bit'
 //; };
 //; }
 always_comb begin

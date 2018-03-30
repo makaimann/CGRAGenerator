@@ -154,6 +154,7 @@
 //;my $read_data_pe = '';
 //;my $read_data_global = '';
 //;my $read_data_memory = "32'h0";
+//;my $read_data_io1bit = '';
 //; #####################################################
 //; #Populate bus track hash
 //; #####################################################
@@ -673,7 +674,7 @@ assign config_data = config_data_in;
 //;  if ($read_data_pe eq '') {
 //;    $read_data_pe = "read_data_$tile_addr_hex";
 //;  } else {
-//;    $read_data_pe = $read_data_pe . "| read_data_$tile_addr_hex";
+//;    $read_data_pe = $read_data_pe . " | read_data_$tile_addr_hex";
 //;  }
 //; #
 //; #
@@ -682,12 +683,15 @@ assign config_data = config_data_in;
 //; #
 //;    } elsif ($tile_type eq "io1") {
 
+    wire [31:0] read_data_`$tile_addr_hex`;
     `$inst_obj->instantiate()` 
     (
       .clk(clk),
       .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
+      .config_read(config_read),
+      .config_write(config_write),
 //;       my $s = $io_side; 
 //;       my $opposite_side = $s + int($sides*0.5);
 //;       if ($opposite_side > ($sides-1)) {$opposite_side -= $sides;}
@@ -711,8 +715,14 @@ assign config_data = config_data_in;
       .f2p_16(wire_`$h_new`_`$w_new`_BUS1_S`$opposite_side`_T`$io1_track`),
       .f2p_1(wire_`$h_new+$h_delta`_`$w_new+$w_delta`_BUS1_S`$opposite_side`_T`$io1_track`),
       .pad(pad_S`$opposite_side`_T`$io_count`),
-      .tile_id(16'h`$tile_addr_hex`)
+      .tile_id(16'h`$tile_addr_hex`),
+      .read_data(read_data_`$tile_addr_hex`)
     );
+//;  if ($read_data_io1bit eq '') {
+//;    $read_data_io1bit = "read_data_$tile_addr_hex";
+//;  } else {
+//;    $read_data_io1bit = $read_data_io1bit . " | read_data_$tile_addr_hex";
+//;  }
     // Fanout for p2f
 //;      for(my $track = 1; $track < $io1bit_num_tracks; $track++) { 
     assign wire_`$h`_`$w`_BUS1_S`$s`_T`$track` = wire_`$h`_`$w`_BUS1_S`$s`_T0;
@@ -939,7 +949,7 @@ assign config_data = config_data_in;
 //;  if ($read_data_global eq '') {
 //;    $read_data_global = "read_data_$new_tile_addr_hex";
 //;  } else {
-//;    $read_data_global = $read_data_global . "| read_data_$new_tile_addr_hex";
+//;    $read_data_global = $read_data_global . " | read_data_$new_tile_addr_hex";
 //;  }
 //;       }
 //;       $next_w++;
@@ -959,6 +969,7 @@ assign config_data = config_data_in;
     assign read_data_pe = `$read_data_pe`;
     assign read_data_memory = `$read_data_memory`;
     assign read_data_global = `$read_data_global`;
-    assign read_data = read_data_pe | read_data_memory | read_data_global;
+    assign read_data_io1bit = `$read_data_io1bit`;
+    assign read_data = read_data_pe | read_data_memory | read_data_global | read_data_io1bit;
 
 endmodule
