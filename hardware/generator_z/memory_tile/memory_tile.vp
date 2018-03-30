@@ -108,7 +108,7 @@ tile_id
 //;   for (my $i=0; $i<$global_signal_count; $i++) {
   input gin_`${i}`;
 //;   }
-  output reg gout;
+  output gout;
   input [`$bus_width_hash { $gen_mem_for_busname } - 1`:0] chain_in;
   output [`$bus_width_hash { $gen_mem_for_busname } - 1`:0] chain_out;
   input [15:0] tile_id;
@@ -127,15 +127,15 @@ tile_id
 //; my $intra_tile_addr = 0;
 //; for my $bus (sort keys %bus_num_tracks_hash) {
 //;   for(my $row=0; $row<$mem_tile_height; $row++,$intra_tile_addr++) {
-  reg config_en_sb_`$row`_`$bus`;
+  wire config_en_sb_`$row`_`$bus`;
   always @(*) begin
     if (reset) begin
-       config_en_sb_`$row`_`$bus` <= 1'b0;
+       config_en_sb_`$row`_`$bus` = 1'b0;
     end else begin
        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
-         config_en_sb_`$row`_`$bus` <= 1'b1;
+         config_en_sb_`$row`_`$bus` = 1'b1;
        end else begin
-         config_en_sb_`$row`_`$bus` <= 1'b0;
+         config_en_sb_`$row`_`$bus` = 1'b0;
        end
     end
   end
@@ -145,15 +145,15 @@ tile_id
 //;   }
 //; }
 
-  reg config_en_mem;
+  wire config_en_mem;
   always @(*) begin
     if (reset) begin
-       config_en_mem <= 1'b0;
+       config_en_mem = 1'b0;
     end else begin
        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
-         config_en_mem <= 1'b1;
+         config_en_mem = 1'b1;
        end else begin
-         config_en_mem <= 1'b0;
+         config_en_mem = 1'b0;
        end
     end
   end
@@ -177,10 +177,10 @@ tile_id
   reg [`$number_of_gout_select_bits_needed - 1`:0] gout_sel;
   always @(posedge clk_in or posedge reset) begin
     if (reset==1'b1) begin
-       gout_sel = `$number_of_gout_select_bits_needed`'d0;
+       gout_sel <= `$number_of_gout_select_bits_needed`'d0;
     end else begin
        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
-         gout_sel  = config_data[`$number_of_gout_select_bits_needed - 1`:0];
+         gout_sel  <= config_data[`$number_of_gout_select_bits_needed - 1`:0];
        end
     end
   end
@@ -340,7 +340,7 @@ tile_id
 //; $mem_input =~ m/(\S*)#(\S*)/;
 //; my $mem_input_bus = $1;
 //; my $mem_input_name = $2;
-  reg config_en_cb_`$mem_input_name`;
+  wire config_en_cb_`$mem_input_name`;
   always @(*) begin
     if (reset) begin
        config_en_cb_`$mem_input_name` = 1'b0;

@@ -118,7 +118,7 @@ read_data
 //;   for (my $i=0; $i<$global_signal_count; $i++) {
   input gin_`${i}`;
 //;   }
-  output reg gout;
+  output gout;
   input [15:0] tile_id;
   input reset;
   output [31:0] read_data;
@@ -130,7 +130,7 @@ read_data
 //; #############################################################
 
 //; if($use_lut || $reg_inputs) {
-   reg config_en_pe;
+   wire config_en_pe;
    always @(*) begin
      if (reset) begin
         config_en_pe = 1'b0;
@@ -212,7 +212,7 @@ read_data
 //; $pe_input =~ m/(\S*)#(\S*)/;
 //; my $pe_input_bus = $1;
 //; my $pe_input_name = $2;
-  reg config_en_cb_`$pe_input_name`;
+  wire config_en_cb_`$pe_input_name`;
   always @(*) begin
     if (reset) begin
        config_en_cb_`$pe_input_name` = 1'b0;
@@ -300,7 +300,7 @@ read_data
 //; ## wide SB
 //; ##
 //;$intra_tile_addr+=1;
-  reg config_en_sb_wide;
+  wire config_en_sb_wide;
   always @(*) begin
     if (reset) begin
        config_en_sb_wide = 1'b0;
@@ -379,7 +379,7 @@ read_data
 //; $registered_outputs =~ m/BUS1:(\S+)/;
 //; my $bus_registered_outputs = $1;
 //;  $intra_tile_addr+=1;
-  reg config_en_sb_1bit;
+  wire config_en_sb_1bit;
   always @(*) begin
     if (reset) begin
        config_en_sb_1bit = 1'b0;
@@ -450,10 +450,10 @@ read_data
   reg [`$number_of_gout_select_bits_needed - 1`:0] gout_sel;
   always @(posedge clk_in or posedge reset) begin
     if (reset==1'b1) begin
-       gout_sel = `$number_of_gout_select_bits_needed`'d0;
+       gout_sel <= `$number_of_gout_select_bits_needed`'d0;
     end else begin
        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
-         gout_sel  = config_data[`$number_of_gout_select_bits_needed - 1`:0];
+         gout_sel  <= config_data[`$number_of_gout_select_bits_needed - 1`:0];
        end
     end
   end
