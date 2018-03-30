@@ -22,9 +22,9 @@ read_data
   input gin_u_`${i}`;
 //;   }
 //;   for (my $i=0; $i<$global_signal_count; $i++) {
-  output gout_l_`${i}`;
+  output reg gout_l_`${i}`;
 //;   }
-  output gout_u;
+  output reg gout_u;
   input  clk;
   input  reset;
   input [31:0] config_addr;

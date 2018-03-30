@@ -28,9 +28,9 @@ count
   input ren_w1;
   input ren_w2;
   input wen;
-  output avail_w1;
-  output avail_w2;
-  output [`($dwidth * 2) - 1`:0] data_out;
+  output reg avail_w1;
+  output reg avail_w2;
+  output reg [`($dwidth * 2) - 1`:0] data_out;
   
   reg [`($dwidth*3) - 1`:0] data_sr;
   output reg [1:0] count;
@@ -72,51 +72,51 @@ count
 
 
   always @(*) begin
-      avail_w2 = 1'b0;
+      avail_w2 <= 1'b0;
       if (wen==1'b0 && ren_w2==1'b0) begin
-        avail_w2 = (count >= 2'd2);        
+        avail_w2 <= (count >= 2'd2);        
       end else if (wen==1'b0 && ren_w2==1'b1) begin
-        avail_w2 = 1'b0;      
+        avail_w2 <= 1'b0;      
       end else if (wen==1'b1 && ren_w2==1'b0) begin
-        avail_w2 = (count >= 2'd1);      
+        avail_w2 <= (count >= 2'd1);      
       end else if (wen==1'b1 && ren_w2==1'b1) begin
-        avail_w2 = (count == 2'd3);      
+        avail_w2 <= (count == 2'd3);      
       end
   end
   always @(*) begin
-      avail_w1 = 1'b0;
+      avail_w1 <= 1'b0;
       if (wen==1'b0 && ren_w1==1'b0 && ren_w2==1'b0) begin
-        avail_w1 = (count >= 2'd1);      
+        avail_w1 <= (count >= 2'd1);      
       end else if (wen==1'b0 && ren_w1==1'b0 && ren_w2==1'b1) begin
-        avail_w1 = (count == 2'd3); 
+        avail_w1 <= (count == 2'd3); 
       end else if (wen==1'b0 && ren_w1==1'b1) begin
-        avail_w1 = (count >= 2'd2);      
+        avail_w1 <= (count >= 2'd2);      
       end else if (wen==1'b1 && ren_w1==1'b0 && ren_w2==1'b0) begin
-        avail_w1 = 1'b1;      
+        avail_w1 <= 1'b1;      
       end else if (wen==1'b1 && ren_w1==1'b0 && ren_w2==1'b1) begin
-        avail_w1 = (count >= 2'd2);
+        avail_w1 <= (count >= 2'd2);
       end else if (wen==1'b1 && ren_w1==1'b1) begin
-        avail_w1 = 1'b1;      
+        avail_w1 <= 1'b1;      
       end
   end
 
   always @(*) begin
     if (ren_w2==1'b1) begin
       if (count==2'd2) begin
-        data_out = data_sr[`($dwidth*2) - 1`:0];
+        data_out <= data_sr[`($dwidth*2) - 1`:0];
       end else if (count==2'd3) begin
-        data_out = data_sr[`($dwidth*3) - 1`: `$dwidth`];
+        data_out <= data_sr[`($dwidth*3) - 1`: `$dwidth`];
       end
     end else if (ren_w1==1'b1) begin
       if (count==2'd1) begin
-        data_out = {`($dwidth)`'d0, data_sr[`($dwidth) - 1`:0]};
+        data_out <= {`($dwidth)`'d0, data_sr[`($dwidth) - 1`:0]};
       end else if (count==2'd2) begin
-        data_out = {`($dwidth)`'d0, data_sr[`($dwidth*2) - 1`:`($dwidth)`]};
+        data_out <= {`($dwidth)`'d0, data_sr[`($dwidth*2) - 1`:`($dwidth)`]};
       end else if (count==2'd3) begin
-        data_out = {`($dwidth)`'d0, data_sr[`($dwidth*3) - 1`: `($dwidth*2)`]};
+        data_out <= {`($dwidth)`'d0, data_sr[`($dwidth*3) - 1`: `($dwidth*2)`]};
       end
     end else begin
-      data_out = `$dwidth*2`'d0;
+      data_out <= `$dwidth*2`'d0;
     end
   end
 
