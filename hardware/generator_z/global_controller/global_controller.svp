@@ -185,7 +185,7 @@ trst_n
     	if (reset_in==1) begin
 		cgra_stalled <= 0;
        		clk_switch_request <= 0;
-		rd_delay_reg <= 16;
+		rd_delay_reg <= 1;
 		TST <= 0;
 		counter <= 0;
 		config_addr_out <= 0;
