@@ -1,5 +1,8 @@
 #!/bin/csh -f
 
+# Can't believe I have to do this...
+set path = (. $path)
+
 # Can use this to extend time on travis
 # ./my_travis_wait.csh 60 &
 
@@ -554,10 +557,10 @@ if (! $?TRAVIS_BUILD_DIR) goto BUILD_SIM
 BUILD_SIM:
 if ($?tracefile) then
   echo build_simulator.csh $VSWITCH $testbench $tracefile
-  build_simulator.csh $VSWITCH $testbench $tracefile
+  ./build_simulator.csh $VSWITCH $testbench $tracefile || exit 13
 else
   echo build_simulator.csh $VSWITCH $testbench
-  build_simulator.csh $VSWITCH $testbench
+  ./build_simulator.csh $VSWITCH $testbench || exit 13
 endif
 
 

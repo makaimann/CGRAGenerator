@@ -105,7 +105,7 @@ if ($#argv == 2) set tracefile = $2
     echo ""
     echo "VERILATOR FAILED!"
     echo "See $tmpdir/verilator.out for full log of verilator warnings."
-    exit -1
+    exit 13
   endif
 
   echo

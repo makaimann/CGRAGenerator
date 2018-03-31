@@ -1,7 +1,12 @@
 #!/bin/bash
 
+# SR Yes, I know, the name of this script is "run.csh"
+# but it's written in bash instead of csh :(
+
+
 # @Caleb: For providing registers on all outputs of all SBs, do-
 # setenv CGRA_GEN_ALL_REG 1 (csh syntax)
+# export CGRA_GEN_ALL_REG=1  (sh syntax)
 export CGRA_GEN_ALL_REG=1
 
 
@@ -11,6 +16,7 @@ fi
 
 # SR 3/29
 # If using verilator, change inouts to separate ins and outs (part 1)
+# See 'fix_inouts.csh' code for details
 ./fix_inouts.csh io1bit
 
 Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
@@ -71,25 +77,23 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
 # echo
 
 
-# ?? 3/29 steveri - I don't see no DW_tap.v ??
-# echo
-# echo HACKWARNING Swapping stub in place of DW_tap
-# echo HACKWARNING Swapping stub in place of DW_tap
-# echo HACKWARNING Swapping stub in place of DW_tap
-# echo cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
-# ls ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
-# cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
-# echo
-
+echo
+echo HACKWARNING Using custom stub instead of proprietary DW_tap
+echo HACKWARNING Using custom stub instead of proprietary DW_tap
+echo HACKWARNING Using custom stub instead of proprietary DW_tap
+echo cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
+cp  ../jtag/Template/src/digital/DW_tap.v.stub genesis_verif/DW_tap.v
+ls -l ../jtag/Template/src/digital/DW_tap.v.stub
+ls -l genesis_verif/DW_tap.v
+echo
 
 # What are these?  Why are they here?
 source clean_up_cgra_inputs.csh
 source remove_genesis_wires.csh
 
-
-
 # SR 3/29
 # If using verilator, change inouts to separate ins and outs (part 2)
+# See 'fix_inouts.csh' code for details
 ./fix_inouts.csh top
 
 
