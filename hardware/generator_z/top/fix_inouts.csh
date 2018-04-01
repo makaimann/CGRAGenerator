@@ -20,19 +20,15 @@ else
   echo WARNING VERILATOR TRI/INOUT HACK
 endif
 
-
-
 if ("$1" == "io1bit") then
-  echo "  Part 1 (pre-genesis): io1bit.pv"
-  echo "   cp ../io1bit/io1bit.vp ../io1bit/io1bit.vp.orig"
-            cp ../io1bit/io1bit.vp ../io1bit/io1bit.vp.orig || exit 13
-  echo "   cp ../io1bit/io1bit.vp.verilator_hack ../io1bit/io1bit.vp"
-            cp ../io1bit/io1bit.vp.verilator_hack ../io1bit/io1bit.vp || exit 13
-  echo "  End part 1"
-  echo ""
+  if (! $?VERILATOR_TRI_HACK) then
+    echo "VHACK"
+  else
+    echo "NO_VHACK"
+  endif
   exit
 endif
-
+  
 if ("$1" == "top") then
   echo "  Part 2 (post-genesis): top.v"
 

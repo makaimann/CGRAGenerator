@@ -16,8 +16,17 @@ fi
 
 # SR 3/29
 # If using verilator, change inouts to separate ins and outs (part 1)
-# See 'fix_inouts.csh' code for details
-./fix_inouts.csh io1bit
+# i.e. use ../io1bit/verilator_hack/io1bit.vp instead of ../io1bit/io1bit.vp
+#
+./fix_inouts.csh io1bit | sed '$d'
+if [[ `./fix_inouts.csh io1bit` == "NO_VHACK" ]]; then
+  echo '  Note: not using verilator tri/inout hack';
+  io1bit=../io1bit/io1bit.vp;
+else
+  echo "  Verilator hack part 1 (pre-genesis): use verilator_hack/io1bit.vp instead";
+  io1bit=../io1bit/verilator_hack/io1bit.vp;
+fi
+
 
 Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   top.vp \
@@ -43,7 +52,7 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../pe_tile_new/pe_tile_new.vp \
   \
   ../empty/empty.vp \
-  ../io1bit/io1bit.vp \
+  $io1bit \
   ../io16bit/io16bit.vp \
   ../global_signal_tile/global_signal_tile.vp \
   \

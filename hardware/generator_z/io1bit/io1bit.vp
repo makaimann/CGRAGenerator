@@ -8,12 +8,7 @@
 module `mname` (
   clk, 
   reset,
-
-  // breakout for verilator
-  //pad,
-  pad_in,
-  pad_out,
-
+  pad,
   p2f,
   f2p_16,
   f2p_1,
@@ -25,12 +20,7 @@ module `mname` (
   /* verilator lint_off UNUSED */
   input  clk;
   input  reset;
-
-  // breakout for verilator
-  //inout  pad;
-  input  pad_in;
-  output pad_out;
-
+  inout  pad;
   output p2f;
   input f2p_16;
   input f2p_1;
@@ -73,8 +63,8 @@ module `mname` (
     end
   end
 
-  assign pad_out = (io_bit==1'b1) ? ((out_bus==1'b0)?f2p_16:f2p_1) : 1'b0;
-  assign p2f     = (io_bit==1'b1) ?            1'b0                : pad_in;
+  assign pad = (io_bit==1'b1) ? ((out_bus==1'b0) ? f2p_16 : f2p_1) : 1'bz;
+  assign p2f = pad;
 
 endmodule
 
@@ -88,3 +78,5 @@ endmodule
 //;print TILEINFO "        <src sel='1'>1</src>  <!--  1 bit mode -->\n";
 //;print TILEINFO "    </mux>\n";
 //;close TILEINFO;
+
+
