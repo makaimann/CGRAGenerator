@@ -34,6 +34,7 @@
 //; my $lut_inps   = parameter(Name=>'lut_inps',
 //;                               Val=>3, Min=>0, Step=>1, Max=>16,
 //;                               Doc=>"0 - no LUT, 1-16 - uses LUTs with that number of inputs");
+//; my $en_debug = parameter(Name=>'en_debug', val=> 1, List=>[1, 0], doc=>'Enable debuging registers?');
 //;
 //; my $intra_tile_addr = 0;
 
@@ -41,7 +42,6 @@
 //; my $use_lut  = ($lut_inps > 1);
 //; my $use_c_input = ($use_sad > 0 || $mult_mode > 1 || $lut_inps > 3);
 //; my $use_cntr = ($use_add > 1) ? 1 : 0;
-
 
 //; #####################################################
 //; #Populate bus track hash
@@ -440,6 +440,9 @@ read_data
 //;
 //;  $intra_tile_addr+=1;
 //;  my $gout_output_count = $output_count + 1;
+//;  if($en_debug) {
+//;    $gout_output_count += 1;
+//;  }
 //;  my $number_of_gout_select_bits_needed = int(ceil(log($gout_output_count)/log(2)));
 //;
 //;   $tile_info_hash->{ 'gout' } = {
@@ -466,6 +469,7 @@ read_data
 //;    foreach my $pe_output (@bit1_outputs) {
 //;      push @output_arr, "pe_out_${pe_output}";
 //;    }
+//;    if ($en_debug) {push @output_arr, "pe_out_irq";}
 //;    foreach my $pe_output (@output_arr) {
 //;      if ($count==0) {
       default: gout = 1'b0;
@@ -499,12 +503,14 @@ read_data
 //; #############################################################
 //; # Generate PE
 //; #############################################################
-
+//; if($en_debug) {
+wire pe_out_irq;
+//; }
 //;my $pe = generate('test_pe', 'test_pe', reg_inputs => $reg_inputs,
 //;                   reg_out => $reg_out, use_add => $use_add,
 //;                   use_cntr => $use_cntr, use_bool => $use_bool, use_shift => $use_shift,
 //;                   mult_mode => $mult_mode, use_div => $use_div, is_msb => $is_msb,
-//;                   en_double => $en_double, lut_inps => $lut_inps);
+//;                   en_double => $en_double, lut_inps => $lut_inps, en_debug => $en_debug);
 
 `$pe->instantiate()`
  (
@@ -527,6 +533,9 @@ read_data
 //; foreach my $port (@pe_inputs) {
 //;    $port =~ m/\S+#(\S*)/;
   .`$1`(`$1`),
+//; }
+//; if($en_debug) {
+  .irq(pe_out_irq),
 //; }
 //; foreach my $port (@wide_outputs) {
   .`$port`(pe_out_`$port`),
@@ -556,6 +565,8 @@ always_comb begin
     //; foreach my $key (sort { $tile_info_hash->{$a}{'address'} cmp $tile_info_hash->{$b}{'address'} } keys(%$tile_info_hash))  {
     //;   if($key ne 'gout') {
           8'd`$tile_info_hash->{$key}->{'address'}` : read_data = read_data_`$key`;
+    //;   } else {
+          8'd`$tile_info_hash->{$key}->{'address'}` : read_data = gout_sel;
     //;   }
     //; }
           default : read_data = 'd0;
