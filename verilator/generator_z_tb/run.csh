@@ -550,11 +550,6 @@ endif
 
 
 RUN_SIM:
-
-
-
-
-
 echo '------------------------------------------------------------------------'
 echo "run.csh: Run the simulator..."
 echo ''
@@ -568,6 +563,7 @@ echo ''
       echo 'WARNING Looks like WENHACK is ON'
       echo 'WARNING Looks like WENHACK is ON'
       echo 'WARNING Looks like WENHACK is ON'
+      echo 'ERROR WENHACK SHOULD NOT EXIST ANY MORE'; exit 13
     else
       echo 'WARNING Looks like WENHACK is OFF'
       echo 'WARNING Looks like WENHACK is OFF'
@@ -583,29 +579,33 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   #   if input file has extension ".raw" => use input file as is
 
   if (! $?input) then
-    echo No input\; testbench will use random numbers for its check (i think)
-    set in = ''
+    # SR 3/2018 Yeah Im pretty sure this dont work no more...
+    # echo No input\; testbench will use random numbers for its check (i think)
+    # set in = ''
+    echo 'ERROR (run.csh) no input file found'; exit 13
 
   else if ("$input:e" == "png") then
+    set iroot = $input:t; set iroot = $iroot:r
     # Convert to raw format
     if ($?VERBOSE) then
       echo "  Converting input file '$input' to '.raw'..."
-      echo "  io/myconvert.csh $input $tmpdir/input.raw"
+      echo "  io/myconvert.csh $input $tmpdir/$iroot.raw"
       echo
       echo -n "  "
-      io/myconvert.csh $input $tmpdir/input.raw || exit 13
+      io/myconvert.csh $input $tmpdir/$iroot.raw || exit 13
     else
-      io/myconvert.csh -q $input $tmpdir/input.raw || exit 13
+      io/myconvert.csh -q $input $tmpdir/$iroot.raw || exit 13
     endif
-    set in = "-input $tmpdir/input.raw"
+    set in = "-input $tmpdir/$iroot.raw"
 
   else if ("$input:e" == "raw") then
+    set iroot = $input:t; set iroot = $iroot:r
     if ($?VERBOSE) then
       echo "Using raw input from '$input'..."
-      echo cp $input $tmpdir/input.raw
+      echo cp $input $tmpdir/$iroot.raw
     endif
-    cp $input $tmpdir/input.raw
-    set in = "-input $tmpdir/input.raw"
+    cp $input $tmpdir/$iroot.raw
+    set in = "-input $tmpdir/$iroot.raw"
 
   else
     echo "ERROR run.csh: Input file '$input' has invalid extension"
@@ -710,7 +710,7 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
 
   if ($?input) then
     echo
-    ls -l $tmpdir/input.raw $output
+    ls -l $tmpdir/$iroot.raw $output
 
     if ("$output:t" == "conv_1_2_CGRA_out.raw") then
       # echo; set cmd = "od -t u1 $output"; echo $cmd; $cmd | head
@@ -732,8 +732,8 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
     endif
 
     echo
-    set cmd = "od -t x1 $tmpdir/input.raw"
-    set cmd = "od -t u1 $tmpdir/input.raw"
+    set cmd = "od -t x1 $tmpdir/$iroot.raw"
+    set cmd = "od -t u1 $tmpdir/$iroot.raw"
   # echo $cmd; $cmd | head
     echo $cmd; $cmd | head; echo ...; $cmd | tail -n 3
 
