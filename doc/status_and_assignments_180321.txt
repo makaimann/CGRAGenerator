@@ -1,19 +1,8 @@
-Notes from Wednesday's hackathon 3/21/2018
+Notes from Wednesday's hackathon 3/21/2018        Today at 8:35 AM
+To AHA List 
 
-
-Notes from Wednesday's hackathon.
-
-        Stephen Richardson <steveri@stanford.edu>
-        Today at 8:35 AM
-
-To
-
-        AHA List 
-
-Message body
 Here is my best effort at a raw transcription of the whiteboard + our discussion from wednesday's hackathon...broken down into five categories: 1) not implemented, 2) broken, 3) never tested, 4) tested a little, and 5) other.  (Note, below, "<s>" means strikethrough.)
 
-------------------------------------------------------------------------
 ----------------------------------------
 NOT IMPLEMENTED
 <s>LoadingDataFlow</s> (Artem has a fix)
