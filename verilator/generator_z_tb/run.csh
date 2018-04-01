@@ -578,17 +578,19 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   #   if input file has extension ".png" => convert to raw
   #   if input file has extension ".raw" => use input file as is
 
-  if (! $?input) then
-    # SR 3/2018 Yeah Im pretty sure this dont work no more...
-    # echo No input\; testbench will use random numbers for its check (i think)
-    # set in = ''
-    echo 'ERROR (run.csh) no input file found'; exit 13
+  set iroot = $input:t; set iroot = $iroot:r
 
-  else if ("$input:e" == "png") then
-    set iroot = $input:t; set iroot = $iroot:r
-    # Convert to raw format
+#   if (! $?input) then
+#     # SR 3/2018 Yeah Im pretty sure this dont work no more...
+#     # echo No input\; testbench will use random numbers for its check (i think)
+#     # set in = ''
+#     echo 'ERROR (run.csh) no input file found'; exit 13
+# 
+#   else
+
+  if ("$input:e" == "png") then
     if ($?VERBOSE) then
-      echo "  Converting input file '$input' to '.raw'..."
+      echo "  Converting input file '$input' to '$tmpdir/$iroot.raw'..."
       echo "  io/myconvert.csh $input $tmpdir/$iroot.raw"
       echo
       echo -n "  "
@@ -596,22 +598,24 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
     else
       io/myconvert.csh -q $input $tmpdir/$iroot.raw || exit 13
     endif
-    set in = "-input $tmpdir/$iroot.raw"
+    set input = "$tmpdir/$iroot.raw"
 
   else if ("$input:e" == "raw") then
-    set iroot = $input:t; set iroot = $iroot:r
     if ($?VERBOSE) then
-      echo "Using raw input from '$input'..."
-      echo cp $input $tmpdir/$iroot.raw
+      echo "  Using raw input from '$input'..."
+      # echo "  cp $input $tmpdir/$iroot.raw"
     endif
-    cp $input $tmpdir/$iroot.raw
-    set in = "-input $tmpdir/$iroot.raw"
+    # cp $input $tmpdir/$iroot.raw
 
   else
     echo "ERROR run.csh: Input file '$input' has invalid extension"
     exit -1
 
   endif
+  # set in = "-input $tmpdir/$iroot.raw"
+  # set input = "$tmpdir/$iroot.raw"
+
+
 
   # echo "First few lines of input file for comparison..."
   # od -t x1 $tmpdir/input.raw | head
@@ -689,7 +693,7 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   if ($?VERBOSE) set echo
     obj_dir/$vtop \
       -config $config \
-      $in \
+      -input $input \
       $out \
       $delay \
       $trace \
