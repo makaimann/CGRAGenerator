@@ -54,6 +54,9 @@ git branch | grep '^*' >    $tmpdir/tmp
 set branch = `sed 's/^..//' $tmpdir/tmp`
 rm $tmpdir/tmp
 
+
+########################################################################
+# Detect if running from within travis
 unset TRAVIS
 # Travis branch comes up as 'detached' :(
 #   * (HEAD detached at a220e19)
@@ -65,15 +68,13 @@ if (`expr "$branch" : ".*detached"`) then
 endif
 echo "run.csh: I think we are in branch '$branch'"
 
-# Default configuration bitstream
-# set config   = ../../bitstream/examples/940/pw.bs
-# if ("$branch" == "srdev") set config = ../../bitstream/examples/pwv2_io.bs
-# if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2_io.bs
 
-# set config   = ../../bitstream/examples/pwv2_io.bs
-# set config   = ../../bitstream/examples/pwv2_nb2.bsa
-# set config   = ../../bitstream/examples/pw2_sixteen.bsa
+########################################################################
+# Default configuration bitstream
+# INOUT/tri-state workaround for side 0 output pads
 set config   = ../../bitstream/examples/pw2_16x16.bsa
+
+
 
 
 set DELAY = '0,0'
@@ -275,22 +276,6 @@ if (! -e "$testbench") then
   end
   exit -1
 endif
-
-
-##############################################################################
-# # Here's a weird hack, okay...srdev travis only gets to run with pwv2 config
-# 
-# # # Set config conditionally depending on current branch
-# # # bsview = v0, master = v1, srdev = v2
-# # 
-# if ("$branch" == "srdev" || "$branch" == "avdev") then
-#   if ("$config" == "../../bitstream/examples/pwv1.bs") then
-#     echo '  SRDEV TRAVIS hack'
-#     echo '  pwv1 was requested; using pwv2 instead...'
-#     set config = ../../bitstream/examples/pwv2.bs
-#   endif
-# endif
-##############################################################################
 
 
 # if ($?VERBOSE) then
@@ -532,8 +517,7 @@ if (! $?TRAVIS_BUILD_DIR) goto BUILD_SIM
   if (-e obj_dir/Vtop) then
     echo Found existing obj_dir/Vtop
 
-
-
+  # NO MORE WENHACK!!!
   #   set vdir = ../../hardware/generator_z/top/genesis_verif
   #   if (-e $vdir/memory_core_unq1.v) then 
   #     echo Found $vdir/memory_core_unq1.v
