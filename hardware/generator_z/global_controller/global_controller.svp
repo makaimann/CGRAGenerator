@@ -40,6 +40,8 @@ trst_n
   output reg [3:0] cgra_stalled;
   output tdo;
 
+	
+
   wire [`$cfg_addr_width-1`:0] config_addr_jtag_out;
   wire [`$cfg_bus_width-1`:0] config_data_jtag_out;
   wire [`$cfg_op_width-1`:0] op;
@@ -75,6 +77,18 @@ trst_n
       assign config_addr_jtag_out = `$jtag_ifc->iname()`.config_addr_to_gc;
       assign op = `$jtag_ifc->iname()`.config_op_to_gc;
  
+// instantiate registers for analog stuff
+//; my $analog_regfile = generate_base("analog_regfile","analog_regfile");
+ `$analog_regfile -> instantiate()` (
+	.wr_en(),
+	.data_in(),
+//; for(my $i = 0; $i < $analog_regfile -> get_param('num_regs'); $i++) {
+	.r`$i`(),
+//; }	
+	.clk(clk),
+	.reset(reset)
+	);
+
   //OPCODES
   parameter NOP = `$cfg_op_width`'d0;
   parameter write_config =`$cfg_op_width`'d1;

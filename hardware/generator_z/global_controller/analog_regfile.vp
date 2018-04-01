@@ -1,10 +1,11 @@
+//; use POSIX;
 /********************************************************************
 Control Registers for analog stuff in CGRA
 ********************************************************************/
 
-my $data_width = parameter(name => 'data_width', val => 32, min => 1, step => 1);
-my $num_regs = parameter(name => 'num_regs', val => 16, min => 1. step => 1);
-my $addr_width = parameter(name => 'addr_width', val => 32, min => 1, step => 1);
+//; my $data_width = parameter(name => 'data_width', val => 32, min => 1, step => 1);
+//; my $num_regs = parameter(name => 'num_regs', val => 16, min => 1, step => 1);
+//; my $addr_width = parameter(name => 'addr_width', val => 32, min => 1, step => 1);
 
 module `mname` (
 addr,
@@ -32,7 +33,14 @@ always @ (posedge clk or posedge reset) begin
 		r`$i` <= `$data_width`'b0;
 //; }
 	end //if reset
-	else begin
+	else if(wr_en == 1) begin
+		case(addr) begin
+//; for(my $i=0; $i < $num_regs; $i++){
+			case(`$i`): begin
+				r`$i` <= data_in;
+			end
+//; }
+		endcase
 
 	end //else	
 end //always
