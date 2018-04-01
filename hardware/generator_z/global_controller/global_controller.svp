@@ -5,9 +5,12 @@
 //; my $jtag_obj = generate("jtag", "jtag_controller", SYSCLK_CFG_BUS_WIDTH => $cfg_bus_width, SYSCLK_CFG_ADDR_WIDTH => $cfg_addr_width, SYSCLK_CFG_OPCODE_WIDTH =>$cfg_op_width);
 //; my $jtag_ifc_path = $self -> define_param(IFC => $jtag_obj -> get_param('IFC'));
 //; my $jtag_ifc = clone($jtag_ifc_path, 'jtag_ifc');
-
+//; my $num_analog_regs = parameter(Name => 'num_analog_regs', val => 16, Doc => "Number of analog registers and analog_regfile");
 module `mname` (
 clk_in, reset_in,
+//; for (my $i = 0; $i < $num_analog_regs; $i++){
+analog_r`$i`,
+//; }
 config_data_in,
 config_addr_out,
 config_data_out,
@@ -39,7 +42,11 @@ trst_n
   output reg reset_out;
   output reg [3:0] cgra_stalled;
   output tdo;
-
+  
+  //value of each register in analog regfile
+//; for (my $i = 0; $i < $num_analog_regs; $i++){
+  output analog_r`$i`;
+//; }
 	
 
   wire [`$cfg_addr_width-1`:0] config_addr_jtag_out;
@@ -76,14 +83,18 @@ trst_n
       assign config_data_jtag_out = `$jtag_ifc->iname()`.config_data_to_gc;
       assign config_addr_jtag_out = `$jtag_ifc->iname()`.config_addr_to_gc;
       assign op = `$jtag_ifc->iname()`.config_op_to_gc;
- 
+
+
+// Internal signals to/from analog registers
+reg analog_wr_en; 
+reg analog_data_in;
 // instantiate registers for analog stuff
-//; my $analog_regfile = generate_base("analog_regfile","analog_regfile");
+//; my $analog_regfile = generate_base("analog_regfile","analog_regfile", num_regs => $num_analog_regs);
  `$analog_regfile -> instantiate()` (
-	.wr_en(),
-	.data_in(),
+	.wr_en(analog_wr_en),
+	.data_in(analog_data_in),
 //; for(my $i = 0; $i < $analog_regfile -> get_param('num_regs'); $i++) {
-	.r`$i`(),
+	.r`$i`(analog_r`$i`),
 //; }	
 	.clk(clk),
 	.reset(reset)
