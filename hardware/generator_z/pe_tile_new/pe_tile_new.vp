@@ -142,7 +142,16 @@ read_data
         end
      end
    end
-//; } else {
+//; } 
+//; $tile_info_hash->{ 'pe' } = {
+//;   address => $intra_tile_addr
+//; };
+  logic [31:0] read_data_pe;
+
+
+//;$intra_tile_addr+=1;
+
+//; if(!($use_lut || $reg_inputs)) {
   reg [31:0] opcode;
 
   always @(posedge clk_in or posedge reset) begin
@@ -158,11 +167,6 @@ read_data
 //;   address => $intra_tile_addr
 //; };
 //;}
-//; $tile_info_hash->{ 'pe' } = {
-//;   address => $intra_tile_addr
-//; };
-  logic [31:0] read_data_pe;
-//;$intra_tile_addr+=1;
 
   
 //; #############################################################

@@ -59,6 +59,8 @@ module `mname`(
 clk_in,
 config_addr,
 config_data,
+config_read,
+config_write,
 //; for (my $row=0; $row < $mem_tile_height; $row++) {
 //;   for my $bus (sort keys %bus_num_tracks_hash) {
 //;     my $num_tracks = $bus_num_tracks_hash { $bus };
@@ -82,12 +84,15 @@ chain_out,
 chain_valid_out,
 chain_wen_in,
 reset,
-tile_id
+tile_id,
+read_data
 );
 
   input clk_in;
   input [31:0] config_addr;
   input [31:0] config_data;
+  input config_read;
+  input config_write;
   input chain_wen_in;
   output chain_valid_out;
 //; for (my $row=0; $row < $mem_tile_height; $row++) {
@@ -113,7 +118,7 @@ tile_id
   output [`$bus_width_hash { $gen_mem_for_busname } - 1`:0] chain_out;
   input [15:0] tile_id;
   input reset;
-
+  output [31:0] read_data;
   wire ___genesis_wire_`$global_signal_count`_`${bus_config}`_`${all_segments_for_all_tiles}`_`${gen_mem_for_busname}`_`${control_busname}`_`${ddepth}`_`${sides}`_`${feedthrough_outputs}`_`${registered_outputs}`_`${is_bidi}`_`${sb_fs}`_`${cb_connections}`_`${mem_tile_height}`;
   wire clk;
 
@@ -132,7 +137,7 @@ tile_id
     if (reset) begin
        config_en_sb_`$row`_`$bus` <= 1'b0;
     end else begin
-       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
          config_en_sb_`$row`_`$bus` <= 1'b1;
        end else begin
          config_en_sb_`$row`_`$bus` <= 1'b0;
@@ -150,7 +155,7 @@ tile_id
     if (reset) begin
        config_en_mem <= 1'b0;
     end else begin
-       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
          config_en_mem <= 1'b1;
        end else begin
          config_en_mem <= 1'b0;
@@ -179,7 +184,7 @@ tile_id
     if (reset==1'b1) begin
        gout_sel = `$number_of_gout_select_bits_needed`'d0;
     end else begin
-       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
          gout_sel  = config_data[`$number_of_gout_select_bits_needed - 1`:0];
        end
     end
@@ -228,9 +233,11 @@ tile_id
 //;   for my $bus (sort keys %bus_num_tracks_hash) {
 //;     my $num_tracks = $bus_num_tracks_hash { $bus };
 //;     my $sb_obj = clone($sb_hash{ $bus }, 'sb_inst_bus'.$bus.'_row'.$row);
+wire [31:0] read_data_sb_`$row`_`$bus`;
   `$sb_obj->instantiate()`
   (
-    .clk(clk),
+    .clk(clk_in),
+    .clk_en(cg_en),
     .reset(reset),
 //;     if ($bus eq $gen_mem_for_busname) {
     .pe_output_0(rdata),
@@ -247,7 +254,8 @@ tile_id
 //;     }
     .config_addr(config_addr),
     .config_data(config_data),
-    .config_en(config_en_sb_`$row`_`$bus`)
+    .config_en(config_en_sb_`$row`_`$bus`),
+    .read_data(read_data_sb_`$row`_`$bus`)
   );
 //;     $tile_info_hash->{ "sb_".$row."_".$bus }{'bus'} = $bus;
 //;     $tile_info_hash->{ "sb_".$row."_".$bus }{'mname'} = $sb_obj->mname();
@@ -345,13 +353,14 @@ tile_id
     if (reset) begin
        config_en_cb_`$mem_input_name` = 1'b0;
     end else begin
-       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
          config_en_cb_`$mem_input_name` = 1'b1;
        end else begin
          config_en_cb_`$mem_input_name` = 1'b0;
        end
     end
   end
+wire [31:0] read_data_cb_`$mem_input_name`;
 //; $tile_info_hash->{ 'cb_'.$mem_input_name } = {
 //;   address => $intra_tile_addr
 //; };
@@ -381,7 +390,7 @@ tile_id
 //;   }
   `$cb->instantiate()`
   (
-    .clk(clk),
+    .clk(clk_in),
     .reset(reset),
     .out(`$mem_input_name`),
 //; my $k=0;
@@ -411,7 +420,8 @@ tile_id
 //;   }
     .config_addr(config_addr),
     .config_data(config_data),
-    .config_en(config_en_cb_`$mem_input_name`)
+    .config_en(config_en_cb_`$mem_input_name`),
+    .read_data(read_data_cb_`$mem_input_name`)
   );
 //; $tile_info_hash->{ 'cb_'.$mem_input_name }{'bus'} = $mem_input_bus;
 //; $tile_info_hash->{ 'cb_'.$mem_input_name }{'mname'} = $cb->mname();
@@ -446,7 +456,7 @@ tile_id
 //; #####################################
 
 
-  assign clk = clk_in & cg_en;
+//  assign clk = clk_in & cg_en;
 
 
 
@@ -463,10 +473,11 @@ tile_id
 //;   $tile_info_hash->{'mem'}{'depth'} = $ddepth;
 
 
-
+wire [31:0] read_data_mem;
   `$mem_core->instantiate()`
   (
-      .clk(clk),
+      .clk(clk_in),
+      .clk_en(cg_en),
       .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
@@ -482,9 +493,31 @@ tile_id
       .chain_wen_in(chain_wen_in),
       .chain_valid_out(chain_valid_out),
       .almost_full(almost_full),
-      .almost_empty(almost_empty)
+      .almost_empty(almost_empty),
+      .read_data(read_data_mem)
    );
 
+//;#######################################################################
+//;## MUX for read_data output 
+//;##
+//;#######################################################################
+
+always @(*) begin
+    if (config_read && (config_addr[15:0]==tile_id)) begin
+        case (config_addr[23:16])
+    //; foreach my $key (sort { $tile_info_hash->{$a}{'address'} cmp $tile_info_hash->{$b}{'address'} } keys(%$tile_info_hash))  {
+    //;   if($key ne 'gout') {
+          8'd`$tile_info_hash->{$key}->{'address'}` : read_data = read_data_`$key`;
+    //;   } else {
+          8'd`$tile_info_hash->{$key}->{'address'}` : read_data = gout_sel;
+    //;   }
+    //; }
+          default : read_data = 'd0;
+        endcase
+    end 
+    else
+        read_data = 'd0;
+end
 
 endmodule
 

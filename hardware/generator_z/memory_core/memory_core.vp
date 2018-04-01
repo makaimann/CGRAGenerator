@@ -15,6 +15,7 @@
 
 module `mname`(
 clk,
+clk_en,
 reset,
 config_addr,
 config_data,
@@ -30,10 +31,12 @@ chain_wen_in,
 chain_valid_out,
 almost_full,
 almost_empty,
-addr_in
+addr_in,
+read_data
 );
 
 input clk;
+input clk_en;
 input reset;
 input config_en;
 input wen_in;
@@ -51,7 +54,7 @@ output reg valid_out;
 output reg almost_full;
 output reg almost_empty;
 output reg [`$dwidth - 1`:0] data_out;
-
+output [31:0] read_data;
 wire  [2:0] mode;
 wire  [2:0] tile_en;
 wire [13:0] depth;
@@ -59,6 +62,7 @@ wire  [3:0] almost_count;
 wire        enable_chain;
 
 wire gclk;
+wire gated_clk;
 wire wen_in_int;
 wire mem_cen0;
 wire mem_cen1;
@@ -101,7 +105,8 @@ assign depth = config_mem[15:3];
 assign almost_count = config_mem[19:16];
 assign enable_chain = config_mem[19];
 
-assign gclk = clk & (tile_en==1'b1);
+assign gated_clk = clk & clk_en;
+assign gclk = clk & clk_en & (tile_en==1'b1);
 
 
 assign data_in_int = (enable_chain==1'b1)?chain_in:data_in;
@@ -114,7 +119,7 @@ assign chain_valid_out = valid_out;
 // At the last minute, run.csh can modify wen_int assignment above
 // to read "assign  wen_in_int = WENHACK" instead
 reg WENHACK;
-always @(posedge clk or posedge reset) begin
+always @(posedge gated_clk or posedge reset) begin
    if (reset==1'b1) begin
      WENHACK = 1'b0;
    end else if (data_in != 16'b0) begin
@@ -193,13 +198,20 @@ always @(*) begin
   endcase
 end
 
-always @(posedge clk) begin
+always @(posedge gated_clk) begin
   sram_sel <= addr_in[`$awidth - 1`];
 end
 
 assign mem_cen0 = mem_wen0 | mem_ren0;
 assign mem_cen1 = mem_wen1 | mem_ren1;
 
+
+always begin
+    case (config_addr[31:24])
+        8'd0 : read_data = config_mem[31:0];
+        default : read_data = 'h0;
+    endcase
+end
 //; my $lb = generate('linebuffer_control', 'linebuffer_control', dwidth => $dwidth, ddepth => $ddepth );
 //; my $fifo = generate('fifo_control', 'fifo_control', dwidth => $dwidth, ddepth => $ddepth );
 

@@ -153,7 +153,7 @@
 //; #####################################################
 //;my $read_data_pe = '';
 //;my $read_data_global = '';
-//;my $read_data_memory = "32'h0";
+//;my $read_data_memory = '';
 //;my $read_data_io1bit = '';
 //; #####################################################
 //; #Populate bus track hash
@@ -565,12 +565,15 @@ assign config_data = config_data_in;
 //;       }
 //;     }
 //;    if ($tile_type eq "mem") {
+    wire [31:0] read_data_`$tile_addr_hex`;
     `$inst_obj->instantiate()` 
     (
       .clk_in(clk),
       .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
+      .config_write(config_write),
+      .config_read(config_read),
 //;   for (my $row=0; $row < $tile_config->{ $tile_type }{ 'tile_height' }; $row++) {
 //;     for my $bus (sort keys %bus_num_tracks_hash) {
 //;       my $num_tracks = $bus_num_tracks_hash { $bus };
@@ -629,8 +632,14 @@ assign config_data = config_data_in;
       .gin_`${i}`(global_wire_h2l_1_`${i}`_`(int(floor((${w}-2)/2))+2)`_`(int(floor((${h}-2)/2))+2)`),
 //;   }
       .gout(global_wire_l2h_0_`${w}`_`${h}`),
-      .tile_id(16'h`$tile_addr_hex`)
+      .tile_id(16'h`$tile_addr_hex`),
+      .read_data(read_data_`$tile_addr_hex`)
     );
+//;  if ($read_data_memory eq '') {
+//;    $read_data_memory = "read_data_$tile_addr_hex";
+//;  } else {
+//;    $read_data_memory = $read_data_memory . " | read_data_$tile_addr_hex";
+//;  }
 //;    } elsif ($tile_type eq "pe") {
     wire [31:0] read_data_`$tile_addr_hex`;
     `$inst_obj->instantiate()` 
