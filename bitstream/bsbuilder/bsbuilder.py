@@ -240,7 +240,32 @@ def main():
     # OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
     for i in io_info: print i
 
+    configure_output_pads();
+
     return
+
+def configure_output_pads():
+    print '''
+# Configure side 0 (right side) io1bit tiles as 16bit output bus;
+# assumes output is tile 36 (io16bit_0x24)
+
+00000026 00000001
+00000034 00000001
+00000046 00000001
+00000054 00000001
+00000066 00000001
+00000074 00000001
+00000086 00000001
+00000094 00000001
+000000A6 00000001
+000000B4 00000001
+000000C6 00000001
+000000D4 00000001
+000000E6 00000001
+000000F4 00000001
+00000106 00000001
+00000114 00000001
+'''
 
 def preprocess(input_lines, DBG=0):
     # For lazy programmers:
