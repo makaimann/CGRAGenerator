@@ -370,16 +370,35 @@ int main(int argc, char **argv, char **env) {
             //            top->pad_S3_T0 = clk;
             //            top->pad_S0_T0 = clk;
 
+
+
+            ///////////////////////////////////////////////////////////////////
+            // When/if inouts ever work:
             // For 16x16 grid, input byte should show up in tile pe_0x15 side 2
             // (only sides 2 and 1 connect to ALU inputs :( )
-            top->pad_S2_T8  = (pads_in & 0x80) ? 1 : 0;
-            top->pad_S2_T9  = (pads_in & 0x40) ? 1 : 0;
-            top->pad_S2_T10 = (pads_in & 0x20) ? 1 : 0;
-            top->pad_S2_T11 = (pads_in & 0x10) ? 1 : 0;
-            top->pad_S2_T12 = (pads_in & 0x08) ? 1 : 0;
-            top->pad_S2_T13 = (pads_in & 0x04) ? 1 : 0;
-            top->pad_S2_T14 = (pads_in & 0x02) ? 1 : 0;
-            top->pad_S2_T15 = (pads_in & 0x01) ? 1 : 0;
+            // top->pad_S2_T8  = (pads_in & 0x80) ? 1 : 0;
+            // top->pad_S2_T9  = (pads_in & 0x40) ? 1 : 0;
+            // top->pad_S2_T10 = (pads_in & 0x20) ? 1 : 0;
+            // top->pad_S2_T11 = (pads_in & 0x10) ? 1 : 0;
+            // top->pad_S2_T12 = (pads_in & 0x08) ? 1 : 0;
+            // top->pad_S2_T13 = (pads_in & 0x04) ? 1 : 0;
+            // top->pad_S2_T14 = (pads_in & 0x02) ? 1 : 0;
+            // top->pad_S2_T15 = (pads_in & 0x01) ? 1 : 0;
+
+            // While inouts are busted:
+            // For 16x16 grid, input byte should show up in tile pe_0x15 side 2
+            // (only sides 2 and 1 connect to ALU inputs :( )
+            top->pad_S2_T8_in  = (pads_in & 0x80) ? 1 : 0;
+            top->pad_S2_T9_in  = (pads_in & 0x40) ? 1 : 0;
+            top->pad_S2_T10_in = (pads_in & 0x20) ? 1 : 0;
+            top->pad_S2_T11_in = (pads_in & 0x10) ? 1 : 0;
+            top->pad_S2_T12_in = (pads_in & 0x08) ? 1 : 0;
+            top->pad_S2_T13_in = (pads_in & 0x04) ? 1 : 0;
+            top->pad_S2_T14_in = (pads_in & 0x02) ? 1 : 0;
+            top->pad_S2_T15_in = (pads_in & 0x01) ? 1 : 0;
+            ///////////////////////////////////////////////////////////////////
+
+
 
             ///always @(posedge clk) begin
             ///   $display ("%h + %h + %h + %h = %h (%h)", pads_in, in_0_1, in_1_0,
@@ -389,6 +408,11 @@ int main(int argc, char **argv, char **env) {
             // PROCESS THE NEXT ROUND OF VERILOG EVENTS (posedge, negedge, repeat...)
             top->eval ();
 
+
+
+            ///////////////////////////////////////////////////////////////////
+            // When/if inouts ever work:
+            /*
             pads_out = 
                 (top->pad_S0_T0  << 15) |
                 (top->pad_S0_T1  << 14) |
@@ -407,9 +431,33 @@ int main(int argc, char **argv, char **env) {
                 (top->pad_S0_T14 <<  1) |
                 (top->pad_S0_T15 <<  0) |
                 0;
+            */
+
+            // While inouts are busted:
+            pads_out = 
+                (top->pad_S0_T0_out  << 15) |
+                (top->pad_S0_T1_out  << 14) |
+                (top->pad_S0_T2_out  << 13) |
+                (top->pad_S0_T3_out  << 12) |
+                (top->pad_S0_T4_out  << 11) |
+                (top->pad_S0_T5_out  << 10) |
+                (top->pad_S0_T6_out  <<  9) |
+                (top->pad_S0_T7_out  <<  8) |
+                (top->pad_S0_T8_out  <<  7) |
+                (top->pad_S0_T9_out  <<  6) |
+                (top->pad_S0_T10_out <<  5) |
+                (top->pad_S0_T11_out <<  4) |
+                (top->pad_S0_T12_out <<  3) |
+                (top->pad_S0_T13_out <<  2) |
+                (top->pad_S0_T14_out <<  1) |
+                (top->pad_S0_T15_out <<  0) |
+                0;
+            ///////////////////////////////////////////////////////////////////
 
             //printf("OUT pad00=%d ", top->pad_S0_T0);
             //printf("pad30=%d\n", top->pad_S3_T0);
+
+
 
             // if (! printed_something) { printf("\n"); }
         } // for (clk)
