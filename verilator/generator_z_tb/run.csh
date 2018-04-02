@@ -1,5 +1,8 @@
 #!/bin/csh -f
 
+# Can't believe I have to do this...
+set path = (. $path)
+
 # Can use this to extend time on travis
 # ./my_travis_wait.csh 60 &
 
@@ -51,6 +54,9 @@ git branch | grep '^*' >    $tmpdir/tmp
 set branch = `sed 's/^..//' $tmpdir/tmp`
 rm $tmpdir/tmp
 
+
+########################################################################
+# Detect if running from within travis
 unset TRAVIS
 # Travis branch comes up as 'detached' :(
 #   * (HEAD detached at a220e19)
@@ -62,14 +68,13 @@ if (`expr "$branch" : ".*detached"`) then
 endif
 echo "run.csh: I think we are in branch '$branch'"
 
-# Default configuration bitstream
-# set config   = ../../bitstream/examples/940/pw.bs
-# if ("$branch" == "srdev") set config = ../../bitstream/examples/pwv2_io.bs
-# if ("$branch" == "avdev") set config = ../../bitstream/examples/pwv2_io.bs
 
-# set config   = ../../bitstream/examples/pwv2_io.bs
-# set config   = ../../bitstream/examples/pwv2_nb2.bsa
-set config   = ../../bitstream/examples/pw2_sixteen.bsa
+########################################################################
+# Default configuration bitstream
+# INOUT/tri-state workaround for side 0 output pads
+set config   = ../../bitstream/examples/pw2_16x16.bsa
+
+
 
 
 set DELAY = '0,0'
@@ -105,6 +110,7 @@ if ($#argv == 1) then
     echo "        -delay <ncy_delay_in>,<ncy_delay_out>"
     echo "       [-trace   <trace_filename.vcd>]"
     echo "        -nclocks <max_ncycles e.g. '100K' or '5M' or '3576602'>"
+    echo "        -build  # (overrides SKIP_RUNCSH_BUILD)""
     echo
     echo "Defaults:"
     echo "    $0 top_tb.cpp \"
@@ -177,6 +183,7 @@ while ($#argv)
 
 
 
+########################################################################
     # DEPRECATED SWITCHES
     case '-4x4':
     case '-8x8':
@@ -191,6 +198,9 @@ while ($#argv)
 #     case -egregious_conv21_hack:
 #       set EGREGIOUS_CONV21_HACK
 #       breaksw
+########################################################################
+
+
 
     case '-gen':
       set GENERATE = '-gen'; breaksw;
@@ -200,6 +210,12 @@ while ($#argv)
 
     case '-nogen':
       set GENERATE = '-nogen'; breaksw;
+
+    case '-build':
+    case '-rebuild':
+        unsetenv SKIP_RUNCSH_BUILD; breaksw
+
+
 
     case '-config':
       set config = "$2"; shift; breaksw
@@ -260,22 +276,6 @@ if (! -e "$testbench") then
   end
   exit -1
 endif
-
-
-##############################################################################
-# # Here's a weird hack, okay...srdev travis only gets to run with pwv2 config
-# 
-# # # Set config conditionally depending on current branch
-# # # bsview = v0, master = v1, srdev = v2
-# # 
-# if ("$branch" == "srdev" || "$branch" == "avdev") then
-#   if ("$config" == "../../bitstream/examples/pwv1.bs") then
-#     echo '  SRDEV TRAVIS hack'
-#     echo '  pwv1 was requested; using pwv2 instead...'
-#     set config = ../../bitstream/examples/pwv2.bs
-#   endif
-# endif
-##############################################################################
 
 
 # if ($?VERBOSE) then
@@ -410,7 +410,7 @@ set goodline = "$c$c$c$c$c$c$c$c $c$c$c$c$c$c$c$c"
 egrep -v "$goodline" $config > /tmp/tmp$$ && set bad_config
 if ($?bad_config) then
   echo
-  echo "ERROR Config file looks bad, man. Bad line(s) include:"
+  echo "ERROR Config file '$config' looks bad, man. Bad line(s) include:"
   cat /tmp/tmp$$ | sed 's/^/> /'
   exit 13
 endif
@@ -517,8 +517,7 @@ if (! $?TRAVIS_BUILD_DIR) goto BUILD_SIM
   if (-e obj_dir/Vtop) then
     echo Found existing obj_dir/Vtop
 
-
-
+  # NO MORE WENHACK!!!
   #   set vdir = ../../hardware/generator_z/top/genesis_verif
   #   if (-e $vdir/memory_core_unq1.v) then 
   #     echo Found $vdir/memory_core_unq1.v
@@ -543,15 +542,14 @@ if (! $?TRAVIS_BUILD_DIR) goto BUILD_SIM
 BUILD_SIM:
 if ($?tracefile) then
   echo build_simulator.csh $VSWITCH $testbench $tracefile
-  build_simulator.csh $VSWITCH $testbench $tracefile
+  ./build_simulator.csh $VSWITCH $testbench $tracefile || exit 13
 else
   echo build_simulator.csh $VSWITCH $testbench
-  build_simulator.csh $VSWITCH $testbench
+  ./build_simulator.csh $VSWITCH $testbench || exit 13
 endif
 
 
 RUN_SIM:
-
 echo '------------------------------------------------------------------------'
 echo "run.csh: Run the simulator..."
 echo ''
@@ -565,6 +563,7 @@ echo ''
       echo 'WARNING Looks like WENHACK is ON'
       echo 'WARNING Looks like WENHACK is ON'
       echo 'WARNING Looks like WENHACK is ON'
+      echo 'ERROR WENHACK SHOULD NOT EXIST ANY MORE'; exit 13
     else
       echo 'WARNING Looks like WENHACK is OFF'
       echo 'WARNING Looks like WENHACK is OFF'
@@ -579,36 +578,44 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   #   if input file has extension ".png" => convert to raw
   #   if input file has extension ".raw" => use input file as is
 
-  if (! $?input) then
-    echo No input\; testbench will use random numbers for its check (i think)
-    set in = ''
+  set iroot = $input:t; set iroot = $iroot:r
 
-  else if ("$input:e" == "png") then
-    # Convert to raw format
+#   if (! $?input) then
+#     # SR 3/2018 Yeah Im pretty sure this dont work no more...
+#     # echo No input\; testbench will use random numbers for its check (i think)
+#     # set in = ''
+#     echo 'ERROR (run.csh) no input file found'; exit 13
+# 
+#   else
+
+  if ("$input:e" == "png") then
     if ($?VERBOSE) then
-      echo "  Converting input file '$input' to '.raw'..."
-      echo "  io/myconvert.csh $input $tmpdir/input.raw"
+      echo "  Converting input file '$input' to '$tmpdir/$iroot.raw'..."
+      echo "  io/myconvert.csh $input $tmpdir/$iroot.raw"
       echo
       echo -n "  "
-      io/myconvert.csh $input $tmpdir/input.raw
+      io/myconvert.csh $input $tmpdir/$iroot.raw || exit 13
     else
-      io/myconvert.csh -q $input $tmpdir/input.raw
+      io/myconvert.csh -q $input $tmpdir/$iroot.raw || exit 13
     endif
-    set in = "-input $tmpdir/input.raw"
+    set input = "$tmpdir/$iroot.raw"
 
   else if ("$input:e" == "raw") then
     if ($?VERBOSE) then
-      echo "Using raw input from '$input'..."
-      echo cp $input $tmpdir/input.raw
+      echo "  Using raw input from '$input'..."
+      # echo "  cp $input $tmpdir/$iroot.raw"
     endif
-    cp $input $tmpdir/input.raw
-    set in = "-input $tmpdir/input.raw"
+    # cp $input $tmpdir/$iroot.raw
 
   else
     echo "ERROR run.csh: Input file '$input' has invalid extension"
     exit -1
 
   endif
+  # set in = "-input $tmpdir/$iroot.raw"
+  # set input = "$tmpdir/$iroot.raw"
+
+
 
   # echo "First few lines of input file for comparison..."
   # od -t x1 $tmpdir/input.raw | head
@@ -654,6 +661,18 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
     set config = $tmpdir/tmpconfig
   endif
 
+  # Quick check of goodness in config file (again)
+  unset bad_config
+  set c = '[0-9a-fA-F]'
+  set goodline = "$c$c$c$c$c$c$c$c $c$c$c$c$c$c$c$c"
+  egrep -v "$goodline" $config > /tmp/tmp$$ && set bad_config
+  if ($?bad_config) then
+    echo
+    echo "ERROR Config file '$config' looks bad, man. Bad line(s) include:"
+    cat /tmp/tmp$$ | sed 's/^/> /'
+    exit 13
+  endif
+
   if ($?VERBOSE) then
     echo
     echo "BITSTREAM '$config':"
@@ -674,7 +693,7 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
   if ($?VERBOSE) set echo
     obj_dir/$vtop \
       -config $config \
-      $in \
+      -input $input \
       $out \
       $delay \
       $trace \
@@ -695,7 +714,7 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
 
   if ($?input) then
     echo
-    ls -l $tmpdir/input.raw $output
+    ls -l $tmpdir/$iroot.raw $output
 
     if ("$output:t" == "conv_1_2_CGRA_out.raw") then
       # echo; set cmd = "od -t u1 $output"; echo $cmd; $cmd | head
@@ -717,8 +736,8 @@ if ($?VERBOSE) echo '  First prepare input and output files...'
     endif
 
     echo
-    set cmd = "od -t x1 $tmpdir/input.raw"
-    set cmd = "od -t u1 $tmpdir/input.raw"
+    set cmd = "od -t x1 $tmpdir/$iroot.raw"
+    set cmd = "od -t u1 $tmpdir/$iroot.raw"
   # echo $cmd; $cmd | head
     echo $cmd; $cmd | head; echo ...; $cmd | tail -n 3
 

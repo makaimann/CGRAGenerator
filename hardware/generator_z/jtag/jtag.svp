@@ -45,8 +45,8 @@
  * ****************************************************************************/
 // ACTUAL GENESIS2 PARAMETERIZATIONS
 //; # Now, let's decide upon the parameters of the configuration bus:
-//; my $sc_cfg_bus_width =  $self->define_param(SYSCLK_CFG_BUS_WIDTH => 16);
-//; my $sc_cfg_addr_width =  $self->define_param(SYSCLK_CFG_ADDR_WIDTH => 31);
+//; my $sc_cfg_bus_width =  $self->define_param(SYSCLK_CFG_BUS_WIDTH => 32);
+//; my $sc_cfg_addr_width =  $self->define_param(SYSCLK_CFG_ADDR_WIDTH => 32);
 //; my $sc_cfg_op_width = $self->define_param(SYSCLK_CFG_OPCODE_WIDTH => 5);
 //; my $IDCODE = $self->define_param(IDCODE => 1);
 //; my $io_list = $self->force_param(IO_LIST => 
@@ -58,7 +58,8 @@
 //;			{name => 'tdo',		width => 1,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
 //;			{name => 'config_data_from_gc',	width => $sc_cfg_bus_width,  direction => 'in', bsr => 'no',  pad => 'digital', orientation => 'right'},
 //;			{name => 'config_data_to_gc',	width => $sc_cfg_bus_width,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
-//;			{name => 'config_addr_to_gc',	width => $sc_cfg_addr_width+$sc_cfg_op_width,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'}
+//;			{name => 'config_addr_to_gc',	width => $sc_cfg_addr_width,  direction => 'out', bsr => 'no',  pad => 'digital', orientation => 'right'},
+//;			{name => 'config_op_to_gc', width => $sc_cfg_op_width, direction => 'out', bsr => 'no', pad => 'digital', orientation => 'right'}
 //;		]);
 //; my $num_ios = scalar(@{$io_list});
 //;
@@ -129,9 +130,9 @@ module `$self->get_module_name()`
    `$sc_jtag2gc_ifc->get_module_name()` `$sc_jtag2gc_ifc->get_instance_name()`();
    `$sc_gc2jtag_ifc->get_module_name()` `$sc_gc2jtag_ifc->get_instance_name()`();
    //The opcode is the upper 3 address bits to the gc
-   assign ifc.config_addr_to_gc = {`$sc_jtag2gc_ifc->get_instance_name()`.cfgOut.op,
-                               `$sc_jtag2gc_ifc->get_instance_name()`.cfgOut.addr};
+   assign ifc.config_addr_to_gc = `$sc_jtag2gc_ifc->get_instance_name()`.cfgOut.addr;
    assign ifc.config_data_to_gc = `$sc_jtag2gc_ifc->get_instance_name()`.cfgOut.data;
+   assign ifc.config_op_to_gc = `$sc_jtag2gc_ifc->get_instance_name()`.cfgOut.op;
    assign `$sc_gc2jtag_ifc->get_instance_name()`.cfgIn.data = ifc.config_data_from_gc;
    assign `$sc_gc2jtag_ifc->get_instance_name()`.cfgIn.addr = 0;
    assign `$sc_gc2jtag_ifc->get_instance_name()`.cfgIn.op = 3;//Set to Bypass so that input data_rd reg is always enabled. Is this ok?
@@ -143,12 +144,12 @@ module `$self->get_module_name()`
    //; my $cfg_dbg = $self->unique_inst('cfg_and_dbg', 'cfg_and_dbg',
    //;					SC_CFG_BUS => 'yes', 
    //;					TC_CFG_BUS => 'no', SC_CFG_IFC_REF => $sc_jtag2gc_ifc,
-   //;					SC_CFG_OPCODES => {nop => 0, write => 1, read => 2, bypass => 3, 
-   //;                                                 set_rw_count => 4, burst_start => 5, read_data => 6, 
+   //;					SC_CFG_OPCODES => {nop => 0, write => 1, read => 2, bypass => 3,                                                 
    //;                                                 wr_A050 => 7, wr_to_TST => 8, rd_TST => 9,
-   //; 						       global_reset => 10, reset_tile => 11, stall => 12, 
+   //; 						       global_reset => 10, stall => 12, 
    //;    					       adv_clk => 13, resume_clk => 14, sys_clk_on => 15,
-   //;						       wr_rd_delay_reg => 16, rd_rd_delay_reg => 17} 
+   //;						       wr_rd_delay_reg => 16, rd_rd_delay_reg => 17, wr_delay_sel_reg => 18,
+   //;						       rd_delay_sel_reg => 19} 
    //;					);#Should this really be bypass??
    //;
    
