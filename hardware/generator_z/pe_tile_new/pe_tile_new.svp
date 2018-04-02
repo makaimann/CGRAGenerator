@@ -34,7 +34,9 @@
 //; my $lut_inps   = parameter(Name=>'lut_inps',
 //;                               Val=>3, Min=>0, Step=>1, Max=>16,
 //;                               Doc=>"0 - no LUT, 1-16 - uses LUTs with that number of inputs");
-//;
+//;      
+//; my $en_debug = parameter(Name=>'en_debug', val=> 1, List=>[1, 0], doc=>'Enable debuging registers?');
+
 //; my $intra_tile_addr = 0;
 
 //; my $use_sad  = $use_add > 1;
@@ -293,6 +295,9 @@ read_data
 //; $input_count = $input_count+1;
 //; };
 
+//; if($en_debug) {
+    wire pe_out_irq;
+//; }
 //; #############################################################
 //; # Generate SB and corresponding config enables
 //; #############################################################
@@ -439,7 +444,10 @@ read_data
 //; #####################################
 //;
 //;  $intra_tile_addr+=1;
-//;  my $gout_output_count = $output_count + 1;
+//;  my $gout_output_count = 1;
+//;  if($en_debug) {
+//;    $gout_output_count += 1;
+//;  }
 //;  my $number_of_gout_select_bits_needed = int(ceil(log($gout_output_count)/log(2)));
 //;
 //;   $tile_info_hash->{ 'gout' } = {
@@ -463,9 +471,7 @@ read_data
     case (gout_sel)
 //;    my @output_arr = ();
 //;    push @output_arr, "1'b0";
-//;    foreach my $pe_output (@bit1_outputs) {
-//;      push @output_arr, "pe_out_${pe_output}";
-//;    }
+//;    if ($en_debug) {push @output_arr, "pe_out_irq";}
 //;    foreach my $pe_output (@output_arr) {
 //;      if ($count==0) {
       default: gout = 1'b0;
@@ -504,7 +510,7 @@ read_data
 //;                   reg_out => $reg_out, use_add => $use_add,
 //;                   use_cntr => $use_cntr, use_bool => $use_bool, use_shift => $use_shift,
 //;                   mult_mode => $mult_mode, use_div => $use_div, is_msb => $is_msb,
-//;                   en_double => $en_double, lut_inps => $lut_inps);
+//;                   en_double => $en_double, lut_inps => $lut_inps, en_debug => $en_debug);
 
 `$pe->instantiate()`
  (
@@ -539,8 +545,11 @@ read_data
 //;  } else {
   .`$port`(pe_out_`$port`),
 //;  }
-  .read_data(read_data_pe)
 //; }
+//; if($en_debug) {
+      .irq(pe_out_irq),
+//; }
+  .read_data(read_data_pe)
 );
 //; $tile_info_hash->{ 'pe' }{'mname'} = $pe->mname();
 //;
@@ -556,6 +565,8 @@ always_comb begin
     //; foreach my $key (sort { $tile_info_hash->{$a}{'address'} cmp $tile_info_hash->{$b}{'address'} } keys(%$tile_info_hash))  {
     //;   if($key ne 'gout') {
           8'd`$tile_info_hash->{$key}->{'address'}` : read_data = read_data_`$key`;
+    //;   } else {
+               8'd`$tile_info_hash->{$key}->{'address'}` : read_data = gout_sel;
     //;   }
     //; }
           default : read_data = 'd0;
