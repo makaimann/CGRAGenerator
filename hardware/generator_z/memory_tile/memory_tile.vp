@@ -121,6 +121,7 @@ read_data
   output [31:0] read_data;
   wire ___genesis_wire_`$global_signal_count`_`${bus_config}`_`${all_segments_for_all_tiles}`_`${gen_mem_for_busname}`_`${control_busname}`_`${ddepth}`_`${sides}`_`${feedthrough_outputs}`_`${registered_outputs}`_`${is_bidi}`_`${sb_fs}`_`${cb_connections}`_`${mem_tile_height}`;
   wire clk;
+  wire cg_en;
 
 //; ##############################################
 //; #
@@ -385,6 +386,7 @@ wire [31:0] read_data_cb_`$mem_input_name`;
 //; }
 //; if ($mem_input_bus eq "BUS16") {
   wire [15:0] `$mem_input_name`;
+//;   } elsif ($mem_input_name eq "cg_en") {
 //;   } else {
   wire `$mem_input_name`;
 //;   }
