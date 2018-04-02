@@ -36,13 +36,13 @@ read_data
   /* verilator lint_on UNUSED */
   wire ___genesis_wire_`${default_value}`_`${width}`_`${num_tracks}`_`${feedthrough_outputs}`_`${has_constant}`;
 
-  output [`$width-1`:0] out;
+  output reg [`$width-1`:0] out;
 //; for(my $i=0; $i<$num_tracks; $i++) {
 //;   if ($feedthrough[$i%$num_tracks]==1) {
   input [`$width-1`:0] in_`$i`;
 //;   }
 //; }
-  output [31:0] read_data;
+  output reg [31:0] read_data;
 
 //; # ############################################
 //; # Setup register for CB mux configuration

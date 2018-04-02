@@ -60,7 +60,7 @@ read_data
   input [`$width-1`:0] in_`$i`_`$j`;
   //;  }
   //; }
-  output [31:0] read_data;
+  output reg [31:0] read_data;
 
   wire ___genesis_wire_`${width}`_`${num_tracks}`_`${feedthrough_outputs}`_`${sides}`_`${registered_outputs}`_`${pe_output_count}`_`${is_bidi}`_`${sb_fs}`;
 
@@ -155,7 +155,7 @@ read_data
 //;     } else {
 //;         my $config_bit_r = ($number_of_driven_outputs_per_side * $number_of_config_bits_per_driven_output * $sides) + ($registered_count * $i) + $registered_config_bit_count;
 //;         my $config_ungate_r = ($registered_count * $i) + $registered_config_bit_count;
-  wire [`$width-1`:0] out_`$i`_`$j`_i;
+  reg [`$width-1`:0] out_`$i`_`$j`_i;
   always @(*) begin
 //;        my $config_bit_l = ($number_of_driven_outputs_per_side * $number_of_config_bits_per_driven_output * $i) + ($number_of_config_bits_per_driven_output * $driven_config_bit_count);
 //;        $driven_config_bit_count++;
@@ -184,7 +184,7 @@ read_data
 //; 
 //;       if ($registered[$j]==1) {
   reg [`$width-1`:0] out_`$i`_`$j`_id1;
-  reg out_`$i`_`$j`_le;
+  wire out_`$i`_`$j`_le;
   assign out_`$i`_`$j`_le = clk_en | (config_ungate[`$config_ungate_r`]); 
   always @(posedge clk) begin
     if (out_`$i`_`$j`_le)

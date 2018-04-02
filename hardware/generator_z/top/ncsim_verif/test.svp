@@ -1,0 +1,247 @@
+/* *****************************************************************************
+ * File: test.v
+ * Author: Ofer Shacham
+ * 
+ * Description:
+ * simple test bench for template
+ * 
+ *
+ * Change bar:
+ * -----------
+ * Date          Author   Description
+ * Apr 3, 2010  shacham  initial version
+ *  
+ * 
+ * ****************************************************************************/
+
+////////////////////////////// IMPORTANT MESSAGE: //////////////////////////////
+// Note that programs are written using object oriented programming. They
+// are closer to software than to hardware. There is therefore no real need
+// in a genesis type parameterization.
+////////////////////////////////////////////////////////////////////////////////
+//; my $num_tracks = $self->get_top_param('num_tracks');
+//; my $config_bs = parameter(NAME => 'config_bs', val => '../../../bitstream/examples/pw2_sixteen.bsa', DOC => "Bitstream to configure CGRA");
+//; my $input_file = parameter(NAME => 'input', val => '../../../verilator/generator_z_tb/io/conv_bw_in.png', DOC => "Input image to use for test");
+
+program automatic `mname`(
+	interface ifc,//JTAG Interface
+	inout logic [`$num_tracks-1`:0] pads_S0,
+	inout logic [`$num_tracks-1`:0] pads_S1,
+	inout logic [`$num_tracks-1`:0] pads_S2,
+	inout logic [`$num_tracks-1`:0] pads_S3
+);
+   
+   // some variables to control the test
+   //int                           seed;
+   //int                           rnd0;
+   int 				 fd;
+   int 				 config_file;
+   int				 input_file;
+   int				 status;
+   int				 i;
+   logic [31:0]			 config_data;
+   logic [31:0]			 config_addr;
+   logic [7:0]			 pads_in_char;
+   // Instantiate a jtag driver
+   //; my $jtag_drvr_obj = generate_base('JTAGDriver', 'jdrv');
+   `$jtag_drvr_obj->instantiate`;
+   jtag_regfile_trans_t jtag_config_trans;      
+   task run_test;
+      begin
+	 jdrv.ReadID(jtag_config_trans);
+	//Begin CGRA configuration
+ 	 
+	 // initialization of structs:
+	 jtag_config_trans.domain = sc_domain;
+	 jtag_config_trans.addr = 32'h16;
+	 jtag_config_trans.data_out = 32'h1;
+	 	
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd25;
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = write;
+	 jdrv.Send(jtag_config_trans);
+	 $fdisplay(fd, "%t: %m: Trans 1 (Write):  Address to GC=%x, Data to GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);
+	 
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd48;
+	 jtag_config_trans.addr = 32'hF000008B;
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = write;
+	 jdrv.Send(jtag_config_trans);
+	 $fdisplay(fd, "%t: %m: Trans 2 (Write):  Address to GC=%x, Data to GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);
+ 
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd0;
+	 jtag_config_trans.addr = 32'h16;
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = read;
+	 jtag_config_trans.data_out = 0;
+	 jdrv.Send(jtag_config_trans);
+	 jtag_config_trans = jdrv.GetResult();
+	 $fdisplay(fd, "%t: %m: Trans 3 (Read):  Address to GC=%h, Data to GC=%d, Data from GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_config_trans.data_out);
+	 
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd0;
+	 jtag_config_trans.addr = 32'hF000008B;
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = read;
+	 jtag_config_trans.data_out = 0;
+	 jdrv.Send(jtag_config_trans);
+	 jtag_config_trans = jdrv.GetResult();
+	 $fdisplay(fd, "%t: %m: Trans 4 (Read):  Address to GC=%h, Data to GC=%d, Data from GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_config_trans.data_out);
+	 
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd0;
+	 jtag_config_trans.addr = 32'h16;
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = read;
+	 jtag_config_trans.data_out = 0;
+	 jdrv.Send(jtag_config_trans);
+	 jtag_config_trans = jdrv.GetResult();
+	 $fdisplay(fd, "%t: %m: Trans 5 (Read again):  Address to GC=%h, Data to GC=%d, Data from GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_config_trans.data_out);
+	 
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd0;
+	 jtag_config_trans.addr = 32'hF000008B;
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = read;
+	 jtag_config_trans.data_out = 0;
+	 jdrv.Send(jtag_config_trans);
+	 jtag_config_trans = jdrv.GetResult();
+	 $fdisplay(fd, "%t: %m: Trans 6 (Read again):  Address to GC=%h, Data to GC=%d, Data from GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_config_trans.data_out);
+	//PARAMETRIZE THESE
+	 /*while( !feof(config_file) ) begin
+		@(posedge ifc.Clk);
+		status = $fscanf(config_file,"%x %x", config_addr,config_data);
+		jtag_config_trans.data_in = config_data;
+		jtag_config_trans.addr = config_addr[28:0];
+		jtag_config_trans.op = config_addr[31:29];
+		jdrv.Send(jtag_config_trans);
+		pads_S0 = 0;
+		pads_S1 = 0;
+		pads_S2 = 0;
+		pads_S3 = 0;
+	 end
+	
+	 //HERE WE SHOULD PROBABLY SWITCH TO THE FAST CLK. WILL DO LATER
+	 $display("Finished Configuration!");
+	 //NOW WE CAN APPLY THE INPUTS TO THE PADS
+	 while( !feof(input_file) )being
+		@(posedge ifc.Clk);
+		pads_in_char = $fgetc(input_file);
+		pads_S2[7:0] =8'b0;
+		//REVERSE THE BITS
+		for(i=0; i<8; i++)
+			pads_S2[15-i] = pads_in_char[i];	
+	 end */
+
+	 /*@(posedge ifc.Clk);
+	 jtag_ofst_trans.data_in = 25;
+	 jtag_ofst_trans.done = 0;
+	 jdrv.Send(jtag_ofst_trans);
+	 $fdisplay(fd,"%t: %m: Trans 1 (Write):  Address to GC=%d, Data to GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);
+
+	 @(posedge ifc.Clk);
+	 jtag_rslt_trans.data_out = 0;
+	 jtag_rslt_trans.done = 0;
+	 ifc.config_data_from_gc = 16'd88;
+	 jdrv.Send(jtag_rslt_trans);
+	 jtag_rslt_trans = jdrv.GetResult();
+	 $fdisplay(fd,"%t: %m: Trans 2 (Read):  Address to GC=%d, Data to GC=%d, Data out from GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_rslt_trans.data_out);*/
+	 
+      end
+   endtask // run_test
+
+
+
+   /****************************************************************************
+    * Control the simulation
+    * *************************************************************************/
+   initial begin
+      $display("%t:\t********************Loading Arguments***********************",$time);
+      init_test;
+      fd = $fopen("test.log","w");
+      /*config_file = $fopen("`$config_bs`","r");
+      if(!config_file)
+	$display("ERROR: Could not open `$config_bs`");	
+      input_file = $fopen("`$input_file`","r");
+      if(!input_file)
+	$display("ERROR: Could not open `$input_file`");*/
+      $display("%t:\t*************************START*****************************",$time);
+      @(negedge ifc.Reset);
+      repeat (10) @(posedge ifc.Clk);
+      run_test;
+      repeat (10) @(posedge ifc.Clk);
+      $display("%t:\t*************************FINISH****************************",$time);
+      $fclose(fd);
+      $finish(2);
+   end
+   
+   
+   task init_test();
+      begin
+	 // read user input
+	 //ProcessArgs();
+	 //rnd0 = $random(seed); // initial the random number generator
+	 
+	 // init the environment
+	 jdrv = new(ifc);
+	 jdrv.Zero();
+	
+ 	 //ZERO out any inputs to the DUT
+	 ifc.config_data_from_gc = '0;
+	 repeat (2) @(posedge ifc.Clk); 
+      end
+   endtask // init_test
+   
+   /****************************************************************************
+    * Other Tasks:
+    * *************************************************************************/
+/*
+   task ProcessArgs;
+      begin
+         // if this is a "+wave" run, it must record all signals
+         if ( $test$plusargs("wave") ) begin
+            //         levels  instance
+            $display("time=%10t Starting Wave Capture", $time);
+            $vcdpluson(0,        top);
+         end
+         // if this is a "+memwave" run, it must record all memories
+         if ( $test$plusargs("memwave") ) begin
+            //         levels  instance
+            $display("time=%10t Starting Memories Capture", $time);
+            CaptureMemoriesOn();
+         end
+         // find the seed for this run
+         if ( $test$plusargs("seed") ) begin
+	    $value$plusargs("seed=%d", seed);
+	 end else begin
+            seed = 12345;
+         end
+	 $display("%t: Using seed %d",$time, seed);
+      end
+   endtask // ProcessArgs
+   
+   task CaptureMemoriesOn;
+      begin
+         $vcdplusmemon(0,        top);
+      end
+   endtask // CaptureMemoriesOn
+   
+   task CaptureMemoriesOff;
+      begin
+         $vcdplusmemoff(0,        top);
+      end
+   endtask // CaptureMemoriesOff
+  */ 
+endprogram : `mname`
+  

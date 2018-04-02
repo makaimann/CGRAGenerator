@@ -32,7 +32,7 @@ read_data
   input config_read;
   input config_write;
   input [15:0] tile_id;
-  output [31:0] read_data;
+  output reg [31:0] read_data;
   /* verilator lint_on UNUSED */
 
   wire ___genesis_wire_`${side}`_`${io_group}`;
