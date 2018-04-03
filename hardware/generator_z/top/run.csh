@@ -49,7 +49,7 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../pe_new/pe/rtl/test_debug_reg.svp  \
   ../pe_new/pe/rtl/test_opt_reg_file.svp  \
   \
-  ../pe_tile_new/pe_tile_new.vp \
+  ../pe_tile_new/pe_tile_new.svp \
   \
   ../empty/empty.vp \
   $io1bit \
