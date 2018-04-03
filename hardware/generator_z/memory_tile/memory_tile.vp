@@ -473,11 +473,12 @@ wire [31:0] read_data_sb_`$row`_`$bus`;
 //;   $tile_info_hash->{'mem'}{'width'} = $width;
 //;   $tile_info_hash->{'mem'}{'depth'} = $ddepth;
 
-
+wire [31:0] read_data_mem;
 
   `$mem_core->instantiate()`
   (
       .clk(clk),
+      .clk_in(clk_in),
       .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
@@ -493,7 +494,8 @@ wire [31:0] read_data_sb_`$row`_`$bus`;
       .chain_wen_in(chain_wen_in),
       .chain_valid_out(chain_valid_out),
       .almost_full(almost_full),
-      .almost_empty(almost_empty)
+      .almost_empty(almost_empty),
+      .read_data(read_data_mem)
    );
    always @(*) begin
            if (config_read && (config_addr[15:0]==tile_id)) begin

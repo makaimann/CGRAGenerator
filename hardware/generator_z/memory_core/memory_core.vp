@@ -15,6 +15,7 @@
 
 module `mname`(
 clk,
+clk_in,
 reset,
 config_addr,
 config_data,
@@ -30,10 +31,12 @@ chain_wen_in,
 chain_valid_out,
 almost_full,
 almost_empty,
-addr_in
+addr_in,
+read_data
 );
 
 input clk;
+input clk_in;
 input reset;
 input config_en;
 input wen_in;
@@ -44,7 +47,7 @@ input [31:0] config_data;
 input [`$dwidth - 1`:0] data_in;
 input [`$dwidth - 1`:0] chain_in;
 input [`$dwidth - 1`:0] addr_in;
-
+output reg [31:0] read_data;
 output chain_valid_out;
 output [`$dwidth - 1`:0] chain_out;
 output reg valid_out;
@@ -123,7 +126,7 @@ always @(posedge clk or posedge reset) begin
 end
 
 
-always @(posedge clk or posedge reset) begin
+always @(posedge clk_in or posedge reset) begin
   if (reset==1'b1) begin
     config_mem <= 32'd0;
   end else begin
@@ -202,6 +205,12 @@ assign mem_cen1 = mem_wen1 | mem_ren1;
 
 //; my $lb = generate('linebuffer_control', 'linebuffer_control', dwidth => $dwidth, ddepth => $ddepth );
 //; my $fifo = generate('fifo_control', 'fifo_control', dwidth => $dwidth, ddepth => $ddepth );
+always @(*) begin
+        case (config_addr[31:24])
+            8'd0 : read_data = config_mem[31:0];
+            default : read_data = 'h0;
+        endcase
+    end
 
 `$lb->instantiate()`
 (
