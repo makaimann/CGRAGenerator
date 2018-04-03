@@ -72,21 +72,19 @@ program automatic `mname`(
 	 jdrv.Send(jtag_config_trans);
 	 $fdisplay(fd, "%t: %m: Trans 2 (Write):  Address to GC=%x, Data to GC=%d",  
 		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);
+	 
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd124;
+	 jtag_config_trans.addr = 32'h00040024;
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = write;
+	 jdrv.Send(jtag_config_trans);
+	 $fdisplay(fd, "%t: %m: Trans 3 (Write):  Address to GC=%x, Data to GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);
  
 	 @(posedge ifc.Clk);
 	 jtag_config_trans.data_in = 32'd0;
 	 jtag_config_trans.addr = 32'h16;
-	 jtag_config_trans.done = 0;
-	 jtag_config_trans.op = read;
-	 jtag_config_trans.data_out = 0;
-	 jdrv.Send(jtag_config_trans);
-	 jtag_config_trans = jdrv.GetResult();
-	 $fdisplay(fd, "%t: %m: Trans 3 (Read):  Address to GC=%h, Data to GC=%d, Data from GC=%d",  
-		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_config_trans.data_out);
-	 
-	 @(posedge ifc.Clk);
-	 jtag_config_trans.data_in = 32'd0;
-	 jtag_config_trans.addr = 32'hF000008B;
 	 jtag_config_trans.done = 0;
 	 jtag_config_trans.op = read;
 	 jtag_config_trans.data_out = 0;
@@ -97,13 +95,34 @@ program automatic `mname`(
 	 
 	 @(posedge ifc.Clk);
 	 jtag_config_trans.data_in = 32'd0;
+	 jtag_config_trans.addr = 32'hF000008B;
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = read;
+	 jtag_config_trans.data_out = 0;
+	 jdrv.Send(jtag_config_trans);
+	 jtag_config_trans = jdrv.GetResult();
+	 $fdisplay(fd, "%t: %m: Trans 5 (Read):  Address to GC=%h, Data to GC=%d, Data from GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_config_trans.data_out);
+	 
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd0;
+	 jtag_config_trans.addr = 32'h00040024;
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = read;
+	 jtag_config_trans.data_out = 0;
+	 jdrv.Send(jtag_config_trans);
+	 jtag_config_trans = jdrv.GetResult();
+	 $fdisplay(fd, "%t: %m: Trans 6 (Read):  Address to GC=%h, Data to GC=%d, Data from GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_config_trans.data_out);
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd0;
 	 jtag_config_trans.addr = 32'h16;
 	 jtag_config_trans.done = 0;
 	 jtag_config_trans.op = read;
 	 jtag_config_trans.data_out = 0;
 	 jdrv.Send(jtag_config_trans);
 	 jtag_config_trans = jdrv.GetResult();
-	 $fdisplay(fd, "%t: %m: Trans 5 (Read again):  Address to GC=%h, Data to GC=%d, Data from GC=%d",  
+	 $fdisplay(fd, "%t: %m: Trans 7 (Read again):  Address to GC=%h, Data to GC=%d, Data from GC=%d",  
 		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_config_trans.data_out);
 	 
 	 @(posedge ifc.Clk);
@@ -114,7 +133,18 @@ program automatic `mname`(
 	 jtag_config_trans.data_out = 0;
 	 jdrv.Send(jtag_config_trans);
 	 jtag_config_trans = jdrv.GetResult();
-	 $fdisplay(fd, "%t: %m: Trans 6 (Read again):  Address to GC=%h, Data to GC=%d, Data from GC=%d",  
+	 $fdisplay(fd, "%t: %m: Trans 8 (Read again):  Address to GC=%h, Data to GC=%d, Data from GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_config_trans.data_out);
+	 
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd0;
+	 jtag_config_trans.addr = 32'h00040024;
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = read;
+	 jtag_config_trans.data_out = 0;
+	 jdrv.Send(jtag_config_trans);
+	 jtag_config_trans = jdrv.GetResult();
+	 $fdisplay(fd, "%t: %m: Trans 9 (Read Again):  Address to GC=%h, Data to GC=%d, Data from GC=%d",  
 		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_config_trans.data_out);
 	//PARAMETRIZE THESE
 	 /*while( !feof(config_file) ) begin
