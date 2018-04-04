@@ -339,8 +339,6 @@ reset_in,
 // VERILATOR_PORT7
 // VERILATOR_PORT8
 // -------------------------------------
-config_addr_in,
-config_data_in,
 tdi,
 tdo,
 tms,
@@ -353,8 +351,6 @@ trst_n
 
   input clk_in;
   input reset_in;
-  input [31:0] config_addr_in;
-  input [31:0] config_data_in;
   input tdi;
   input tms;
   input tck;
@@ -397,9 +393,7 @@ wire [31:0] read_data;
 wire [31:0] read_data_pe;
 wire [31:0] read_data_global;
 wire [31:0] read_data_memory;
-//CONFIG_HACK. ONCE GC IS DONE SEND ADDR AND DATA IN THROUGH JTAG
-assign config_addr = config_addr_in;
-assign config_data = config_data_in;
+wire [3:0] stall;
 //; my $global_controller_obj = generate("global_controller", "global_controller");
 //; my $jtag_ifc_path = parameter(NAME => 'IFC', VAL => $global_controller_obj -> get_param('IFC'), DOC => "Path to JTAG interface for JTAGDriver");
     `$global_controller_obj->instantiate()` 
@@ -940,7 +934,12 @@ assign config_data = config_data_in;
 //;           my $child_addr_hex = sprintf("%X",$child_addr);
 //;           if ($child_type eq "mem" || $child_type eq "pe" || $child_type eq "gst") {
       .gout_l_`$i`(global_wire_h2l_`$incr`_`$i`_`$new_key`), 
+//;   if($incr*2 == $cgra_grid_width-4) {
+      .gin_u_`$i`(stall[`$i`]),
+//;   }
+//;   else {
       .gin_u_`$i`(global_wire_h2l_`($incr*2)`_`$i`_`(int(floor((${next_w}-2)/2))+2)`_`(int(floor((${next_h}-2)/2))+2)`), 
+//;   }     
       .gin_l_`$i`(global_wire_l2h_`(floor($incr/2))`_`$child_key`), 
 //;             print INFO "      <tile>0x${child_addr_hex}</tile>\n";
 //;           } else {

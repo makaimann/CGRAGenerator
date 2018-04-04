@@ -37,7 +37,7 @@ trst_n
   output reg [`$cfg_bus_width-1`:0] config_data_out;
   output reg clk_out;
   output reg reset_out;
-  output reg cgra_stalled;
+  output reg [3:0] cgra_stalled;
   output tdo;
 
   wire [`$cfg_addr_width-1`:0] config_addr_jtag_out;
