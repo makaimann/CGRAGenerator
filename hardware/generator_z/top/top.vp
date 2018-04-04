@@ -401,9 +401,9 @@ wire [3:0] stall;
     `$global_controller_obj->instantiate()` 
     (
       .clk_in(clk_in),
-      .clk_out(clk),
+      .clk_out(),//clk),
       .reset_in(reset_in),
-      .reset_out(reset),
+      .reset_out(),//reset),
       .config_addr_out(),//config_addr),
       .config_data_in(read_data),
       .config_data_out(),//config_data),
