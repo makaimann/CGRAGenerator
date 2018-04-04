@@ -53,11 +53,21 @@ program automatic `mname`(
  	 
 	 // initialization of structs:
 	 jtag_config_trans.domain = sc_domain;
-	 jtag_config_trans.addr = 32'h16;
+	 jtag_config_trans.addr = 32'h0;
 	 jtag_config_trans.data_out = 32'h1;
+
+
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd0;
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = stall;
+	 jdrv.Send(jtag_config_trans);
+	 $fdisplay(fd, "%t: %m: Trans 1 (STALL):  Address to GC=%x, Data to GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);
 	 	
 	 @(posedge ifc.Clk);
 	 jtag_config_trans.data_in = 32'd25;
+	 jtag_config_trans.addr = 32'h16;
 	 jtag_config_trans.done = 0;
 	 jtag_config_trans.op = write;
 	 jdrv.Send(jtag_config_trans);

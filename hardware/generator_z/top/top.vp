@@ -386,7 +386,6 @@ wire [31:0] config_addr;
 wire [31:0] config_data;
 wire clk;
 wire reset;
-wire stall;
 wire config_read;
 wire config_write;
 wire [31:0] read_data;
