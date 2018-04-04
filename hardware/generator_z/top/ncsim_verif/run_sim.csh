@@ -6,7 +6,6 @@ irun -top test_top -timescale 1ns/1ps -l irun.log -access +rwc -notimingchecks \
 $RTL_FOLDER/../ncsim_verif/cmd.tcl \
 $RTL_FOLDER/cb_unq1.v  \
 $RTL_FOLDER/cb_unq2.v \
-$RTL_FOLDER/cb_unq3.v \
 $RTL_FOLDER/cfg_and_dbg_unq1.sv \
 $RTL_FOLDER/cfg_ifc_unq1.sv \
 $RTL_FOLDER/clocker_unq1.sv \

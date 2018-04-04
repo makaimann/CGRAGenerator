@@ -124,6 +124,7 @@ read_data
   input [15:0] tile_id;
   input reset;
   output reg [31:0] read_data;
+  wire clk_en;
 
   wire ___genesis_wire_`${global_signal_count}`_`${bus_config}`_`${all_segments_for_all_tiles}`_`${sides}`_`${feedthrough_outputs}`_`${registered_outputs}`_`${is_bidi}`_`${sb_fs}`_`${cb_connections}`_`${has_constant}`_`${reg_inputs}`_`${reg_out}`_`${use_add}`_`${use_cntr}`_`${use_bool}`_`${use_shift}`_`${mult_mode}`_`${use_div}`_`${is_msb}`_`${en_double}`_`${lut_inps}`;
 //; # wire clk;
@@ -202,7 +203,7 @@ read_data
 //; my $num_tracks_1b = $bus_num_tracks_hash{'BUS1'};
 //; my $cb_wide = generate('cb', 'cbwide_base', width=>$wide_bus_width, num_tracks=>($num_tracks_wide*2), has_constant=>$has_constant, feedthrough_outputs=>$cb_connections);
 //; my $cb_1b = generate('cb', 'cb1b_base', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>$has_constant, feedthrough_outputs=>$cb_connections);
-//; my $cb_cg = generate('cb', 'cb1b_cg', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>1, feedthrough_outputs=>$cb_connections, default_value=>'1');
+//; my $cb_cg = generate('cb', 'cb1b_cg', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>0, feedthrough_outputs=>$cb_connections);
 //; my @cb_connections_arr = split('',$cb_connections);
 //; my $input_count=0;
 //; my $num_tracks;
@@ -302,6 +303,7 @@ read_data
 //; if($en_debug) {
     wire pe_out_irq;
 //; }
+  assign clk_en = ~cg_en;
 //; #############################################################
 //; # Generate SB and corresponding config enables
 //; #############################################################
@@ -355,7 +357,7 @@ read_data
   `$sb_wide->instantiate()`
   (
     .clk(clk_in),
-    .clk_en(cg_en),
+    .clk_en(clk_en),
     .reset(reset),
 //;  foreach my $pe_output (@wide_outputs) {
     .pe_output_`$output_count`(pe_out_`$pe_output`),
@@ -420,7 +422,7 @@ read_data
   `$sb_1b->instantiate()`
   (
     .clk(clk_in),
-    .clk_en(cg_en),
+    .clk_en(clk_en),
     .reset(reset),
 //;  foreach my $pe_output (@bit1_outputs) {
     .pe_output_`$output_count`(pe_out_`$pe_output`),
@@ -521,7 +523,7 @@ read_data
 //;if($use_lut || $reg_inputs || $reg_out) {
   .clk(clk_in),
   .rst_n(~reset),
-  .clk_en(cg_en),
+  .clk_en(clk_en),
 //;}
 //; if($use_lut || $reg_inputs) {
   .cfg_d(config_data[31:0]),
