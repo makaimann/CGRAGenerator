@@ -1103,15 +1103,21 @@ def initialize_routes():
 #     # print tiles[0]
 
 
-class Resource:
-
-    def __init__(self, tileno):
-        rlist = self.build_resource_list(tileno)
-        self.bus = rlist
-        self.bit = rlist
+    ntiles = cgra_info.ntiles()
+    resources = range(ntiles)
+    for i in range(ntiles):
+        resources[i] = build_resource_list(i, DBG)
 
 
-    def build_resource_list(self, tileno, DBG=0):
+    if DBG: print "Initialized %d tiles" % ntiles
+    print ''
+    print 'PE: ', resources[0]
+    print ''
+    print 'MEM:', resources[3]
+    print ''
+
+
+def build_resource_list(tileno, DBG=0):
 
         i = tileno
         resources = []
@@ -1132,51 +1138,6 @@ class Resource:
             resources.extend([pfx+'op1',pfx+'op2',pfx+'pe_out'])
 
         return resources
-
-
-def init_tile_resources(DBG=0):
-    '''E.g. resources[0] = ['in_s0t0', 'in_s0t1', ... 'out_s3t3', 'out_s3t4']'''
-    global resources
-
-    ntiles = cgra_info.ntiles()
-    resources = range(ntiles)
-    for i in range(ntiles):
-        # resources[i] = build_resource_list(i, DBG)
-
-        # resources[i] = Resource(i).bus
-        resources[i] = Resource(i)
-
-
-
-    if DBG: print "Initialized %d tiles" % ntiles
-    print ''
-    print 'PE: ', resources[0].bus
-    print ''
-    print 'MEM:', resources[3].bus
-    print ''
-
-
-# def build_resource_list(tileno, DBG=0):
-# 
-#         i = tileno
-#         resources = []
-#         for dir in ['in','out']:
-#             # for side in range(4):
-#             nsides = 4
-#             if  is_mem_tile(i): nsides = 8
-#             for side in range(nsides):
-#                 for track in range(5):
-#                     port = "T%d_%s_s%dt%d" % (i, dir,side,track)
-#                     resources.append(port)
-# 
-#         # Tile-specific resources
-#         pfx = 'T' + str(i) + '_'
-#         if  is_mem_tile(i):
-#             resources.extend([pfx+'mem_in',pfx+'mem_out'])
-#         elif is_pe_tile(i):
-#             resources.extend([pfx+'op1',pfx+'op2',pfx+'pe_out'])
-# 
-#         return resources
 
 
 
