@@ -412,6 +412,9 @@ wire [3:0] stall;
       .tms(tms),
       .tck(tck),
       .trst_n(trst_n),
+//; for (my $i = 0; $i < $global_controller_obj->get_param('num_analog_regs'); $i++){
+      .analog_r`$i`(),
+//; }
       .cgra_stalled(stall),
       .read(config_read),
       .write()//config_write)

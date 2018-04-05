@@ -14,6 +14,7 @@ $RTL_FOLDER/flop_unq1.sv \
 $RTL_FOLDER/flop_unq2.sv \
 $RTL_FOLDER/flop_unq3.sv \
 $RTL_FOLDER/global_controller_unq1.sv \
+$RTL_FOLDER/analog_regfile.v \
 $RTL_FOLDER/global_signal_tile_unq1.v \
 $RTL_FOLDER/input_sr_unq1.v \
 $RTL_FOLDER/io16bit_unq1.v \
