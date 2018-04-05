@@ -511,6 +511,8 @@ wire [31:0] read_data_mem;
       .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
+      .config_read(config_read),
+      .config_write(config_write),
       .config_en(config_en_mem),
       .config_en_sram(config_en_sram),
       .data_in(wdata),
@@ -532,10 +534,13 @@ wire [31:0] read_data_mem;
            if (config_read && (config_addr[15:0]==tile_id)) begin
                    case (config_addr[23:16])
                //; foreach my $key (sort { $tile_info_hash->{$a}{'address'} cmp $tile_info_hash->{$b}{'address'} } keys(%$tile_info_hash))  {
-               //;   if($key ne 'gout') {
+	       //;   if($key eq 'sram_0' or $key eq 'sram_1' or  $key eq 'sram_2' or  $key eq 'sram_3'){
+                        'd`$tile_info_hash->{$key}->{'address'}` : read_data = read_data_sram;
+               //;   }
+	       //;   elsif($key ne 'gout') {
                         'd`$tile_info_hash->{$key}->{'address'}` : read_data = read_data_`$key`;
                    //;   } else {
-                             'd`$tile_info_hash->{$key}->{'address'}` : read_data = gout_sel;
+                        'd`$tile_info_hash->{$key}->{'address'}` : read_data = gout_sel;
                        //;   }
                        //; }
                              default : read_data = 'd0;
