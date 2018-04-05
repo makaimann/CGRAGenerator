@@ -335,7 +335,8 @@ read_data
 //;     }
 //;   }
 //;   if ($mem_input_bus eq "BUS1") {
-//;     for (my $i=0; $i<$global_signal_count; $i++, $k++)sram    .in_`$k`(gin_`${i}`),
+//;     for (my $i=0; $i<$global_signal_count; $i++, $k++){
+    .in_`$k`(gin_`${i}`),
 //;       $rename_hash->{ 'cb_'.$mem_input_name }{"in_${k}"} = "gin_${i}";
 //;     }
 //;   }
