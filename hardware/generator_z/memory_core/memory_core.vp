@@ -175,7 +175,7 @@ always @(*) begin
       mem_addr <= addr_in;      
       mem_data_in0 <= data_in;
       mem_data_in1 <= data_in;
-      data_out <= (sram_sel==1'b1)?mem_data_in1:mem_data_in0;
+      data_out <= (sram_sel==1'b1)?mem_data_out1:mem_data_out0;
       valid_out <= 1'b1;  
       almost_full <= 1'b0; 
       almost_empty <= 1'b0; 
