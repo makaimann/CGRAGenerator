@@ -45,7 +45,7 @@ trst_n
   
   //value of each register in analog regfile
 //; for (my $i = 0; $i < $num_analog_regs; $i++){
-  output analog_r`$i`;
+  output [`$cfg_bus_width-1`:0]  analog_r`$i`;
 //; }
 	
 
@@ -87,17 +87,19 @@ trst_n
 
 // Internal signals to/from analog registers
 reg analog_wr_en; 
-reg analog_data_in;
+reg [`$cfg_addr_width-1`:0] analog_data_in;
+reg [`$cfg_addr_width-1`:0] analog_addr;
 // instantiate registers for analog stuff
 //; my $analog_regfile = generate_base("analog_regfile","analog_regfile", num_regs => $num_analog_regs);
  `$analog_regfile -> instantiate()` (
 	.wr_en(analog_wr_en),
 	.data_in(analog_data_in),
+	.addr(analog_addr),
 //; for(my $i = 0; $i < $analog_regfile -> get_param('num_regs'); $i++) {
 	.r`$i`(analog_r`$i`),
 //; }	
 	.clk(clk),
-	.reset(reset)
+	.reset(reset_out)
 	);
 
   //OPCODES
@@ -122,6 +124,8 @@ reg analog_data_in;
   parameter rd_rd_delay_reg = `$cfg_op_width`'d17;
   parameter wr_delay_sel_reg = `$cfg_op_width`'d18;
   parameter rd_delay_sel_reg = `$cfg_op_width`'d19;
+  parameter wr_analog_reg = `$cfg_op_width`'d20;
+  parameter rd_analog_reg = `$cfg_op_width`'d21;
   //STATES FOR IGNORING INCOMING INSTRUCTIONS
   parameter ready = 2'd0;
   parameter reading = 2'd1;
@@ -219,6 +223,9 @@ reg analog_data_in;
 		delay_sel <= 2'b0;
 		read <= 0;
 		write <= 0;
+		analog_wr_en <= 0;
+		analog_data_in <= 0;
+		analog_addr <= 0;
     	end
 
     	else begin
@@ -230,12 +237,14 @@ reg analog_data_in;
 				config_data_jtag_in <= config_data_jtag_in;	
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			write_config: begin
 				config_addr_out <= config_addr_jtag_out;
 				config_data_out <= config_data_jtag_out; 
 				read <= 0;
 				write <= 1;
+				analog_wr_en <= 0;
 			end
 			read_config: begin
 				config_addr_out <= config_addr_jtag_out;
@@ -244,32 +253,38 @@ reg analog_data_in;
 				state <= reading;
 				read <= 1;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			write_A050: begin
 				config_data_jtag_in <= `$cfg_bus_width`'hA050;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			write_TST: begin
 				TST <= config_data_jtag_out;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			read_TST: begin
 				config_data_jtag_in <= TST;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			global_reset: begin
 				state <= resetting;
 				counter <= (config_data_jtag_out > 0) ? config_data_jtag_out-1 : `$cfg_bus_width`'d19;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			stall: begin
 				cgra_stalled <= 1;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end			
 			advance_clk: begin
 				if (cgra_stalled) begin
@@ -279,34 +294,59 @@ reg analog_data_in;
 				end
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			resume_clk: begin
 				cgra_stalled <= 0;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			sys_clk_on: begin
 				clk_switch_request <= 1;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			wr_rd_delay_reg: begin
 				rd_delay_reg <= config_data_jtag_out;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			rd_rd_delay_reg: begin
 				config_data_jtag_in <= rd_delay_reg;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			wr_delay_sel_reg: begin
 				delay_sel <= config_data_jtag_out[1:0];
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			rd_delay_sel_reg: begin
 				config_data_jtag_in <= {`$cfg_bus_width-2`'b0,delay_sel};
+				read <= 0;
+				write <= 0;
+				analog_wr_en <= 0;
+			end
+			wr_analog_reg: begin
+				analog_wr_en <= 1;
+				analog_data_in <= config_data_jtag_out;
+				analog_addr <= config_addr_jtag_out;
+				read <= 0;
+				write <= 0;	
+			end
+			rd_analog_reg: begin	
+				case(config_addr_jtag_out)
+//; 	for(my $i = 0; $i < $analog_regfile -> get_param('num_regs'); $i++) {
+					'd`$i`: config_data_jtag_in <= analog_r`$i`;
+//;	}	
+					default: config_data_jtag_in <= 0;
+				endcase
+				analog_wr_en <= 0;
 				read <= 0;
 				write <= 0;
 			end

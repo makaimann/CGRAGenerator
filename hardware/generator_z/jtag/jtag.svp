@@ -149,7 +149,7 @@ module `$self->get_module_name()`
    //; 						       global_reset => 10, stall => 12, 
    //;    					       adv_clk => 13, resume_clk => 14, sys_clk_on => 15,
    //;						       wr_rd_delay_reg => 16, rd_rd_delay_reg => 17, wr_delay_sel_reg => 18,
-   //;						       rd_delay_sel_reg => 19} 
+   //;						       rd_delay_sel_reg => 19, wr_analog_reg => 20, rd_analog_reg => 21} 
    //;					);#Should this really be bypass??
    //;
    

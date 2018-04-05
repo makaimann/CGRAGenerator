@@ -34,9 +34,9 @@ always @ (posedge clk or posedge reset) begin
 //; }
 	end //if reset
 	else if(wr_en == 1) begin
-		case(addr) begin
+		case(addr)
 //; for(my $i=0; $i < $num_regs; $i++){
-			case(`$i`): begin
+			`$addr_width`'d`$i`: begin
 				r`$i` <= data_in;
 			end
 //; }

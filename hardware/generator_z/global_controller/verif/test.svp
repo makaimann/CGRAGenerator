@@ -187,6 +187,25 @@ program automatic `mname`(interface ifc);
 	 jdrv.Send(jtag_ofst_trans);
 	 $fdisplay(fd,"%t: %m: Trans 15 (write):  Address to GC=%d, Data to GC=%d",  
 		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);	 
+	 
+	 @(posedge ifc.Clk);
+	 jtag_ofst_trans.op = wr_analog_reg;
+	 jtag_ofst_trans.data_in = 32'd24;
+	 jtag_ofst_trans.addr = 32'd10;
+	 jtag_ofst_trans.done = 0;
+	 jdrv.Send(jtag_ofst_trans);
+	 $fdisplay(fd,"%t: %m: Trans 15 (write):  Address to GC=%d, Data to GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);	 
+	 
+	 @(posedge ifc.Clk);
+	 jtag_rslt_trans.op = rd_analog_reg;
+	 jtag_rslt_trans.addr = 32'd10;
+	 jtag_rslt_trans.data_out = 0;
+	 jtag_rslt_trans.done = 0;
+	 jdrv.Send(jtag_rslt_trans);
+	 jtag_rslt_trans = jdrv.GetResult();
+	 $fdisplay(fd,"%t: %m: Trans 15 (Read analog reg):  Data from GC = %d",  
+		   $time, jtag_rslt_trans.data_out);	 
       end
    endtask // run_test
 
