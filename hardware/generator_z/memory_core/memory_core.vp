@@ -20,6 +20,7 @@ reset,
 config_addr,
 config_data,
 config_en,
+config_en_sram,
 data_in,
 data_out,
 wen_in,
@@ -32,13 +33,15 @@ chain_valid_out,
 almost_full,
 almost_empty,
 addr_in,
-read_data
+read_data,
+read_data_sram
 );
 
 input clk;
 input clk_in;
 input reset;
 input config_en;
+input [3:0] config_en_sram;
 input wen_in;
 input ren_in;
 input chain_wen_in;
@@ -48,6 +51,7 @@ input [`$dwidth - 1`:0] data_in;
 input [`$dwidth - 1`:0] chain_in;
 input [`$dwidth - 1`:0] addr_in;
 output reg [31:0] read_data;
+output reg [31:0] read_data_sram;
 output chain_valid_out;
 output [`$dwidth - 1`:0] chain_out;
 output reg valid_out;
@@ -142,6 +146,18 @@ end
 
 
 always @(*) begin
+  if(config_en_sram) begin
+      mem_wen0 = ~addr_in[`$awidth - 1`];
+      mem_ren0 = 1'b1;
+      mem_wen1 = addr_in[`$awidth - 1`];
+      mem_ren1 = 1'b1;
+      mem_addr = addr_in;      
+      mem_data_in0 = data_in;
+      mem_data_in1 = data_in;
+      data_out = (sram_sel==1'b1)?mem_data_out1:mem_data_out0;
+      valid_out = 1'b1;  
+  end
+  else begin
   case (mode)
     2'd0: begin
       mem_wen0 <= lb_wen;
@@ -175,7 +191,7 @@ always @(*) begin
       mem_addr <= addr_in;      
       mem_data_in0 <= data_in;
       mem_data_in1 <= data_in;
-      data_out <= (sram_sel==1'b1)?mem_data_in1:mem_data_in0;
+      data_out <= (sram_sel==1'b1)?mem_data_out1:mem_data_out0;
       valid_out <= 1'b1;  
       almost_full <= 1'b0; 
       almost_empty <= 1'b0; 
@@ -194,6 +210,7 @@ always @(*) begin
       almost_empty <= 1'b0;
     end
   endcase
+  end //else
 end
 
 always @(posedge clk) begin
@@ -210,7 +227,14 @@ always @(*) begin
             8'd0 : read_data = config_mem[31:0];
             default : read_data = 'h0;
         endcase
-    end
+end
+
+//Read data for SRAM. Will need to borrow some bits from the feature field to address completely.
+wire config_sram_addr;
+always @(*) begin
+	config_sram_addr = config_addr[31:22];
+	
+end
 
 `$lb->instantiate()`
 (
