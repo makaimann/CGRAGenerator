@@ -92,7 +92,20 @@ def find_input_tile():
 
 
 OUTPUT_TILENO = 0x24
+
+OUTPUT_TILENO_onebit = 0x105
+# Should be the tile ABOVE io1bit tile that is the LSB in first group on side 1 (bottom) e.g.
+#      <tile type='io1bit' tile_addr='0x125' row='19' col='17' ... name='pad_S1_T15'>
+#        <io_bit>0</io_bit><!-- LSB=0 -->
+#        <io_group>2</io_group>
+# => io1bit tile is row 19, col 17 => look for tile in row 18, col 17
+#   <tile type='memory_tile' tile_addr='0x105' row='16' col='17' tracks='BUS1:5 BUS16:5 '>
+
+
 # Find the output tile = last pe or mem in row 2
+# FIXME should also set OUTPUT_TILENO_onebit for node "io1_out_0_0"
+# which is the tile above io1bit tile for LSB in first group on side 1 (bottom) (see above)
+
 def find_output_tile():
     global OUTPUT_TILENO
     for i in range(1000):
@@ -471,6 +484,7 @@ def print_io_info(DBG=0):
     if DBG>1: print iwire, ig
     if DBG>1: print owire, og
 
+    # Func to print IO comments
     def p(io, t, w, wg):
         # INPUT  tile  0 (0,0) / out_BUS16_S1_T4 / wire_0_0_BUS16_S1_T4
         # OUTPUT tile  0 (0,0) / in_BUS16_S1_T1 / wire_1_0_BUS16_S3_T1
@@ -1089,7 +1103,21 @@ def init_tile_resources(DBG=0):
     ntiles = cgra_info.ntiles()
     resources = range(ntiles)
     for i in range(ntiles):
-        resources[i] = []
+        resources[i] = build_resource_list(i, DBG)
+
+
+    if DBG: print "Initialized %d tiles" % ntiles
+    print ''
+    print 'PE: ', resources[0]
+    print ''
+    print 'MEM:', resources[3]
+    print ''
+
+
+def build_resource_list(tileno, DBG=0):
+
+        i = tileno
+        resources = []
         for dir in ['in','out']:
             # for side in range(4):
             nsides = 4
@@ -1097,20 +1125,18 @@ def init_tile_resources(DBG=0):
             for side in range(nsides):
                 for track in range(5):
                     port = "T%d_%s_s%dt%d" % (i, dir,side,track)
-                    resources[i].append(port)
+                    resources.append(port)
 
         # Tile-specific resources
         pfx = 'T' + str(i) + '_'
         if  is_mem_tile(i):
-            resources[i].extend([pfx+'mem_in',pfx+'mem_out'])
+            resources.extend([pfx+'mem_in',pfx+'mem_out'])
         elif is_pe_tile(i):
-            resources[i].extend([pfx+'op1',pfx+'op2',pfx+'pe_out'])
+            resources.extend([pfx+'op1',pfx+'op2',pfx+'pe_out'])
 
-    # TODO/FIXME add memtile, pe-specific resources etc.
+        return resources
 
-    if DBG: print "Initialized %d tiles" % ntiles
-    print 'PE: ', resources[0]
-    print 'MEM:', resources[3]
+
 
 # def is_pe_tile(tileno):  return re.search("^pe",  cgra_info.tiletype(tileno))
 # def is_mem_tile(tileno): return re.search("^mem", cgra_info.tiletype(tileno))
@@ -1143,10 +1169,18 @@ def is_pe(nodename):
         (nodename.find('PE') >= 0) \
          )
 def is_io(nodename):
-    return (nodename and re.search("INPUT|OUTPUT", nodename)) == True
-    return (nodename) and (\
-        (nodename == 'INPUT') or (nodename == 'OUTPUT')
-        )
+    print "is it a io?"
+    nodename="OUTPUT"
+    print nodename
+    print (re.search("(aaa)|(OUTPUT)", nodename) == True)
+    return \
+           (nodename != None) and \
+           (re.search("(INPUT)|(OUTPUT)|(io1_out_0_0)", nodename) != None)
+
+    # Huh.
+    # return (nodename) and (\
+    #     (nodename == 'INPUT') or (nodename == 'OUTPUT')
+    #     )
 
 
 def dstports(name,tile):
@@ -1464,7 +1498,10 @@ def process_nodes(sname, indent='# ', DBG=1):
         elif is_mem(dname): otherchilds.append(dname)
         elif is_regop(dname): otherchilds.append(dname)
         elif is_reg(dname):   regchilds.append(dname)
-        elif dname=='OUTPUT': otherchilds.append(dname)
+
+        # should have been caught by is_io, above
+        #elif dname=='OUTPUT': otherchilds.append(dname)
+
         else:
             print "ERROR What is '%s'?" % dname
             assert False, "ERROR What is '%s'?" % dname
@@ -1615,6 +1652,12 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
         if dname == "OUTPUT":
             dtileno = OUTPUT_TILENO
+
+        elif dname == "io1_out_0_0":
+            dtileno = OUTPUT_TILENO_onebit
+
+
+
         elif not is_placed(dname):
             dtileno = get_nearest_tile(sname, dname)
         else:
@@ -1631,15 +1674,20 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
         if DBG:
             if dname == "OUTPUT":
                 pwhere(1567, 'Connecting to OUTPUT tile %d\n' % dtileno)
+
+            elif dname == "io1_out_0_0":
+                pwhere(1657, 'Connecting to one-bit OUTPUT tile %d\n' % dtileno)
+
             else:
                 pwhere(1114, 'Nearest available tile is %d\n' % dtileno)
 
         # If node is pe or mem, can try multiple tracks
 
         # (For now at least) output must be track 0
-        if dname == "OUTPUT": trackrange = [0]
+        if   dname == "OUTPUT":      trackrange = [0]
+        elif dname == "io1_out_0_0": trackrange = [0]
         elif is_mem(sname): trackrange = range(5)
-        elif is_pe(sname): trackrange = range(5)
+        elif is_pe(sname):  trackrange = range(5)
         else: trackrange = [0]
 
         for track in trackrange:
@@ -1650,7 +1698,7 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
                 pwhere(1608, "trackrange = %s" % trackrange)
 
         if not path:
-            if dname == "OUTPUT":
+            if (dname == "OUTPUT") or (dname == "io1_out_0_0"):
                 print "Cannot find our way to OUTPUT, looks like we're screwed :("
                 assert False, "Cannot find our way to OUTPUT, looks like we're screwed :("
 
@@ -1689,11 +1737,21 @@ def place_and_route(sname,dname,indent='# ',DBG=0):
 
         elif is_mem(dname): d_out = addT(dtileno, 'mem_out')
 
+        # elif dname == "OUTPUT":
         elif dname == "OUTPUT":
             # (For now at least) output must be track 0, see above
             # FIXME later could have an option to hop tracks maybe
+            # So: One-bit output must come out track 0 on the right side (S0)
+            # of the mem tile to the left of the pad (OUTPUT_TILE)
             trackno = 0
             d_out = addT(dtileno,'_out_s0t%d' % trackno)
+
+        elif dname == "io1_out_0_0":
+            # One-bit output must come out track 0 on the bottom side (S5)
+            # of the mem tile above the pad (OUTPUT_TILE_onebit)
+            trackno = 0
+            d_out = addT(dtileno,'_out_s5t%d' % trackno)
+
 
         elif is_regsolo(dname):
             print '# 1a. If regsolo, add name to REGISTERS for later'
@@ -2212,7 +2270,7 @@ def find_best_path(sname,dname,dtileno,track,DBG=1):
     dnode = nodes[dname]
     stileno = snode.tileno
     pwhere(1289,\
-        "Want to route from src tile %d ('%s') to dest tile %d ('%s')" \
+        "Want to route from src tile %d ('%s') to dest tile %d ('%s')\n" \
         % (stileno, sname, dtileno, dname))
 
     nodes[sname].show()
@@ -2318,6 +2376,9 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
        % (path[-1], dname, where(1413))
     
     if (dname == 'OUTPUT') and re.search('in_s6', path[-1]):
+        # Looks like we have the lower left half (side 6) of a mem
+        # tile as our OUTPUT endpoint. We gotta do extra stuff to get
+        # it to come out the upper right side where it belongs.
         output_endpoint_hack(dname, path, DBG)
         if DBG: print "2 (redo). Attach path endpoint '%s' to dest node '%s' (%s)"\
            % (path[-1], dname, where(2203))
