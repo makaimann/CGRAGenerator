@@ -42,6 +42,14 @@ if DBG:
 
 def uniquify(nodename):
     '''Turn e.g. "PE_U70.data.out, PE_U8.data.in.1" into "PE_U70, PE_U8"'''
+
+    # Preserve bitPE-in info e.g.
+    # "bitmux_157_lut_bitPE.bit.in.1" => "bitmux_157_lut_bitPE.in1"
+    parse = re.search('([^.]*)\.bit\.in\.([0-9])', nodename)
+    if parse:
+        return '%s.in%s' % (parse.group(1), parse.group(2))
+
+
     # Huh really more of a UN-uniquify isn't it
     parse = re.search('([^.]*)[.]', nodename)
     if parse: nodename = parse.group(1)
@@ -59,9 +67,14 @@ def uniquify(nodename):
     #    "add_335_343_344_PE" -> "add_335_343_344"
     parse = re.search("(.*)_PE", nodename)
     if parse:
+        orig = nodename
         # print "FOO", ; print nodename
         # print "FOO", ; print instances[nodename]
         nodename = "%s_PE" % parse.group(1)
+
+        # Wait...this did nothing.  Right?
+        assert orig == nodename
+
         return nodename
     
 #     # Sample const node:
