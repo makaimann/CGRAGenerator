@@ -176,7 +176,7 @@ def test_ctsc():
     p = connect_tiles_same_col(3, 17, track, DBG=1)
     verify(p, results,resno,testname); resno = resno+1
 
-def connect_tiles(src=0,dst=17,track=0,buswidth=16,dir='hv',DBG=0):
+def connect_tiles(src=0,dst=17,track=0,dir='hv',DBG=0):
     '''tile17 should be row 2, col 3 maybe'''
     (rsrc,csrc) = cgra_info.tileno2rc(src)
     (rdst,cdst) = cgra_info.tileno2rc(dst)
@@ -187,16 +187,6 @@ def connect_tiles(src=0,dst=17,track=0,buswidth=16,dir='hv',DBG=0):
         print "on %s path" % dir
         if is_mem_rc(rdst,cdst):
             print "# Destination is a memory tile"
-        if buswidth == 1:
-            print "# Must follow single-bit path (BUS1)"
-
-
-    if (buswidth != 16):
-        print("\nOopsie FIXME only know how to route 16-bit paths\n")
-    assert buswidth == 16, "\nOopsie FIXME only know how to route 16-bit paths\n"
-    
-
-
 
     # No need for a corner if sr, dst are in same row or col
     (cornerconn,path1,path2) = ([],[],[])
