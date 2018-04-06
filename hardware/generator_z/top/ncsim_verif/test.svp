@@ -56,7 +56,27 @@ program automatic `mname`(
 	 jtag_config_trans.addr = 32'h0;
 	 jtag_config_trans.data_out = 32'h1;
 
-
+	
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd987;
+	 jtag_config_trans.addr = {8'hAB,8'h5,16'h18};
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = write;
+	 jdrv.Send(jtag_config_trans);
+	 $fdisplay(fd, "%t: %m: Trans 1 (Write):  Address to GC=%x, Data to GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);
+	
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd0;
+	 jtag_config_trans.addr = {8'hAB,8'h5,16'h18};
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = read;
+	 jtag_config_trans.data_out = 0;
+	 jdrv.Send(jtag_config_trans);
+	 jtag_config_trans = jdrv.GetResult();
+	 $fdisplay(fd, "%t: %m: Trans 4 (Read):  Address to GC=%h, Data to GC=%d, Data from GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_config_trans.data_out);
+	 
 	 @(posedge ifc.Clk);
 	 jtag_config_trans.data_in = 32'd0;
 	 jtag_config_trans.done = 0;
