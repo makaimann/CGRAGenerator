@@ -150,7 +150,7 @@ end
 
 
 always @(*) begin
-  if(config_en_sram ~= 4'b0) begin
+  if(config_en_sram != 4'b0) begin
       mem_wen0 = ~(config_write & (config_en_sram[0] | config_en_sram[1]));
       mem_ren0 = ~(config_read & (config_en_sram[0] | config_en_sram[1]));
       mem_wen1 = ~(config_write & (config_en_sram[2] | config_en_sram[3]));
@@ -158,7 +158,7 @@ always @(*) begin
       mem_addr = {(config_en_sram[3] | config_en_sram[1]), config_addr[31:24]};
       mem_data_in0 = config_data[15:0];
       mem_data_in1 = config_data[15:0];
-      read_data_sram = (config_en_sram[3:2]==2'b0) ? mem_data_out0:mem_data_out1;
+      read_data_sram = {16'b0, (config_en_sram[3:2]==2'b0) ? mem_data_out0:mem_data_out1};
       valid_out = 1'b0;  
   end
   else begin

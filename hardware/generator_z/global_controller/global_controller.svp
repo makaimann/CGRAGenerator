@@ -214,7 +214,7 @@ reg [`$cfg_addr_width-1`:0] analog_addr;
     	if (reset_in==1) begin
 		cgra_stalled <= 0;
        		clk_switch_request <= 0;
-		rd_delay_reg <= 1;
+		rd_delay_reg <= 3;
 		TST <= 0;
 		counter <= 0;
 		config_addr_out <= 0;
@@ -369,6 +369,7 @@ reg [`$cfg_addr_width-1`:0] analog_addr;
 				state <= ready;
 				if (state == reading) 
 					config_data_jtag_in <= config_data_in;
+					read <= 0;
 				if (state == advancing_clk)
 					cgra_stalled <= 1;
 			end

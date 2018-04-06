@@ -503,7 +503,7 @@ wire [31:0] read_data_sb_`$row`_`$bus`;
 //;   $tile_info_hash->{'mem'}{'depth'} = $ddepth;
 
 wire [31:0] read_data_mem;
-
+wire [31:0] read_data_sram;
   `$mem_core->instantiate()`
   (
       .clk(clk),
