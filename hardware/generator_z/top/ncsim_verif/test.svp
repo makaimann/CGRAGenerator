@@ -55,7 +55,27 @@ program automatic `mname`(
 	 jtag_config_trans.domain = sc_domain;
 	 jtag_config_trans.addr = 32'h0;
 	 jtag_config_trans.data_out = 32'h1;
-
+	 //Read contents of a mem config registeri
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd0;
+	 jtag_config_trans.addr = {8'h0,8'h4,16'h18};
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = read;
+	 jtag_config_trans.data_out = 0;
+	 jdrv.Send(jtag_config_trans);
+	 jtag_config_trans = jdrv.GetResult();
+	 $fdisplay(fd, "%t: %m: Trans 4 (Read):  Address to GC=%h, Data to GC=%d, Data from GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_config_trans.data_out);
+	 
+	 //Write contents back but also enable the tile (bit 2)
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = {jtag_config_trans.data_out[31:3],1'b1,jtag_config_trans.data_out[1:0]};
+	 jtag_config_trans.addr = {8'h0,8'h4,16'h18};
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = write;
+	 jdrv.Send(jtag_config_trans);
+	 $fdisplay(fd, "%t: %m: Trans 1 (Write):  Address to GC=%x, Data to GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);
 	
 	 @(posedge ifc.Clk);
 	 jtag_config_trans.data_in = 32'd987;
@@ -85,6 +105,26 @@ program automatic `mname`(
 	 $fdisplay(fd, "%t: %m: Trans 1 (STALL):  Address to GC=%x, Data to GC=%d",  
 		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);
 	 	
+	 
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd123;
+	 jtag_config_trans.addr = {8'h14,8'h5,16'h18};
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = write;
+	 jdrv.Send(jtag_config_trans);
+	 $fdisplay(fd, "%t: %m: Trans 1 (Write):  Address to GC=%x, Data to GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);
+	 
+	 @(posedge ifc.Clk);
+	 jtag_config_trans.data_in = 32'd0;
+	 jtag_config_trans.addr = {8'h14,8'h5,16'h18};
+	 jtag_config_trans.done = 0;
+	 jtag_config_trans.op = read;
+	 jtag_config_trans.data_out = 0;
+	 jdrv.Send(jtag_config_trans);
+	 jtag_config_trans = jdrv.GetResult();
+	 $fdisplay(fd, "%t: %m: Trans 4 (Read):  Address to GC=%h, Data to GC=%d, Data from GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_config_trans.data_out);
 	 @(posedge ifc.Clk);
 	 jtag_config_trans.data_in = 32'd25;
 	 jtag_config_trans.addr = 32'h16;

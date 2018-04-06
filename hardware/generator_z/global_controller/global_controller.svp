@@ -281,7 +281,7 @@ reg [`$cfg_addr_width-1`:0] analog_addr;
 				analog_wr_en <= 0;
 			end
 			stall: begin
-				cgra_stalled <= 1;
+				cgra_stalled <= 4'b1111;
 				read <= 0;
 				write <= 0;
 				analog_wr_en <= 0;
