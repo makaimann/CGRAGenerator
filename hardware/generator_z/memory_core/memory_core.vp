@@ -14,8 +14,8 @@
 //; my $awidth = int(ceil(log($ddepth)/log(2)));
 
 module `mname`(
-clk,
 clk_in,
+clk_en,
 reset,
 config_addr,
 config_data,
@@ -39,8 +39,8 @@ read_data,
 read_data_sram
 );
 
-input clk;
 input clk_in;
+input clk_en;
 input reset;
 input config_en;
 input [3:0] config_en_sram;
@@ -85,6 +85,7 @@ wire lb_ren;
 wire fifo_wen;
 wire fifo_ren;
 
+wire clk;
 wire [`$dwidth - 1`:0] data_in_int;
 wire [`$dwidth - 1`:0] mem_data_out0;
 wire [`$dwidth - 1`:0] mem_data_out1;
@@ -111,8 +112,9 @@ assign tile_en = config_mem[2];
 assign depth = config_mem[15:3];
 assign almost_count = config_mem[19:16];
 assign enable_chain = config_mem[19];
-
-assign gclk = clk & (tile_en==1'b1);
+assign gclk_in = clk_in & (tile_en==1'b1);
+assign gclk = gclk_in & clk_en;
+assign gclk_sram = gclk_in & (clk_en || config_en_sram);
 
 
 assign data_in_int = (enable_chain==1'b1)?chain_in:data_in;
@@ -125,7 +127,7 @@ assign chain_valid_out = valid_out;
 // At the last minute, run.csh can modify wen_int assignment above
 // to read "assign  wen_in_int = WENHACK" instead
 reg WENHACK;
-always @(posedge clk or posedge reset) begin
+always @(posedge gclk_in or posedge reset) begin
    if (reset==1'b1) begin
      WENHACK = 1'b0;
    end else if (data_in != 16'b0) begin
@@ -217,7 +219,7 @@ always @(*) begin
   end //else
 end
 
-always @(posedge clk) begin
+always @(posedge gclk) begin
   sram_sel <= addr_in[`$awidth - 1`];
 end
 
@@ -279,7 +281,7 @@ always @(*) begin
 (
 .data_out(mem_data_out0),
 .data_in(mem_data_in0),
-.clk(gclk),
+.clk(gclk_sram),
 .cen(mem_cen0),
 .wen(mem_wen0),
 .addr(mem_addr[`$awidth - 2`:0])
@@ -290,7 +292,7 @@ always @(*) begin
 (
 .data_out(mem_data_out1),
 .data_in(mem_data_in1),
-.clk(gclk),
+.clk(gclk_sram),
 .cen(mem_cen1),
 .wen(mem_wen1),
 .addr(mem_addr[`$awidth - 2`:0])

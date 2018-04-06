@@ -120,7 +120,7 @@ read_data
   input config_write;
   output reg [31:0] read_data;
   wire ___genesis_wire_`$global_signal_count`_`${bus_config}`_`${all_segments_for_all_tiles}`_`${gen_mem_for_busname}`_`${control_busname}`_`${ddepth}`_`${sides}`_`${feedthrough_outputs}`_`${registered_outputs}`_`${is_bidi}`_`${sb_fs}`_`${cb_connections}`_`${mem_tile_height}`;
-  wire clk;
+//  wire clk;
   wire cg_en;
   wire clk_en;
 //; ##############################################
@@ -486,7 +486,7 @@ wire [31:0] read_data_sb_`$row`_`$bus`;
 //; #####################################
 
 
-  assign clk = clk_in & clk_en;
+  //assign clk = clk_in & clk_en;
 
 
 
@@ -506,8 +506,8 @@ wire [31:0] read_data_mem;
 wire [31:0] read_data_sram;
   `$mem_core->instantiate()`
   (
-      .clk(clk),
       .clk_in(clk_in),
+      .clk_en(clk_en),
       .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
