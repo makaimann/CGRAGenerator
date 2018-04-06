@@ -505,8 +505,14 @@ def print_oplist():
         src = nodes[sname]
         if is_pe(sname):
             addmul = sname[0:3]
-            assert src.input0 != False, "PE op '%s' has no op1; why?" % sname
-            assert src.input1 != False, "PE op '%s' has no op2; why?" % sname
+
+            if (src.input0 == False) or (src.input1 == False):
+                print('');
+                nodes[sname].show()
+                print('');
+                assert src.input0 != False, "PE op '%s' has no op1; why?" % sname
+                assert src.input1 != False, "PE op '%s' has no op2; why?" % sname
+
             op1 = optype(src.input0)
             op2 = optype(src.input1)
             opline = 'T%d_%s(%s,%s)' % (src.tileno, addmul, op1, op2)
@@ -1106,7 +1112,6 @@ class Resource:
 
 
     def build_resource_list(self, tileno, DBG=0):
-        print tileno
 
         i = tileno
         resources = []
@@ -1180,6 +1185,10 @@ def init_tile_resources(DBG=0):
 
 def is_pe_tile(tileno):  return cgra_info.mem_or_pe(tileno) == 'pe'
 def is_mem_tile(tileno): return cgra_info.mem_or_pe(tileno) == 'mem'
+def is_bitnode(nodename):
+    # E.g. 'bitmux_157_157_149_lut_bitPE.in0'
+    if re.search('bitPE\.in', nodename): return True
+    else: return False
 
 def initialize_node_INPUT():
     input  = INPUT_WIRE_T
@@ -1519,6 +1528,14 @@ def process_nodes(sname, indent='# ', DBG=1):
 
     # print indent+"Processing node '%s'" % sname
     src = nodes[sname]
+
+    # E.g. 'ult_152_147_153_not_lut_bitPE.in0' => 'ult_152_147_153_not_lut_bitPE'
+    parse = re.search('(.*bitPE)\..*', sname)
+    if parse:
+        oldname = sname
+        sname   = parse.group(1)
+        s = indent + "  Look for '%s' not '%s'" % (sname, oldname)
+        if DBG: print(s)
 
     schildren = sorted(src.dests)
     if schildren == []:
@@ -2331,12 +2348,19 @@ def find_best_path(sname,dname,dtileno,track,DBG=1):
         ENDPOINT_MUST_BE_FREE = False
         return p
 
+    buswidth = 16; # default is to use 16-bit paths (BUS16)
+    if is_bitnode(dname):
+        if DBG:
+            print('Dest "%s" is a single-bit node, yes?' % dname)
+            print('Should use BUS1 path, right?\n')
+            buswidth = 1
+
     # foreach path p in connect_{hv,vh}connect(ptile,dtile)
     # FIXME for now only looking at track 0(!)
-    phv = CT.connect_tiles(stileno,dtileno,track,dir='hv',DBG=DBG-1)
+    phv = CT.connect_tiles(stileno,dtileno,track,buswidth,dir='hv',DBG=DBG-1)
     if DBG>2: print '  Found path phv', phv
 
-    pvh = CT.connect_tiles(stileno,dtileno,track,dir='vh',DBG=DBG-1)
+    pvh = CT.connect_tiles(stileno,dtileno,track,buswidth,dir='vh',DBG=DBG-1)
     if DBG>2: print '  Found path pvh', pvh
 
     # FIXME need a better way to determine if path is straight-line
@@ -2345,6 +2369,16 @@ def find_best_path(sname,dname,dtileno,track,DBG=1):
 
     which = 'pvh'
     for path in [pvh,phv]:
+
+        # E.g. 'bitmux_157_157_149_lut_bitPE.in0', 'T21_out_s1t0'
+        # SHOULD BE 'T21_out_s1t0b'
+        if is_bitnode('bitPE\.in') and not re.search('b$', pvh[0]):
+            print("")
+            print('Trying to reach "%s" via "%s"' % (dname, pvh[0]))
+            print('Should use BUS1 path "%sb" instead' % pvh[0])
+            print("")
+            assert False
+
         if DBG: pwhere(1325,
                        "Evaluating %s path %s" % (which,path)); which = 'phv'
         
