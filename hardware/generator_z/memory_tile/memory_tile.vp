@@ -168,6 +168,33 @@ read_data
 //;       data_bus => $gen_mem_for_busname,
 //;       control_bus => $control_busname
 //;     };
+
+//; #4 256 word SRAMs (so we can use the 8 bit register address)
+  reg [3:0] config_en_sram;
+//; for(my $i = 0; $i < 4; $i++){
+//;$intra_tile_addr++; 
+  always @(*) begin
+    if(reset) begin
+      config_en_sram[`$i`] = 1'b0;
+    end
+    else begin
+       //NEED TO REVISE THIS. CONFIG_WRITE ALONE NOT SUFFICIENT
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`) && (config_read | config_write)) begin
+         config_en_sram[`$i`] <= 1'b1;
+       end 
+       else begin
+         config_en_sram[`$i`] <= 1'b0;
+       end
+    end
+  end
+//; ### HOW DO I ADD THIS TO CGRA INFO???       
+//;     $tile_info_hash->{ "sram_$i" } = {
+//;       address => $intra_tile_addr,
+//;       data_bus => $gen_mem_for_busname,
+//;       control_bus => $control_busname
+//;     };
+//; }
+
 //; ##
 //; ## global out signal
 //; ##
@@ -308,7 +335,7 @@ read_data
 //;     }
 //;   }
 //;   if ($mem_input_bus eq "BUS1") {
-//;     for (my $i=0; $i<$global_signal_count; $i++, $k++) {
+//;     for (my $i=0; $i<$global_signal_count; $i++, $k++){
     .in_`$k`(gin_`${i}`),
 //;       $rename_hash->{ 'cb_'.$mem_input_name }{"in_${k}"} = "gin_${i}";
 //;     }
@@ -484,7 +511,10 @@ wire [31:0] read_data_mem;
       .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
+      .config_read(config_read),
+      .config_write(config_write),
       .config_en(config_en_mem),
+      .config_en_sram(config_en_sram),
       .data_in(wdata),
       .data_out(rdata),
       .addr_in(addr),
@@ -497,16 +527,20 @@ wire [31:0] read_data_mem;
       .chain_valid_out(chain_valid_out),
       .almost_full(almost_full),
       .almost_empty(almost_empty),
-      .read_data(read_data_mem)
+      .read_data(read_data_mem),
+      .read_data_sram(read_data_sram)
    );
    always @(*) begin
            if (config_read && (config_addr[15:0]==tile_id)) begin
                    case (config_addr[23:16])
                //; foreach my $key (sort { $tile_info_hash->{$a}{'address'} cmp $tile_info_hash->{$b}{'address'} } keys(%$tile_info_hash))  {
-               //;   if($key ne 'gout') {
-                        8'd`$tile_info_hash->{$key}->{'address'}` : read_data = read_data_`$key`;
+	       //;   if($key eq 'sram_0' or $key eq 'sram_1' or  $key eq 'sram_2' or  $key eq 'sram_3'){
+                        'd`$tile_info_hash->{$key}->{'address'}` : read_data = read_data_sram;
+               //;   }
+	       //;   elsif($key ne 'gout') {
+                        'd`$tile_info_hash->{$key}->{'address'}` : read_data = read_data_`$key`;
                    //;   } else {
-                             8'd`$tile_info_hash->{$key}->{'address'}` : read_data = gout_sel;
+                        'd`$tile_info_hash->{$key}->{'address'}` : read_data = gout_sel;
                        //;   }
                        //; }
                              default : read_data = 'd0;

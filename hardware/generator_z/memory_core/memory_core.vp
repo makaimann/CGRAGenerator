@@ -19,6 +19,8 @@ clk_in,
 reset,
 config_addr,
 config_data,
+config_read,
+config_write,
 config_en,
 config_en_sram,
 data_in,
@@ -33,23 +35,27 @@ chain_valid_out,
 almost_full,
 almost_empty,
 addr_in,
-read_data
+read_data,
+read_data_sram
 );
 
 input clk;
 input clk_in;
 input reset;
 input config_en;
-input config_en_sram;
+input [3:0] config_en_sram;
 input wen_in;
 input ren_in;
 input chain_wen_in;
 input [31:0] config_addr;
 input [31:0] config_data;
+input config_read;
+input config_write;
 input [`$dwidth - 1`:0] data_in;
 input [`$dwidth - 1`:0] chain_in;
 input [`$dwidth - 1`:0] addr_in;
 output reg [31:0] read_data;
+output reg [31:0] read_data_sram;
 output chain_valid_out;
 output [`$dwidth - 1`:0] chain_out;
 output reg valid_out;
@@ -144,58 +150,71 @@ end
 
 
 always @(*) begin
+  if(config_en_sram ~= 4'b0) begin
+      mem_wen0 = ~(config_write & (config_en_sram[0] | config_en_sram[1]));
+      mem_ren0 = ~(config_read & (config_en_sram[0] | config_en_sram[1]));
+      mem_wen1 = ~(config_write & (config_en_sram[2] | config_en_sram[3]));
+      mem_ren1 = ~(config_read & (config_en_sram[2] | config_en_sram[3]));
+      mem_addr = {(config_en_sram[3] | config_en_sram[1]), config_addr[31:24]};
+      mem_data_in0 = config_data[15:0];
+      mem_data_in1 = config_data[15:0];
+      read_data_sram = (config_en_sram[3:2]==2'b0) ? mem_data_out0:mem_data_out1;
+      valid_out = 1'b0;  
+  end
+  else begin
   case (mode)
     2'd0: begin
-      mem_wen0 <= lb_wen;
-      mem_ren0 <= lb_ren;
-      mem_wen1 <= lb_wen;
-      mem_ren1 <= lb_ren;
-      mem_addr <= lb_addr;
-      {mem_data_in1,mem_data_in0} <= lb_mem_data_out;
-      data_out <= lb_out; 
-      valid_out <= lb_valid_out;
-      almost_full <= lb_almost_full;
-      almost_empty <= lb_almost_empty;
+      mem_wen0 = lb_wen;
+      mem_ren0 = lb_ren;
+      mem_wen1 = lb_wen;
+      mem_ren1 = lb_ren;
+      mem_addr = lb_addr;
+      {mem_data_in1,mem_data_in0} = lb_mem_data_out;
+      data_out = lb_out; 
+      valid_out = lb_valid_out;
+      almost_full = lb_almost_full;
+      almost_empty = lb_almost_empty;
     end
     2'd1: begin
-      mem_wen0 <= fifo_wen;
-      mem_ren0 <= fifo_ren;
-      mem_wen1 <= fifo_wen;
-      mem_ren1 <= fifo_ren;
-      mem_addr <= fifo_addr;
-      {mem_data_in1,mem_data_in0} <= fifo_mem_data_out;
-      data_out <= fifo_out;
-      valid_out <= fifo_valid_out;
-      almost_full <= fifo_almost_full;
-      almost_empty <= fifo_almost_empty;
+      mem_wen0 = fifo_wen;
+      mem_ren0 = fifo_ren;
+      mem_wen1 = fifo_wen;
+      mem_ren1 = fifo_ren;
+      mem_addr = fifo_addr;
+      {mem_data_in1,mem_data_in0} = fifo_mem_data_out;
+      data_out = fifo_out;
+      valid_out = fifo_valid_out;
+      almost_full = fifo_almost_full;
+      almost_empty = fifo_almost_empty;
     end
     2'd2: begin
-      mem_wen0 <= ~addr_in[`$awidth - 1`];
-      mem_ren0 <= 1'b1;
-      mem_wen1 <= addr_in[`$awidth - 1`];
-      mem_ren1 <= 1'b1;
-      mem_addr <= addr_in;      
-      mem_data_in0 <= data_in;
-      mem_data_in1 <= data_in;
-      data_out <= (sram_sel==1'b1)?mem_data_out1:mem_data_out0;
-      valid_out <= 1'b1;  
-      almost_full <= 1'b0; 
-      almost_empty <= 1'b0; 
+      mem_wen0 = ~addr_in[`$awidth - 1`];
+      mem_ren0 = 1'b1;
+      mem_wen1 = addr_in[`$awidth - 1`];
+      mem_ren1 = 1'b1;
+      mem_addr = addr_in;      
+      mem_data_in0 = data_in;
+      mem_data_in1 = data_in;
+      data_out = (sram_sel==1'b1)?mem_data_out1:mem_data_out0;
+      valid_out = 1'b1;  
+      almost_full = 1'b0; 
+      almost_empty = 1'b0; 
     end
     default: begin
-      mem_wen0 <= 1'b0; 
-      mem_ren0 <= 1'b0;
-      mem_wen1 <= 1'b0; 
-      mem_ren1 <= 1'b1;
-      mem_addr <= `$dwidth`'d0;      
-      mem_data_in0 <= `$dwidth`'d0;
-      mem_data_in1 <= `$dwidth`'d0;
-      data_out <= `$dwidth`'d0;
-      valid_out <= 1'b0;
-      almost_full <= 1'b0;
-      almost_empty <= 1'b0;
+      mem_wen0 = 1'b0; 
+      mem_ren0 = 1'b0;
+      mem_wen1 = 1'b0; 
+      mem_ren1 = 1'b1;
+      mem_addr = `$dwidth`'d0;      
+      mem_data_in0 = `$dwidth`'d0;
+      mem_data_in1 = `$dwidth`'d0;
+      data_out = `$dwidth`'d0;
+      valid_out = 1'b0;
+      almost_full = 1'b0;
+      almost_empty = 1'b0;
     end
   endcase
+  end //else
 end
 
 always @(posedge clk) begin
