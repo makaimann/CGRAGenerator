@@ -1112,7 +1112,6 @@ class Resource:
 
 
     def build_resource_list(self, tileno, DBG=0):
-        print tileno
 
         i = tileno
         resources = []
