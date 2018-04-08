@@ -699,10 +699,12 @@ class Node:
         if DBG>2: pwhere(386)
         if DBG>2: print "Looking for '%s' in %s" % (r, self.net)
 
+        allresources = resources[tileno].bus + resources[tileno].bit
+
         # E.g. resources[T] = ['in_s0t0', 'in_s0t1', ...
         # Can't use a register unless we're specifically looking for a register
         if rname in REGISTERS:
-            assert rname not in resources[tileno].bus,\
+            assert rname not in allresources,\
                    "'%s' is a register: should not be in resources list!"
             # But it CAN be in the net list maybe...?
             print "'%s' not avail to '%s' b/c its a register" % (r, self.name)
@@ -717,8 +719,8 @@ class Node:
             return True
 
         if DBG>2: print "is_avail: looking for '%s' in tile %d resources %s" \
-              % (rname, tileno, resources[tileno].bus)
-        if rname in resources[tileno].bus:
+              % (rname, tileno, allresources)
+        if rname in allresources:
             # print "       %-11s is in free list for tile %d" % (rname, tileno)
             return True
 
@@ -764,6 +766,17 @@ class Node:
                 assert not is_pe(self.name), input
                 self.input0 = input
         
+        # dests=['bitmux_157_157_149_lut_bitPE.in0', 'bitxor_149_151_155_lut_bitPE.in0']
+        if (len(self.dests) > 0) and re.search('in0$', self.dests[0]): buswidth = 1
+        else: buswidth = 16
+
+        # if (self.buswidth == 1) and (output[-3:] == "out"):
+        if (buswidth == 1) and (output[-3:] == "out"):
+            if DBG: print("output was '%s'" % output)
+            output = output + 'b'
+            if DBG: print("output now '%s'" % output)
+            # assert False
+
         self.output = output
         self.placed = True
 
@@ -937,9 +950,10 @@ def addT(tileno, r):
 def parse_resource(r):
     '''
     resource must be of the form "T0_in_s0t0" or "T3_mem_out"
-    returns tileno+remains e.g. parse_resource("T0_in_s0t0") = (0, 'in_s0t0')
+    returns tileno+remains e.g. parse_resource("T0_in_s0t0") = (0, "in_s0t0")
+    4/2018 now also works for e.g. "T0_in_s0t0b"
     '''
-    return CT.parse_resource(r)
+    return cgra_info.parse_resource(r)
 
 
 
@@ -1106,12 +1120,11 @@ def initialize_routes():
 class Resource:
 
     def __init__(self, tileno):
-        rlist = self.build_resource_list(tileno)
-        self.bus = rlist
-        self.bit = rlist
+        self.bus = self.build_resource_list(tileno, '')  # BUS16
+        self.bit = self.build_resource_list(tileno, 'b') # BUS1
 
 
-    def build_resource_list(self, tileno, DBG=0):
+    def build_resource_list(self, tileno, suffix, DBG=0):
 
         i = tileno
         resources = []
@@ -1121,15 +1134,24 @@ class Resource:
             if  is_mem_tile(i): nsides = 8
             for side in range(nsides):
                 for track in range(5):
-                    port = "T%d_%s_s%dt%d" % (i, dir,side,track)
+                    port = "T%d_%s_s%dt%d%s" % (i, dir,side,track,suffix)
                     resources.append(port)
 
         # Tile-specific resources
         pfx = 'T' + str(i) + '_'
-        if  is_mem_tile(i):
-            resources.extend([pfx+'mem_in',pfx+'mem_out'])
-        elif is_pe_tile(i):
-            resources.extend([pfx+'op1',pfx+'op2',pfx+'pe_out'])
+        if suffix == '':
+            # BUS16 resources
+            if  is_mem_tile(i):
+                resources.extend([pfx+'mem_in',pfx+'mem_out'])
+            elif is_pe_tile(i):
+                resources.extend([pfx+'op1',pfx+'op2',pfx+'pe_out'])
+        else:
+            # BUS1 resources
+            if  is_mem_tile(i):
+                resources.extend([pfx+'wen'])
+            elif is_pe_tile(i):
+                # Note bit[012] maps to in[012] repsectively
+                resources.extend([pfx+'bit0',pfx+'bit1',pfx+'bit2',pfx+'pe_outb'])
 
         return resources
 
@@ -2348,19 +2370,12 @@ def find_best_path(sname,dname,dtileno,track,DBG=1):
         ENDPOINT_MUST_BE_FREE = False
         return p
 
-    buswidth = 16; # default is to use 16-bit paths (BUS16)
-    if is_bitnode(dname):
-        if DBG:
-            print('Dest "%s" is a single-bit node, yes?' % dname)
-            print('Should use BUS1 path, right?\n')
-            buswidth = 1
-
     # foreach path p in connect_{hv,vh}connect(ptile,dtile)
     # FIXME for now only looking at track 0(!)
-    phv = CT.connect_tiles(stileno,dtileno,track,buswidth,dir='hv',DBG=DBG-1)
+    phv = CT.connect_tiles(stileno,dtileno,track,dir='hv',DBG=DBG-1)
     if DBG>2: print '  Found path phv', phv
 
-    pvh = CT.connect_tiles(stileno,dtileno,track,buswidth,dir='vh',DBG=DBG-1)
+    pvh = CT.connect_tiles(stileno,dtileno,track,dir='vh',DBG=DBG-1)
     if DBG>2: print '  Found path pvh', pvh
 
     # FIXME need a better way to determine if path is straight-line
@@ -2396,14 +2411,39 @@ def find_best_path(sname,dname,dtileno,track,DBG=1):
         # choose a path in paths
 
 
-# FIXME WHAY ISN'T ALL THIS CONNECT STUFF IN THE
+# FIXME WHY ISN'T ALL THIS CONNECT STUFF IN THE
 # CONNECT_TILES LIBRARY WHERE IT BELONGS!!?
+def fix_path(path, dname, DBG=0):
+    assert is_bitnode(dname)
+
+    if DBG:
+        print('Dest "%s" is a single-bit node, yes?' % dname)
+        print('Should use BUS1 path, right?\n')
+
+    # dnode.buswidth = 1
+
+    # Is this a hack?  This looks like a hack. FIXME
+    # Change default (BUS16) wires to 'b' (BUS1) wires
+    # before: ['T21_out_s1t0',  'T40_in_s3t0 -> T40_out_s0t0',   'T41_in_s2t0']
+    # after:  ['T21_out_s1t0b', 'T40_in_s3t0b -> T40_out_s0t0b', 'T41_in_s2t0b']
+    if DBG: print('before: ' + str(path))
+    if DBG: print("---")
+
+    for i in range(len(path)):
+        path[i] = re.sub('(s.t.)','\\1b', path[i])
+
+    if DBG: print('after: ' + str(path))
+
+
 def eval_path(path, snode, dname, dtileno, DBG=0):
     # Given 'path' from src node 'snode' in stileno
     # to dst node 'dname' in possible dest tile 'dtileno',
     # see if path is valid
     stileno = snode.tileno
     sname   = snode.name
+
+    # If BUS1 path, Change default (BUS16) wires to 'b' (BUS1) wires
+    if is_bitnode(dname): fix_path(path, dname, DBG)
 
     # part 1 verify the tile-to-tile path
     # Check every port on the path for availability to snode
@@ -2419,7 +2459,23 @@ def eval_path(path, snode, dname, dtileno, DBG=0):
         # Dude no need to die, it'll try again...right?
         return False
 
+
+    # BOOKMARK
+    if is_bitnode(dname):
+        print '''
+
+        huh.  looks like okay to here maybe.  forge on!
+
+        '''
+        assert False
+
+
+
     return final_path
+
+def buswidth(connection):
+    if connection[-1] == 'b': return 1
+    else:                     return 16
 
 def can_connect_ends(path, snode, dname, dtileno, DBG=0):
     stileno = snode.tileno
@@ -2435,7 +2491,7 @@ def can_connect_ends(path, snode, dname, dtileno, DBG=0):
     assert snode.output in snode.net,\
            "'%s' output '%s' is not in '%s' net!!?" % (sname, snode.input0,sname)
 
-    cbegin = connect_beginpoint(snode, path[0],DBG)
+    cbegin = connect_beginpoint(snode, path[0], buswidth(path[0]), DBG)
     if not cbegin:
         err = "  Cannot connect beginpoint '%s' to path-begin '%s'?" % (snode, path[0])
         assert False, err
@@ -2518,7 +2574,7 @@ def ports_available(snode, path, DBG=0):
     return True
 
 
-def connect_beginpoint(snode, beginpoint, DBG=0):
+def connect_beginpoint(snode, beginpoint, buswidth, DBG=0):
     stileno = snode.tileno
     sname   = snode.name
 
@@ -2547,7 +2603,7 @@ def connect_beginpoint(snode, beginpoint, DBG=0):
 
     return False
 
-def connect_endpoint(snode, endpoint, dname, dtileno,DBG):
+def connect_endpoint(snode, endpoint, dname, dtileno, DBG):
 
     # 'dstports' is what you need to connect to to get the indicated node, yes?
     # E.g. for pe it's op1 AND op2; for mem it's 'mem_in'
@@ -2562,6 +2618,22 @@ def connect_endpoint(snode, endpoint, dname, dtileno,DBG):
         #     # If endpoint is on side 0 or 3, choose op2 preferentially over op1 and vice versa
         #     dplist = sort_dplist(endpoint,dplist)
 
+    # E.g. bitmux_157_157_149_lut_bitPE.in0 or in1 or in2
+    parse = re.search(r'bitPE.in([0-9])$', dname)
+    if parse:
+        dport = 'T%d_bit%s' % (dtileno,parse.group(1))
+        dplist = [dport]
+        if DBG:
+            print '''
+            NOPE. WRONG.
+            Found single-bit input; must connect to "%s" ONLY
+            ''' % dport
+            print "   In-ports avail to dest node '%s': %s" % (dname,dplist)
+            print "   Take each one in turn"
+
+    # FIXME this whole dplist only works for commutative operations.  Right?
+    # Should not be doing this anyway, there are better ways maybe.
+    # E.g. back off / retry after rewriting original serpent DAG input
     for dstport in dplist:
 
         print "     Can path endpoint '%s' connect to dest port '%s'?" \
@@ -2628,7 +2700,29 @@ def can_connect_begin(snode,src,begin,DBG=0):
     return cbegin
 
 def can_connect_end(snode, end,dstport,DBG=0):
+
+    if is_bitnode(dstport):
+        print '''
+        Found single-bit input; what now?
+
+        '''
+        # assert False
+
+
     cend = can_connect(snode, end,dstport,DBG)
+
+    # BOOKMARK
+    if is_bitnode(dstport):
+        print """
+        Found single-bit input; wha' hoppen'?
+
+        """
+        assert False
+
+
+
+
+
     if cend:
         print '   Ready to connect endpoint %s (%s)' % (cend, where(1516))
         print ''
