@@ -7,6 +7,13 @@ if ("$1" == "--help") then
   exit
 endif
 
+set buildswitch = ''
+if ("$1" == "-nobuild") then
+  set buildswitch = '-nobuild'
+  shift
+endif
+
+
 if (! -d $1) then
   echo 'Where are the test.bsa input files?'
   echo "Example: $0:t /tmp/build42/"
@@ -69,7 +76,7 @@ foreach b ($bmarks)
   setenv SERPENT_HACK
   (\
    cd $v; \
-   ./run.csh $tswitch -config $bsa -input $input -output $out -delay $delay \
+   ./run.csh $buildswitch $tswitch -config $bsa -input $input -output $out -delay $delay \
   ) || exit 13
 
 

@@ -687,7 +687,7 @@ def find_mux(tile, src, snk, DBG=0):
                 # Look for sinks whose src is rdst
                 owsnk = mux.attrib['snk']
                 if owsnk == snk:
-                    if DBG: print 'found snk', mux.attrib['snk']
+                    if DBG: print '690 found snk', mux.attrib['snk']
                     for msrc in mux.iter('src'):
                         owsrc = msrc.text
                         if src == owsrc:
@@ -941,10 +941,10 @@ def get_tile(tileno):
 
 def parse_resource(r):
     '''
-    resource must be of the form "T0_in_s0t0" or "T3_mem_out"
+    resource must be of the form "T0_in_s0t0" or "T3_mem_out" or "T0_in_s0t0b"
     returns tileno+remains e.g. parse_resource("T0_in_s0t0") = (0, 'in_s0t0')
     '''
-    parse = re.search('^T(\d+)_(.*)', r)
+    parse = re.search('^T(\d+)_(.*)b?', r)
     if not parse: assert False, r
     (tileno,resource) = (getnum(parse.group(1)), parse.group(2))
     return (tileno,resource)
@@ -1068,15 +1068,25 @@ def canon2cgra(name, DBG=0):
     in_s5t2    => in_2_BUS16_S1_T2
     T3_in_s1t2 => sb_wire_in_1_S3_T2  (if T3 is a mem tile)
     T3_out_s7t2=> sb_wire_out_1_S3_T2 (if T3 is a mem tile)
+    in_s1t2b    => in_BUS1_S1_T2
     '''
     if DBG>1: print "converting", name
 
     # First check to see if it's a single-bit signal e.g. T25_pe_out.0 or T25_out_s2t0.0
     oldname = name # A secret tool that will help us later
-    bus1 = (name[-3:] == '_b0')
-    if bus1:
+    if (name[-3:] == '_b0'):
+        bus1 = True
         if DBG>1: print "Found single-bit wire '%s'" % name
         name = name[0:-3]
+
+    # What? Oh nooooo
+    elif (name[-1] == 'b'):
+        bus1 = True
+        if DBG>1: print "Found single-bit wire '%s'" % name
+        name = name[0:-1]
+
+    else: bus1 = False
+
 
     # E.g. 'T0_in_s1t2' => 'in_BUS16_S1_T2'
     (T,d,side,t) = parse_canon(name)
@@ -1274,11 +1284,21 @@ def connect_within_tile(tileno, src, snk, DBG):
     # FIXME DO WE STILL NEED SEARCH_MUXES()??
     # #     rlist = search_muxes(fan_dir, tile, port, DBG-1)
 
+    # BOOKMARK
+    if snk == 'T41_bit0':
+        print 'HEYHEY'
+        DBG=9
+
+
     tile = get_tile(tileno)
     assert tile != -1, '404 tile not found'
 
     src_cgra = canon2cgra(src)
     snk_cgra = canon2cgra(snk)
+
+    if DBG: print('# looking to connect (canon) src "%s" and snk "%s"' % (src, snk))
+    if DBG: print('# looking to connect (cgra)  src "%s" and snk "%s"' % (src_cgra, snk_cgra))
+    if DBG: print('# ')
 
     # FIXME maybe canon2cgra(0 should be done in find_mux()...
     parms = find_mux(tile, src_cgra, snk_cgra, DBG)
