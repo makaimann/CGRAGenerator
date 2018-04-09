@@ -130,10 +130,6 @@ def uniquify(nodename):
 
     return nodename
 
-if DBG:
-    print "CONNECTIONS"
-    print connections
-
 def to_or_from(nodename):
 
     # Apparently connections are unordered!!?
@@ -173,15 +169,32 @@ def to_or_from(nodename):
 
     # print "FOO I don't know what '%s' is" % nodename
     # return "unknown"
-    sys.stderr.write("FOO I don't know what '%s' is" % nodename)
-    sys.exit(13)
+    sys.stderr.write("\nERROR I don't know what '%s' is\n\n" % nodename)
+    assert False
 
+# FIXME hacky hack wacky wack
+# Ignore connections to cg_en, ren, wcgw?
+def ignoble_node(n):
+    if re.search('cg_en$', n):
+        if DBG: print('# WARNING Ignoring connection to cg_en signal "%s" wcgw?\n' % n);
+        return True
+    elif re.search('ren$', n):
+        if DBG: print('# WARNING Ignoring connection to ren signal "%s" wcgw?\n' % n);
+        return True
+    else:
+        return False
 
+if DBG:
+    print "CONNECTIONS"
+    print connections
 
 if DBG: print "CONNECTIONS"
 for k in connections:
     # print k
     if DBG: print "# %s , %s" % (k[0], k[1])
+
+    # FIXME hacky hack wacky wack - ignore connections to cg_en, ren, wcgw?
+    if ignoble_node(k[1]): continue
 
     u0 = uniquify(k[0])
     u1 = uniquify(k[1])
@@ -192,11 +205,16 @@ for k in connections:
     #   "modargs":{"almost_full_cnt":["Int",0], "fifo_depth":["Int",64], ...
     # Insert a fifo_depth comment
     # (for some reason, node name has a '.wdata' on the end)
-    try:
+
+    parse = re.search('(.*).wdata', k[1])
+    if parse:
         k1 = re.search('(.*).wdata', k[1]).group(1)
-        fifo_depth = instances[k1]['modargs']['fifo_depth'][1]
-        fdcomment = ' # fifo_depth %s' % fifo_depth
-    except:
+        if DBG: print "# FOO found wdata node", k1
+        fifo_depth = int(instances[k1]['modargs']['depth'][1])
+        if DBG: print "# FOO found fifo depth", fifo_depth
+        assert fifo_depth > 1 and fifo_depth <= 1024
+        fdcomment = ' # fifo_depth %d' % fifo_depth
+    else:
         fdcomment = ''
 
     # Turn "PE_U70.data.out, PE_U8.data.in.1" into "PE_U70, PE_U8"

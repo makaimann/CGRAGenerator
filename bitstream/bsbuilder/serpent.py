@@ -817,7 +817,7 @@ class Node:
 #     else:
 #         resources[otile].remove(output)
 
-    def connect(self,a,b,T=-1,DBG=88):
+    def connect(self,a,b,T=-1,DBG=1):
         '''
         In tile T, connect a to b if possible.
         a and b may or may not have embedded tile info.
@@ -826,8 +826,6 @@ class Node:
         Else return FALSE i guess.
         '''
         DBG = max(0,DBG)
-        if DBG==88: pwhere(1544, 'WARNING did you mean to not set DBG?')
-
         if a[0] == 'T': T = int(re.search('^T(\d+)', a).group(1))
         if b[0] == 'T': T = int(re.search('^T(\d+)', b).group(1))
 
@@ -858,7 +856,7 @@ class Node:
         # FIXME is this bad?  connect_within_tile() used to
         # return False if no connect, now it dies.
         try:
-            cgra_info.connect_within_tile(T, a, b, DBG-1)
+            cgra_info.connect_within_tile(T, a, b, max(0,DBG-1))
             if DBG: print '     YES'
             return ['%s -> %s' % (a,b)]
         except:
