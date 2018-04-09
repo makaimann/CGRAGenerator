@@ -190,9 +190,9 @@ always @(*) begin
       almost_empty = fifo_almost_empty;
     end
     2'd2: begin
-      mem_wen0 = ~addr_in[`$awidth - 1`];
+      mem_wen0 = (~addr_in[`$awidth - 1`] & wen_in);
       mem_ren0 = 1'b1;
-      mem_wen1 = addr_in[`$awidth - 1`];
+      mem_wen1 = (addr_in[`$awidth - 1`] & wen_in);
       mem_ren1 = 1'b1;
       mem_addr = addr_in;      
       mem_data_in0 = data_in;
