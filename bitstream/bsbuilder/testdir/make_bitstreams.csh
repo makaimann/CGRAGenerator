@@ -3,7 +3,7 @@
 if ($#argv == 0) then
   echo 'Where should I put the bsa output files?'
   echo "Example: $0:t /tmp/build42/"
-  exit -1
+  exit 13
 endif
 
 if ("$1" == "--help") then
@@ -16,7 +16,7 @@ endif
 if (! -d $1) then
   echo 'Where should I put the bsa output files?'
   echo "Example: $0:t /tmp/build42/"
-  exit -1
+  exit 13
 endif
 set tmp = $1
 
@@ -58,7 +58,7 @@ foreach b ($bmarks)
   set bsa      =   ${b}.bsa
 
   echo "  json2dot < $map_json > $t/$map_dot"
-  json2dot < $map_json > $tmp/$map_dot || exit -1
+  json2dot < $map_json > $tmp/$map_dot || exit 13
 
   echo "cmp $tmp/$map_dot examples/$map_dot"
   cmp $tmp/$map_dot examples/$map_dot || set result = 'FAILED'
@@ -66,7 +66,7 @@ foreach b ($bmarks)
 
 
   echo "  ../serpent.py $t/$map_dot -o $t/$bsb > $t/$b.log.serpent"
-  ../serpent.py $tmp/$map_dot -o $tmp/$bsb > $tmp/$b.log.serpent || exit -1
+  ../serpent.py $tmp/$map_dot -o $tmp/$bsb > $tmp/$b.log.serpent || exit 13
 
   echo "  cmp $tmp/$bsb examples/$bsb"
   cmp $tmp/$bsb examples/$bsb || set result = 'FAILED'
@@ -84,8 +84,8 @@ foreach b ($bmarks)
   endif
 
   echo "  ../bsbuilder.py < $tmp/$bsb > $tmp/$bsa"
-  # ../bsbuilder.py -v < $tmp/$bsb | sed -n '/FINAL PASS/,$p' | sed '1,2d' > $tmp/$bsa || exit -1
-  ../bsbuilder.py < $tmp/$bsb > $tmp/$bsa || exit -1
+  # ../bsbuilder.py -v < $tmp/$bsb | sed -n '/FINAL PASS/,$p' | sed '1,2d' > $tmp/$bsa || exit 13
+  ../bsbuilder.py < $tmp/$bsb > $tmp/$bsa || exit 13
 
   echo "  cmp $tmp/$bsa examples/$bsa"
   ls -l examples/$bsa $tmp/$bsa
@@ -104,7 +104,7 @@ foreach b ($bmarks)
   echo "TEST $b $result"
   echo ""
 
-  # if ($result == "FAILED") exit -1
+  # if ($result == "FAILED") exit 13
   if ($result == "FAILED") then
     echo "WARNING comparison failed; will attempt to recover"
   endif

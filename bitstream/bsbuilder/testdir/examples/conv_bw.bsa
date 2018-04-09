@@ -80,10 +80,10 @@ FF000017 0002000B
 # data[(18, 16)] : almost_full_count = 0
 # data[(19, 19)] : chain_enable = 0
 
-00060018 00000000
+000A0018 00000000
 # data[(3, 0)] : @ tile (2, 5) connect wire 0 (in_0_BUS16_S2_T0) to wdata
 
-00090018 00000005
+000D0018 00000005
 # data[(3, 0)] : @ tile (2, 5) connect wire 5 (out_0_BUS1_S2_T0) to wen
 
 00000019 0000000F
@@ -154,8 +154,8 @@ FF000029 000A0000
 # data[(25, 24)] : @ tile (3, 3) connect wire 0 (in_BUS16_S0_T2) to out_BUS16_S2_T2
 # data[(31, 30)] : @ tile (3, 3) connect wire 2 (in_BUS16_S2_T0) to out_BUS16_S3_T0
 
-F100002A 0000000F
-# data[(15, 0)] : init `data1` reg with const `15`
+F100002A 00000000
+# data[(15, 0)] : init `data1` reg with const `0`
 
 FF00002A 0002000B
 # data[(4, 0)] : alu_op = mul
@@ -261,10 +261,10 @@ FF000038 0002000B
 # data[(18, 16)] : almost_full_count = 0
 # data[(19, 19)] : chain_enable = 0
 
-00060039 00000005
+000A0039 00000005
 # data[(3, 0)] : @ tile (4, 5) connect wire 5 (out_0_BUS16_S2_T0) to wdata
 
-00090039 00000005
+000D0039 00000005
 # data[(3, 0)] : @ tile (4, 5) connect wire 5 (out_0_BUS1_S2_T0) to wen
 
 0000003A 0000000F

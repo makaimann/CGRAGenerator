@@ -62,15 +62,15 @@ test_all:
 
 
 test_serpent_dev:
-	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR) pointwise conv_1_2 conv_2_1 || echo oops
+	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR) pointwise conv_1_2 conv_2_1
 	../bitstream/bsbuilder/testdir/test_bitstreams.csh $(TEMPDIR) pointwise conv_1_2 conv_2_1
-	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR) conv_3_1 || echo oops
+	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR) conv_3_1
 	../bitstream/bsbuilder/testdir/test_bitstreams.csh $(TEMPDIR) conv_3_1
-	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR) conv_bw || echo oops
+	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR) conv_bw
 	../bitstream/bsbuilder/testdir/test_bitstreams.csh $(TEMPDIR) conv_bw
 
 test_serpent:
-	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR) || echo oops
+	../bitstream/bsbuilder/testdir/make_bitstreams.csh $(TEMPDIR)
 	../bitstream/bsbuilder/testdir/test_bitstreams.csh $(TEMPDIR)
 #	FIXME Who will delete TEMPDIR?
 
