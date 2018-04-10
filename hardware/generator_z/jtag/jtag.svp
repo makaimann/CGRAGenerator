@@ -146,8 +146,8 @@ module `$self->get_module_name()`
    //;					TC_CFG_BUS => 'no', SC_CFG_IFC_REF => $sc_jtag2gc_ifc,
    //;					SC_CFG_OPCODES => {nop => 0, write => 1, read => 2, bypass => 3,                                                 
    //;                                                 wr_A050 => 7, wr_to_TST => 8, rd_TST => 9,
-   //; 						       global_reset => 10, stall => 12, 
-   //;    					       adv_clk => 13, resume_clk => 14, sys_clk_on => 15,
+   //; 						       global_reset => 10, write_stall => 11,read_stall => 12, 
+   //;    					       adv_clk => 13, sys_clk_on => 15,
    //;						       wr_rd_delay_reg => 16, rd_rd_delay_reg => 17, wr_delay_sel_reg => 18,
    //;						       rd_delay_sel_reg => 19, wr_analog_reg => 20, rd_analog_reg => 21} 
    //;					);#Should this really be bypass??

@@ -116,9 +116,10 @@ reg [`$cfg_addr_width-1`:0] analog_addr;
   parameter read_TST = `$cfg_op_width`'d9;
   parameter global_reset = `$cfg_op_width`'d10;
   //parameter reset_tile = `$cfg_op_width`'d11; 
-  parameter stall = `$cfg_op_width`'d12;
+  parameter write_stall = `$cfg_op_width`'d11;
+  parameter read_stall = `$cfg_op_width`d12;
   parameter advance_clk = `$cfg_op_width`'d13;
-  parameter resume_clk = `$cfg_op_width`'d14;
+  //parameter resume_clk = `$cfg_op_width`'d14;
   parameter sys_clk_on = `$cfg_op_width`'d15;
   parameter wr_rd_delay_reg = `$cfg_op_width`'d16;
   parameter rd_rd_delay_reg = `$cfg_op_width`'d17;
@@ -133,6 +134,8 @@ reg [`$cfg_addr_width-1`:0] analog_addr;
   parameter advancing_clk = 2'd3;
 
   reg [1:0] state;
+  //USED to remember old stall signal when advancing clk
+  reg [3:0] stall_restore;
  
   logic all_stalled_tck;
   logic all_stalled_tck_rise;
@@ -213,6 +216,7 @@ reg [`$cfg_addr_width-1`:0] analog_addr;
   always @ (posedge clk or posedge reset_in) begin
     	if (reset_in==1) begin
 		cgra_stalled <= 0;
+		stall_restore <= 0;
        		clk_switch_request <= 0;
 		rd_delay_reg <= 2;
 		TST <= 0;
@@ -280,28 +284,37 @@ reg [`$cfg_addr_width-1`:0] analog_addr;
 				write <= 0;
 				analog_wr_en <= 0;
 			end
-			stall: begin
-				cgra_stalled <= 4'b1111;
+			read_stall: begin
+				read <= 0;
+				write <= 0;
+				analog_wr_en <= 0;
+				config_data_jtag_in <= {`$cfg_bus_width-4`'b0, cgra_stalled};
+			end
+			write_stall: begin
+				cgra_stalled <= config_data_jtag_out[3:0];
 				read <= 0;
 				write <= 0;
 				analog_wr_en <= 0;
 			end			
 			advance_clk: begin
-				if (cgra_stalled) begin
+				if (cgra_stalled & config_addr_jtag_out[3:0]) begin
 					counter <= config_data_jtag_out-1;
 					state <= advancing_clk;	
-					cgra_stalled <= 0;
+					stall_restore <= cgra_stalled;
+//;		for(my $i = 0; $i < 3; $i++){
+					cgra_stalled[`$i`] <= config_addr_jtag_out[`$i`] ? 1'b0 : cgra_stalled[`$i`];
+//;		}
 				end
 				read <= 0;
 				write <= 0;
 				analog_wr_en <= 0;
 			end
-			resume_clk: begin
+			/*resume_clk: begin //REMOVE THIS
 				cgra_stalled <= 0;
 				read <= 0;
 				write <= 0;
 				analog_wr_en <= 0;
-			end
+			end */
 			sys_clk_on: begin
 				clk_switch_request <= 1;
 				read <= 0;
@@ -371,7 +384,7 @@ reg [`$cfg_addr_width-1`:0] analog_addr;
 					config_data_jtag_in <= config_data_in;
 					read <= 0;
 				if (state == advancing_clk)
-					cgra_stalled <= 1;
+					cgra_stalled <= stall_restore;
 			end
 		end    	
   	end
