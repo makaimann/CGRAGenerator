@@ -214,7 +214,7 @@ reg [`$cfg_addr_width-1`:0] analog_addr;
     	if (reset_in==1) begin
 		cgra_stalled <= 0;
        		clk_switch_request <= 0;
-		rd_delay_reg <= 3;
+		rd_delay_reg <= 2;
 		TST <= 0;
 		counter <= 0;
 		config_addr_out <= 0;

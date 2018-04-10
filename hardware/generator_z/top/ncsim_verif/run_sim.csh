@@ -52,4 +52,4 @@ $RTL_FOLDER/test_top.sv \
 $RTL_FOLDER/test_unq1.sv \
 $RTL_FOLDER/top.v \
 $SYNOPSYS/dw/sim_ver/DW_tap.v \
-$RTL_FOLDER/../sram_512w_16b.v 
+$RTL_FOLDER/sram_512w_16b.v 

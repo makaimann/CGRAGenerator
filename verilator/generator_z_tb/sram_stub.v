@@ -14,7 +14,7 @@
 // .STOV(1'b0));
 
 module sram_512w_16b (Q, CLK, CEN, WEN, A, D, EMA, EMAW, EMAS, TEN, BEN, RET1N, STOV);
-   output [15:0] Q;
+   output reg [15:0] Q;
    input        CLK;
    input        CEN;
    input        WEN;

@@ -153,10 +153,10 @@ end
 
 always @(*) begin
   if(config_en_sram != 4'b0) begin
-      mem_wen0 = ~(config_write & (config_en_sram[0] | config_en_sram[1]));
-      mem_ren0 = ~(config_read & (config_en_sram[0] | config_en_sram[1]));
-      mem_wen1 = ~(config_write & (config_en_sram[2] | config_en_sram[3]));
-      mem_ren1 = ~(config_read & (config_en_sram[2] | config_en_sram[3]));
+      mem_wen0 = (config_write & (config_en_sram[0] | config_en_sram[1]));
+      mem_ren0 = (config_read & (config_en_sram[0] | config_en_sram[1]));
+      mem_wen1 = (config_write & (config_en_sram[2] | config_en_sram[3]));
+      mem_ren1 = (config_read & (config_en_sram[2] | config_en_sram[3]));
       mem_addr = {(config_en_sram[3] | config_en_sram[1]), config_addr[31:24]};
       mem_data_in0 = config_data[15:0];
       mem_data_in1 = config_data[15:0];
@@ -190,10 +190,10 @@ always @(*) begin
       almost_empty = fifo_almost_empty;
     end
     2'd2: begin
-      mem_wen0 = ~addr_in[`$awidth - 1`];
-      mem_ren0 = 1'b1;
-      mem_wen1 = addr_in[`$awidth - 1`];
-      mem_ren1 = 1'b1;
+      mem_wen0 = (~addr_in[`$awidth - 1`] & wen_in);
+      mem_ren0 = ren_in;
+      mem_wen1 = (addr_in[`$awidth - 1`] & wen_in);
+      mem_ren1 = ren_in;
       mem_addr = addr_in;      
       mem_data_in0 = data_in;
       mem_data_in1 = data_in;
