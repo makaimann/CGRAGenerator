@@ -117,7 +117,7 @@ reg [`$cfg_addr_width-1`:0] analog_addr;
   parameter global_reset = `$cfg_op_width`'d10;
   //parameter reset_tile = `$cfg_op_width`'d11; 
   parameter write_stall = `$cfg_op_width`'d11;
-  parameter read_stall = `$cfg_op_width`d12;
+  parameter read_stall = `$cfg_op_width`'d12;
   parameter advance_clk = `$cfg_op_width`'d13;
   //parameter resume_clk = `$cfg_op_width`'d14;
   parameter sys_clk_on = `$cfg_op_width`'d15;
@@ -301,7 +301,7 @@ reg [`$cfg_addr_width-1`:0] analog_addr;
 					counter <= config_data_jtag_out-1;
 					state <= advancing_clk;	
 					stall_restore <= cgra_stalled;
-//;		for(my $i = 0; $i < 3; $i++){
+//;		for(my $i = 0; $i < 4; $i++){
 					cgra_stalled[`$i`] <= config_addr_jtag_out[`$i`] ? 1'b0 : cgra_stalled[`$i`];
 //;		}
 				end

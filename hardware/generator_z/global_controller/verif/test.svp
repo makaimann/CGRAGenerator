@@ -87,26 +87,37 @@ program automatic `mname`(interface ifc);
 		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);
 	 
 	 @(posedge ifc.Clk);
-	 jtag_ofst_trans.op = stall;
+	 jtag_ofst_trans.op = write_stall;
+	 jtag_ofst_trans.data_in = 32'hF;
 	 jtag_ofst_trans.done = 0;
 	 jdrv.Send(jtag_ofst_trans);
-	 $fdisplay(fd,"%t: %m: Trans 5 (stall):  Address to GC=%d, Data to GC=%d",  
+	 $fdisplay(fd,"%t: %m: Trans 5 (write stall):  Address to GC=%d, Data to GC=%d",  
 		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);
+	 
+	 @(posedge ifc.Clk);
+	 jtag_rslt_trans.op = read_stall;
+	 jtag_rslt_trans.data_out = 0;
+	 jtag_rslt_trans.done = 0;
+	 jdrv.Send(jtag_rslt_trans);
+	 jtag_rslt_trans = jdrv.GetResult();
+	 $fdisplay(fd,"%t: %m: Trans 3 (Read stall):  Address to GC=%d, Data to GC=%d, Data out from GC=%d",  
+		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc, jtag_rslt_trans.data_out);
 	 
 	 @(posedge ifc.Clk);
 	 jtag_ofst_trans.op = advance_clk;
 	 jtag_ofst_trans.data_in = 32'd6;
+	 jtag_ofst_trans.addr = 32'b1010;
 	 jtag_ofst_trans.done = 0;
 	 jdrv.Send(jtag_ofst_trans);
 	 $fdisplay(fd,"%t: %m: Trans 6 (advance_clk):  Address to GC=%d, Data to GC=%d",  
 		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);
 	 
 	 @(posedge ifc.Clk);
-	 jtag_ofst_trans.op = resume_clk;
-	 jtag_ofst_trans.data_in = 32'd6;
+	 jtag_ofst_trans.op = write_stall;
+	 jtag_ofst_trans.data_in = 32'd0;
 	 jtag_ofst_trans.done = 0;
 	 jdrv.Send(jtag_ofst_trans);
-	 $fdisplay(fd,"%t: %m: Trans 7 (advance_clk):  Address to GC=%d, Data to GC=%d",  
+	 $fdisplay(fd,"%t: %m: Trans 7 (write stall):  Address to GC=%d, Data to GC=%d",  
 		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);
 	 
 	 @(posedge ifc.Clk);
@@ -194,7 +205,7 @@ program automatic `mname`(interface ifc);
 	 jtag_ofst_trans.addr = 32'd10;
 	 jtag_ofst_trans.done = 0;
 	 jdrv.Send(jtag_ofst_trans);
-	 $fdisplay(fd,"%t: %m: Trans 15 (write):  Address to GC=%d, Data to GC=%d",  
+	 $fdisplay(fd,"%t: %m: Trans 15 (write analog reg):  Address to GC=%d, Data to GC=%d",  
 		   $time, ifc.config_addr_to_gc, ifc.config_data_to_gc);	 
 	 
 	 @(posedge ifc.Clk);
