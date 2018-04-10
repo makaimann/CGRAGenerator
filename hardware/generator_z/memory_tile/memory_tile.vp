@@ -253,7 +253,7 @@ read_data
 //; my $num_tracks_1b = $bus_num_tracks_hash{ $control_busname };
 //; my $cb_1b = generate('cb', 'cb_ctl', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>0, feedthrough_outputs=>$cb_connections);
 //; my $cb_cg = generate('cb', 'cb1b_cg', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>0, feedthrough_outputs=>$cb_connections);
-//; my @mem_inputs = ("BUS16#wdata","BUS16#addr","BUS1#ren","BUS1#wen");
+//; my @mem_inputs = ("BUS16#wdata","BUS16#addr","BUS1#ren","BUS1#wen","BUS1#flush");
 //; my @non_mem_inputs = ("BUS1#cg_en");
 //; my $input_count=0;
 //; my $num_tracks;
@@ -509,6 +509,7 @@ wire [31:0] read_data_sram;
       .clk_in(clk_in),
       .clk_en(clk_en),
       .reset(reset),
+      .flush(flush),
       .config_addr(config_addr),
       .config_data(config_data),
       .config_read(config_read),
