@@ -297,13 +297,15 @@ reg [`$cfg_addr_width-1`:0] analog_addr;
 				analog_wr_en <= 0;
 			end			
 			advance_clk: begin
-				if (cgra_stalled & config_addr_jtag_out[3:0]) begin
-					counter <= config_data_jtag_out-1;
-					state <= advancing_clk;	
-					stall_restore <= cgra_stalled;
-//;		for(my $i = 0; $i < 4; $i++){
-					cgra_stalled[`$i`] <= config_addr_jtag_out[`$i`] ? 1'b0 : cgra_stalled[`$i`];
-//;		}
+				if (config_data_jtag_out > 0) begin
+					if (cgra_stalled & config_addr_jtag_out[3:0]) begin
+						counter <= config_data_jtag_out-1;
+						state <= advancing_clk;	
+						stall_restore <= cgra_stalled;
+//;			for(my $i = 0; $i < 4; $i++){
+						cgra_stalled[`$i`] <= config_addr_jtag_out[`$i`] ? 1'b0 : cgra_stalled[`$i`];
+//;			}
+					end
 				end
 				read <= 0;
 				write <= 0;
