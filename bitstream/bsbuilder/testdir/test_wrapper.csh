@@ -23,7 +23,6 @@ foreach b ($bmarks)
   ./serpent.csh $map_json -cgra_info $cgra -o /tmp/$b-$$.bsa
 
   echo "  diff testdir/examples/$b.bsa /tmp/$b-$$.bsa"
-  echo "  TO FIX: cp /tmp/$b-$$.bsa examples/$b.bsa"
   diff testdir/examples/$b.bsa /tmp/$b-$$.bsa || set result = 'FAILED'
 
   if ("$result" == "FAILED") set test_suite = 'FAILED'
