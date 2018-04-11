@@ -4,7 +4,7 @@
 set path = (. $path)
 
 # Can use this to extend time on travis
-# ./my_travis_wait.csh 60 &
+./my_travis_wait.csh 60 &
 
 set VERBOSE
 
