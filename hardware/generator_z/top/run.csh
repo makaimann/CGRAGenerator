@@ -57,6 +57,7 @@ Genesis2.pl -parse -generate -top top -hierarchy top.xml -input\
   ../global_signal_tile/global_signal_tile.vp \
   \
   ../memory_tile/memory_tile.vp \
+  ../memory_tile/mem_shift_reg.svp \
   ../memory_core/input_sr.vp \
   ../memory_core/output_sr.vp \
   ../memory_core/linebuffer_control.vp \
