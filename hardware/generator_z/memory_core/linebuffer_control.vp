@@ -115,6 +115,7 @@ wire output_sr_data_avail;
 always @(posedge clk or posedge reset) begin
   if (reset==1'b1) begin
     phase <= 1'b0;
+  end
   else if (flush==1'b1) begin
     phase <= 1'b0;
   end 
