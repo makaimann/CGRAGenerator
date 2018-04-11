@@ -228,9 +228,6 @@ end
 assign mem_cen0 = mem_wen0 | mem_ren0;
 assign mem_cen1 = mem_wen1 | mem_ren1;
 
-//Flush signal to reset only the linebuffer/FIFO control
-wire mem_ctl_reset;
-assign mem_ctl_reset = reset | flush;
 
 //; my $lb = generate('linebuffer_control', 'linebuffer_control', dwidth => $dwidth, ddepth => $ddepth );
 //; my $fifo = generate('fifo_control', 'fifo_control', dwidth => $dwidth, ddepth => $ddepth );
@@ -244,7 +241,8 @@ always @(*) begin
 `$lb->instantiate()`
 (
 .clk(gclk),
-.reset(mem_ctl_reset),
+.reset(reset),
+.flush(flush),
 .data_in(data_in_int),
 .wen(wen_in_int),
 .data_out(lb_out),
@@ -264,7 +262,8 @@ always @(*) begin
 `$fifo->instantiate()`
 (
 .clk(gclk),
-.reset(mem_ctl_reset),
+.reset(reset),
+.flush(flush),
 .data_in(data_in_int),
 .wen(wen_in_int),
 .data_out(fifo_out),

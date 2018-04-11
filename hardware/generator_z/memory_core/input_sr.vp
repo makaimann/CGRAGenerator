@@ -12,6 +12,7 @@
 module `mname`(
 clk,
 reset,
+flush,
 data_in,
 wen,
 data_out,
@@ -24,6 +25,7 @@ count
 
   input clk;
   input reset;
+  input flush;
   input [`$dwidth - 1`:0] data_in;
   input ren_w1;
   input ren_w2;
@@ -51,7 +53,11 @@ count
   always @(posedge clk or posedge reset) begin
     if (reset==1'b1) begin
       count <= 2'd0;
-    end else begin
+    end	
+    else if (flush==1'b1) begin
+      count <= 2'd0;
+    end
+    else begin
       if (wen==1'b1 && (ren_w2==1'b0 && ren_w1==1'b0)) begin
         count <= count + 2'd1;
         `$backtick`xassert(count >= 2'd3, "pushing data into sr when count >= 3")
