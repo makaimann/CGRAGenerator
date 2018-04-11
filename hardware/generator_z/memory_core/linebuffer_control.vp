@@ -111,9 +111,12 @@ wire output_sr_data_avail;
 );
 
 always @(posedge clk or posedge reset) begin
-  if (reset==1'b1 | flush==1'b1) begin
+  if (reset==1'b1) begin
     phase <= 1'b0;
-  end else begin
+  else if (flush==1'b1) begin
+    phase <= 1'b0;
+  end 
+  else begin
     phase <= ~phase;
   end
 end
@@ -124,10 +127,15 @@ assign wen_to_mem = input_sr_ren_w2;
 assign depth_even = ((depth>>1)<<1);
 
 always @(posedge clk or posedge reset) begin
-  if (reset==1'b1 | flush == 1'b1) begin
+  if (reset==1'b1) begin
     input_sr_ren_w1 <= 1'b0;
     input_sr_ren_w2 <= 1'b0;
-  end else begin
+  end
+  else if (flush == 1'b1) begin
+    input_sr_ren_w1 <= 1'b0;
+    input_sr_ren_w2 <= 1'b0;
+  end 
+  else begin
     input_sr_ren_w2 <= 1'b0;
     input_sr_ren_w1 <= 1'b0;
     if (phase==1'b0) begin // phase=1=WRITE to mem;1=READ from mem
@@ -148,11 +156,17 @@ assign total_word_count = num_words_mem + input_sr_count;
 assign ren_to_mem = (phase==1'b0) & (read_state==2'd1);
 
 always @(posedge clk or posedge reset) begin
-  if (reset==1'b1 | flush==1'b1) begin
+  if (reset==1'b1) begin
     num_words_mem <= `$dwidth`'d0;
     read_addr <= `$dwidth`'d0;
     write_addr <= `$dwidth`'d0;
-  end else begin
+  end
+  else if (flush==1'b1) begin
+    num_words_mem <= `$dwidth`'d0;
+    read_addr <= `$dwidth`'d0;
+    write_addr <= `$dwidth`'d0;
+  end 
+  else begin
     if (phase==1'b1) begin 
       if (input_sr_ren_w2 == 1'b1) begin
         if (write_addr>=warp_addr) begin
@@ -178,12 +192,19 @@ end
 assign stall_read_int = (total_word_count<(depth-3'd5)); // 3'd5 = offset to start reading for 0 latency 
 
 always @(posedge clk or posedge reset) begin
-  if (reset==1'b1 | flush==1'b1) begin
+  if (reset==1'b1) begin
     read_state <= 2'd0;
     num_words_read <= `$dwidth`'d0;
     delay_outputs <= 1'b0;
     warp <= 1'b0;
-  end else begin
+  end
+  else if (flush==1'b1) begin
+    read_state <= 2'd0;
+    num_words_read <= `$dwidth`'d0;
+    delay_outputs <= 1'b0;
+    warp <= 1'b0;
+  end 
+  else begin
     if (phase==1'b0) begin
       warp <= 1'b0;
       if ((read_state == 2'd0) && (stall_read==1'b0) && (stall_read_int==1'b0)) begin //00 = not reading
@@ -212,11 +233,17 @@ always @(posedge clk or posedge reset) begin
 end
 
 always @(posedge clk or posedge reset) begin
-  if (reset==1'b1 | flush==1'b1) begin
+  if (reset==1'b1) begin
     output_sr_wen_w1 <= 1'b0;
     output_sr_wen_w2 <= 1'b0;
     output_sr_ren <= 1'b0;
-  end else begin
+  end 
+  else if (flush==1'b1) begin
+    output_sr_wen_w1 <= 1'b0;
+    output_sr_wen_w2 <= 1'b0;
+    output_sr_ren <= 1'b0;
+  end
+  else begin
     output_sr_wen_w1 <= 1'b0;
     output_sr_wen_w2 <= 1'b0;
     output_sr_ren <= 1'b0;
