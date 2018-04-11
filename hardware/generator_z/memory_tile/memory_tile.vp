@@ -59,6 +59,8 @@ module `mname`(
 clk_in,
 config_addr,
 config_data,
+config_write,
+config_read,
 //; for (my $row=0; $row < $mem_tile_height; $row++) {
 //;   for my $bus (sort keys %bus_num_tracks_hash) {
 //;     my $num_tracks = $bus_num_tracks_hash { $bus };
@@ -82,7 +84,8 @@ chain_out,
 chain_valid_out,
 chain_wen_in,
 reset,
-tile_id
+tile_id,
+read_data
 );
 
   input clk_in;
@@ -113,10 +116,13 @@ tile_id
   output [`$bus_width_hash { $gen_mem_for_busname } - 1`:0] chain_out;
   input [15:0] tile_id;
   input reset;
-
+  input config_read;
+  input config_write;
+  output reg [31:0] read_data;
   wire ___genesis_wire_`$global_signal_count`_`${bus_config}`_`${all_segments_for_all_tiles}`_`${gen_mem_for_busname}`_`${control_busname}`_`${ddepth}`_`${sides}`_`${feedthrough_outputs}`_`${registered_outputs}`_`${is_bidi}`_`${sb_fs}`_`${cb_connections}`_`${mem_tile_height}`;
-  wire clk;
-
+//  wire clk;
+  wire cg_en;
+  wire clk_en;
 //; ##############################################
 //; #
 //; # Generate config enables
@@ -132,7 +138,7 @@ tile_id
     if (reset) begin
        config_en_sb_`$row`_`$bus` <= 1'b0;
     end else begin
-       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
          config_en_sb_`$row`_`$bus` <= 1'b1;
        end else begin
          config_en_sb_`$row`_`$bus` <= 1'b0;
@@ -150,7 +156,7 @@ tile_id
     if (reset) begin
        config_en_mem <= 1'b0;
     end else begin
-       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
          config_en_mem <= 1'b1;
        end else begin
          config_en_mem <= 1'b0;
@@ -162,6 +168,33 @@ tile_id
 //;       data_bus => $gen_mem_for_busname,
 //;       control_bus => $control_busname
 //;     };
+
+//; #4 256 word SRAMs (so we can use the 8 bit register address)
+  reg [3:0] config_en_sram;
+//; for(my $i = 0; $i < 4; $i++){
+//;$intra_tile_addr++; 
+  always @(*) begin
+    if(reset) begin
+      config_en_sram[`$i`] = 1'b0;
+    end
+    else begin
+       //NEED TO REVISE THIS. CONFIG_WRITE ALONE NOT SUFFICIENT
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`) && (config_read | config_write)) begin
+         config_en_sram[`$i`] <= 1'b1;
+       end 
+       else begin
+         config_en_sram[`$i`] <= 1'b0;
+       end
+    end
+  end
+//; ### HOW DO I ADD THIS TO CGRA INFO???       
+//;     $tile_info_hash->{ "sram_$i" } = {
+//;       address => $intra_tile_addr,
+//;       data_bus => $gen_mem_for_busname,
+//;       control_bus => $control_busname
+//;     };
+//; }
+
 //; ##
 //; ## global out signal
 //; ##
@@ -179,7 +212,7 @@ tile_id
     if (reset==1'b1) begin
        gout_sel = `$number_of_gout_select_bits_needed`'d0;
     end else begin
-       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
          gout_sel  = config_data[`$number_of_gout_select_bits_needed - 1`:0];
        end
     end
@@ -207,6 +240,118 @@ tile_id
 //;   }
 //; }
 
+
+//; ##############################################
+//; #
+//; # Instantiate CBs
+//; #
+//; ##############################################
+
+//; my $num_tracks_wide = $bus_num_tracks_hash { $gen_mem_for_busname };
+//; my $cb_wide = generate('cb', 'cb', width=>16, num_tracks=>($num_tracks_wide*2), has_constant=>0, feedthrough_outputs=>$cb_connections);  
+
+//; my $num_tracks_1b = $bus_num_tracks_hash{ $control_busname };
+//; my $cb_1b = generate('cb', 'cb_ctl', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>0, feedthrough_outputs=>$cb_connections);
+//; my $cb_cg = generate('cb', 'cb1b_cg', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>0, feedthrough_outputs=>$cb_connections);
+//; my @mem_inputs = ("BUS16#wdata","BUS16#addr","BUS1#ren","BUS1#wen","BUS1#flush");
+//; my @non_mem_inputs = ("BUS1#cg_en");
+//; my $input_count=0;
+//; my $num_tracks;
+//; my $cb;
+//;
+//; #######
+//;
+//;foreach my $mem_input (@mem_inputs, @non_mem_inputs) {
+//; ##
+//; ## Generate config enables for the input CB
+//; ##
+//; $intra_tile_addr+=1;
+//; $mem_input =~ m/(\S*)#(\S*)/;
+//; my $mem_input_bus = $1;
+//; my $mem_input_name = $2;
+  reg config_en_cb_`$mem_input_name`;
+  always @(*) begin
+    if (reset) begin
+       config_en_cb_`$mem_input_name` = 1'b0;
+    end else begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
+         config_en_cb_`$mem_input_name` = 1'b1;
+       end else begin
+         config_en_cb_`$mem_input_name` = 1'b0;
+       end
+    end
+  end
+  wire [31:0] read_data_cb_`$mem_input_name`;
+
+//; $tile_info_hash->{ 'cb_'.$mem_input_name } = {
+//;   address => $intra_tile_addr
+//; };
+//; ##
+//; ## Instantiate the CB
+//; ##
+//; my $xside=2; 
+//;# if ($input_count % 2 == 0) {
+//;#  $xside = 2;
+//;# } else {
+//;#  $xside = 1;
+//;# }
+//; if ($mem_input_bus eq "BUS16") {
+//;   $cb = clone($cb_wide,'cb_'.$mem_input_name);
+//;    $num_tracks=$num_tracks_wide;
+//; } elsif ($mem_input_name eq "cg_en") {
+//;   $cb = clone($cb_cg,'cb_'.$mem_input_name);
+//;   $num_tracks=$num_tracks_1b;
+//; } else {
+//;   $cb = clone($cb_1b,'cb_'.$mem_input_name);
+//;   $num_tracks=$num_tracks_1b;
+//; }
+//; if ($mem_input_bus eq "BUS16") {
+  wire [15:0] `$mem_input_name`;
+//;    } elsif ($mem_input_name eq "cg_en") {} else {
+  wire `$mem_input_name`;
+//;   }
+  `$cb->instantiate()`
+  (
+    .clk(clk_in),
+    .reset(reset),
+    .out(`$mem_input_name`),
+//; my $k=0;
+//;   for(my $j=0; $j<$num_tracks*2; $j++, $k++) {
+//;     my $dirn;
+//;     my $track = $k % $num_tracks;
+//;     if ($j < $num_tracks) {
+//;       $dirn="in";
+//;     } else {
+//;       $dirn="out";
+//;     }
+//;     if (@cb_connections_arr[$j]==1) {
+//;       if ($mem_input_bus eq "BUS16") {
+    .in_`$k`(`${dirn}`_0_BUS16_`${xside}`_`${track}`),
+//;         $rename_hash->{ 'cb_'.$mem_input_name }{"in_${k}"} = "${dirn}_0_BUS16_S${xside}_T${track}";
+//;       } else {
+    .in_`$k`(`${dirn}`_0_BUS1_`${xside}`_`${track}`),
+//;         $rename_hash->{ 'cb_'.$mem_input_name }{"in_${k}"} = "${dirn}_0_BUS1_S${xside}_T${track}";
+//;       }
+//;     }
+//;   }
+//;   if ($mem_input_bus eq "BUS1") {
+//;     for (my $i=0; $i<$global_signal_count; $i++, $k++){
+    .in_`$k`(gin_`${i}`),
+//;       $rename_hash->{ 'cb_'.$mem_input_name }{"in_${k}"} = "gin_${i}";
+//;     }
+//;   }
+    .config_addr(config_addr),
+    .config_data(config_data),
+    .config_en(config_en_cb_`$mem_input_name`),
+    .read_data(read_data_cb_`$mem_input_name`)
+  );
+//; $tile_info_hash->{ 'cb_'.$mem_input_name }{'bus'} = $mem_input_bus;
+//; $tile_info_hash->{ 'cb_'.$mem_input_name }{'mname'} = $cb->mname();
+//; $rename_hash->{ 'cb_'.$mem_input_name }{'out'} = $mem_input_name;
+//; $input_count = $input_count+1;
+//; };
+
+  assign clk_en = ~cg_en;
 //; ##############################################
 //; #
 //; # Instantiate SBs
@@ -228,9 +373,11 @@ tile_id
 //;   for my $bus (sort keys %bus_num_tracks_hash) {
 //;     my $num_tracks = $bus_num_tracks_hash { $bus };
 //;     my $sb_obj = clone($sb_hash{ $bus }, 'sb_inst_bus'.$bus.'_row'.$row);
+wire [31:0] read_data_sb_`$row`_`$bus`;    
   `$sb_obj->instantiate()`
   (
-    .clk(clk),
+    .clk(clk_in),
+    .clk_en(clk_en),
     .reset(reset),
 //;     if ($bus eq $gen_mem_for_busname) {
     .pe_output_0(rdata),
@@ -247,7 +394,8 @@ tile_id
 //;     }
     .config_addr(config_addr),
     .config_data(config_data),
-    .config_en(config_en_sb_`$row`_`$bus`)
+    .config_en(config_en_sb_`$row`_`$bus`),
+    .read_data(read_data_sb_`$row`_`$bus`)
   );
 //;     $tile_info_hash->{ "sb_".$row."_".$bus }{'bus'} = $bus;
 //;     $tile_info_hash->{ "sb_".$row."_".$bus }{'mname'} = $sb_obj->mname();
@@ -312,114 +460,6 @@ tile_id
 //;   }
 //; }
 
-//; ##############################################
-//; #
-//; # Instantiate CBs
-//; #
-//; ##############################################
-
-//; my $num_tracks_wide = $bus_num_tracks_hash { $gen_mem_for_busname };
-//; my $cb_wide = generate('cb', 'cb', width=>16, num_tracks=>($num_tracks_wide*2), has_constant=>0, feedthrough_outputs=>$cb_connections);  
-
-//; my $num_tracks_1b = $bus_num_tracks_hash{ $control_busname };
-//; my $cb_1b = generate('cb', 'cb_ctl', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>0, feedthrough_outputs=>$cb_connections);
-//; my $cb_cg = generate('cb', 'cb1b_cg', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>1, feedthrough_outputs=>$cb_connections, default_value=>'1');
-//; my @mem_inputs = ("BUS16#wdata","BUS16#addr","BUS1#ren","BUS1#wen");
-//; my @non_mem_inputs = ("BUS1#cg_en");
-//; my $input_count=0;
-//; my $num_tracks;
-//; my $cb;
-//;
-//; #######
-//;
-//;foreach my $mem_input (@mem_inputs, @non_mem_inputs) {
-//; ##
-//; ## Generate config enables for the input CB
-//; ##
-//; $intra_tile_addr+=1;
-//; $mem_input =~ m/(\S*)#(\S*)/;
-//; my $mem_input_bus = $1;
-//; my $mem_input_name = $2;
-  reg config_en_cb_`$mem_input_name`;
-  always @(*) begin
-    if (reset) begin
-       config_en_cb_`$mem_input_name` = 1'b0;
-    end else begin
-       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
-         config_en_cb_`$mem_input_name` = 1'b1;
-       end else begin
-         config_en_cb_`$mem_input_name` = 1'b0;
-       end
-    end
-  end
-//; $tile_info_hash->{ 'cb_'.$mem_input_name } = {
-//;   address => $intra_tile_addr
-//; };
-//; ##
-//; ## Instantiate the CB
-//; ##
-//; my $xside=2; 
-//;# if ($input_count % 2 == 0) {
-//;#  $xside = 2;
-//;# } else {
-//;#  $xside = 1;
-//;# }
-//; if ($mem_input_bus eq "BUS16") {
-//;   $cb = clone($cb_wide,'cb_'.$mem_input_name);
-//;    $num_tracks=$num_tracks_wide;
-//; } elsif ($mem_input_name eq "cg_en") {
-//;   $cb = clone($cb_cg,'cb_'.$mem_input_name);
-//;   $num_tracks=$num_tracks_1b;
-//; } else {
-//;   $cb = clone($cb_1b,'cb_'.$mem_input_name);
-//;   $num_tracks=$num_tracks_1b;
-//; }
-//; if ($mem_input_bus eq "BUS16") {
-  wire [15:0] `$mem_input_name`;
-//;   } else {
-  wire `$mem_input_name`;
-//;   }
-  `$cb->instantiate()`
-  (
-    .clk(clk),
-    .reset(reset),
-    .out(`$mem_input_name`),
-//; my $k=0;
-//;   for(my $j=0; $j<$num_tracks*2; $j++, $k++) {
-//;     my $dirn;
-//;     my $track = $k % $num_tracks;
-//;     if ($j < $num_tracks) {
-//;       $dirn="in";
-//;     } else {
-//;       $dirn="out";
-//;     }
-//;     if (@cb_connections_arr[$j]==1) {
-//;       if ($mem_input_bus eq "BUS16") {
-    .in_`$k`(`${dirn}`_0_BUS16_`${xside}`_`${track}`),
-//;         $rename_hash->{ 'cb_'.$mem_input_name }{"in_${k}"} = "${dirn}_0_BUS16_S${xside}_T${track}";
-//;       } else {
-    .in_`$k`(`${dirn}`_0_BUS1_`${xside}`_`${track}`),
-//;         $rename_hash->{ 'cb_'.$mem_input_name }{"in_${k}"} = "${dirn}_0_BUS1_S${xside}_T${track}";
-//;       }
-//;     }
-//;   }
-//;   if ($mem_input_bus eq "BUS1") {
-//;     for (my $i=0; $i<$global_signal_count; $i++, $k++) {
-    .in_`$k`(gin_`${i}`),
-//;       $rename_hash->{ 'cb_'.$mem_input_name }{"in_${k}"} = "gin_${i}";
-//;     }
-//;   }
-    .config_addr(config_addr),
-    .config_data(config_data),
-    .config_en(config_en_cb_`$mem_input_name`)
-  );
-//; $tile_info_hash->{ 'cb_'.$mem_input_name }{'bus'} = $mem_input_bus;
-//; $tile_info_hash->{ 'cb_'.$mem_input_name }{'mname'} = $cb->mname();
-//; $rename_hash->{ 'cb_'.$mem_input_name }{'out'} = $mem_input_name;
-//; $input_count = $input_count+1;
-//; };
-
-
 //; ######################################################
 //; ## global out signal
 //; ######################################################
@@ -446,7 +486,7 @@ tile_id
 //; #####################################
 
 
-  assign clk = clk_in & cg_en;
+  //assign clk = clk_in & clk_en;
 
 
 
@@ -462,15 +502,20 @@ tile_id
 //;   $tile_info_hash->{'mem'}{'width'} = $width;
 //;   $tile_info_hash->{'mem'}{'depth'} = $ddepth;
 
-
-
+wire [31:0] read_data_mem;
+wire [31:0] read_data_sram;
   `$mem_core->instantiate()`
   (
-      .clk(clk),
+      .clk_in(clk_in),
+      .clk_en(clk_en),
       .reset(reset),
+      .flush(flush),
       .config_addr(config_addr),
       .config_data(config_data),
+      .config_read(config_read),
+      .config_write(config_write),
       .config_en(config_en_mem),
+      .config_en_sram(config_en_sram),
       .data_in(wdata),
       .data_out(rdata),
       .addr_in(addr),
@@ -482,9 +527,29 @@ tile_id
       .chain_wen_in(chain_wen_in),
       .chain_valid_out(chain_valid_out),
       .almost_full(almost_full),
-      .almost_empty(almost_empty)
+      .almost_empty(almost_empty),
+      .read_data(read_data_mem),
+      .read_data_sram(read_data_sram)
    );
-
+   always @(*) begin
+           if (config_read && (config_addr[15:0]==tile_id)) begin
+                   case (config_addr[23:16])
+               //; foreach my $key (sort { $tile_info_hash->{$a}{'address'} cmp $tile_info_hash->{$b}{'address'} } keys(%$tile_info_hash))  {
+	       //;   if($key eq 'sram_0' or $key eq 'sram_1' or  $key eq 'sram_2' or  $key eq 'sram_3'){
+                        'd`$tile_info_hash->{$key}->{'address'}` : read_data = read_data_sram;
+               //;   }
+	       //;   elsif($key ne 'gout') {
+                        'd`$tile_info_hash->{$key}->{'address'}` : read_data = read_data_`$key`;
+                   //;   } else {
+                        'd`$tile_info_hash->{$key}->{'address'}` : read_data = gout_sel;
+                       //;   }
+                       //; }
+                             default : read_data = 'd0;
+                           endcase
+                       end 
+                       else
+                               read_data = 'd0;
+                       end
 
 endmodule
 

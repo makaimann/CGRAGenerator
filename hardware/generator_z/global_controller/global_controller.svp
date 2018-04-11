@@ -5,9 +5,12 @@
 //; my $jtag_obj = generate("jtag", "jtag_controller", SYSCLK_CFG_BUS_WIDTH => $cfg_bus_width, SYSCLK_CFG_ADDR_WIDTH => $cfg_addr_width, SYSCLK_CFG_OPCODE_WIDTH =>$cfg_op_width);
 //; my $jtag_ifc_path = $self -> define_param(IFC => $jtag_obj -> get_param('IFC'));
 //; my $jtag_ifc = clone($jtag_ifc_path, 'jtag_ifc');
-
+//; my $num_analog_regs = parameter(Name => 'num_analog_regs', val => 16, Doc => "Number of analog registers and analog_regfile");
 module `mname` (
 clk_in, reset_in,
+//; for (my $i = 0; $i < $num_analog_regs; $i++){
+analog_r`$i`,
+//; }
 config_data_in,
 config_addr_out,
 config_data_out,
@@ -37,8 +40,14 @@ trst_n
   output reg [`$cfg_bus_width-1`:0] config_data_out;
   output reg clk_out;
   output reg reset_out;
-  output reg cgra_stalled;
+  output reg [3:0] cgra_stalled;
   output tdo;
+  
+  //value of each register in analog regfile
+//; for (my $i = 0; $i < $num_analog_regs; $i++){
+  output [`$cfg_bus_width-1`:0]  analog_r`$i`;
+//; }
+	
 
   wire [`$cfg_addr_width-1`:0] config_addr_jtag_out;
   wire [`$cfg_bus_width-1`:0] config_data_jtag_out;
@@ -74,7 +83,25 @@ trst_n
       assign config_data_jtag_out = `$jtag_ifc->iname()`.config_data_to_gc;
       assign config_addr_jtag_out = `$jtag_ifc->iname()`.config_addr_to_gc;
       assign op = `$jtag_ifc->iname()`.config_op_to_gc;
- 
+
+
+// Internal signals to/from analog registers
+reg analog_wr_en; 
+reg [`$cfg_addr_width-1`:0] analog_data_in;
+reg [`$cfg_addr_width-1`:0] analog_addr;
+// instantiate registers for analog stuff
+//; my $analog_regfile = generate_base("analog_regfile","analog_regfile", num_regs => $num_analog_regs);
+ `$analog_regfile -> instantiate()` (
+	.wr_en(analog_wr_en),
+	.data_in(analog_data_in),
+	.addr(analog_addr),
+//; for(my $i = 0; $i < $analog_regfile -> get_param('num_regs'); $i++) {
+	.r`$i`(analog_r`$i`),
+//; }	
+	.clk(clk),
+	.reset(reset_out)
+	);
+
   //OPCODES
   parameter NOP = `$cfg_op_width`'d0;
   parameter write_config =`$cfg_op_width`'d1;
@@ -89,14 +116,17 @@ trst_n
   parameter read_TST = `$cfg_op_width`'d9;
   parameter global_reset = `$cfg_op_width`'d10;
   //parameter reset_tile = `$cfg_op_width`'d11; 
-  parameter stall = `$cfg_op_width`'d12;
+  parameter write_stall = `$cfg_op_width`'d11;
+  parameter read_stall = `$cfg_op_width`'d12;
   parameter advance_clk = `$cfg_op_width`'d13;
-  parameter resume_clk = `$cfg_op_width`'d14;
+  //parameter resume_clk = `$cfg_op_width`'d14;
   parameter sys_clk_on = `$cfg_op_width`'d15;
   parameter wr_rd_delay_reg = `$cfg_op_width`'d16;
   parameter rd_rd_delay_reg = `$cfg_op_width`'d17;
   parameter wr_delay_sel_reg = `$cfg_op_width`'d18;
   parameter rd_delay_sel_reg = `$cfg_op_width`'d19;
+  parameter wr_analog_reg = `$cfg_op_width`'d20;
+  parameter rd_analog_reg = `$cfg_op_width`'d21;
   //STATES FOR IGNORING INCOMING INSTRUCTIONS
   parameter ready = 2'd0;
   parameter reading = 2'd1;
@@ -104,6 +134,8 @@ trst_n
   parameter advancing_clk = 2'd3;
 
   reg [1:0] state;
+  //USED to remember old stall signal when advancing clk
+  reg [3:0] stall_restore;
  
   logic all_stalled_tck;
   logic all_stalled_tck_rise;
@@ -184,8 +216,9 @@ trst_n
   always @ (posedge clk or posedge reset_in) begin
     	if (reset_in==1) begin
 		cgra_stalled <= 0;
+		stall_restore <= 0;
        		clk_switch_request <= 0;
-		rd_delay_reg <= 16;
+		rd_delay_reg <= 2;
 		TST <= 0;
 		counter <= 0;
 		config_addr_out <= 0;
@@ -194,6 +227,9 @@ trst_n
 		delay_sel <= 2'b0;
 		read <= 0;
 		write <= 0;
+		analog_wr_en <= 0;
+		analog_data_in <= 0;
+		analog_addr <= 0;
     	end
 
     	else begin
@@ -205,12 +241,14 @@ trst_n
 				config_data_jtag_in <= config_data_jtag_in;	
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			write_config: begin
 				config_addr_out <= config_addr_jtag_out;
 				config_data_out <= config_data_jtag_out; 
 				read <= 0;
 				write <= 1;
+				analog_wr_en <= 0;
 			end
 			read_config: begin
 				config_addr_out <= config_addr_jtag_out;
@@ -219,69 +257,111 @@ trst_n
 				state <= reading;
 				read <= 1;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			write_A050: begin
 				config_data_jtag_in <= `$cfg_bus_width`'hA050;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			write_TST: begin
 				TST <= config_data_jtag_out;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			read_TST: begin
 				config_data_jtag_in <= TST;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			global_reset: begin
 				state <= resetting;
 				counter <= (config_data_jtag_out > 0) ? config_data_jtag_out-1 : `$cfg_bus_width`'d19;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
-			stall: begin
-				cgra_stalled <= 1;
+			read_stall: begin
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
+				config_data_jtag_in <= {`$cfg_bus_width-4`'b0, cgra_stalled};
+			end
+			write_stall: begin
+				cgra_stalled <= config_data_jtag_out[3:0];
+				read <= 0;
+				write <= 0;
+				analog_wr_en <= 0;
 			end			
 			advance_clk: begin
-				if (cgra_stalled) begin
-					counter <= config_data_jtag_out-1;
-					state <= advancing_clk;	
-					cgra_stalled <= 0;
+				if (config_data_jtag_out > 0) begin
+					if (cgra_stalled & config_addr_jtag_out[3:0]) begin
+						counter <= config_data_jtag_out-1;
+						state <= advancing_clk;	
+						stall_restore <= cgra_stalled;
+//;			for(my $i = 0; $i < 4; $i++){
+						cgra_stalled[`$i`] <= config_addr_jtag_out[`$i`] ? 1'b0 : cgra_stalled[`$i`];
+//;			}
+					end
 				end
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
-			resume_clk: begin
+			/*resume_clk: begin //REMOVE THIS
 				cgra_stalled <= 0;
 				read <= 0;
 				write <= 0;
-			end
+				analog_wr_en <= 0;
+			end */
 			sys_clk_on: begin
 				clk_switch_request <= 1;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			wr_rd_delay_reg: begin
 				rd_delay_reg <= config_data_jtag_out;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			rd_rd_delay_reg: begin
 				config_data_jtag_in <= rd_delay_reg;
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			wr_delay_sel_reg: begin
 				delay_sel <= config_data_jtag_out[1:0];
 				read <= 0;
 				write <= 0;
+				analog_wr_en <= 0;
 			end
 			rd_delay_sel_reg: begin
 				config_data_jtag_in <= {`$cfg_bus_width-2`'b0,delay_sel};
+				read <= 0;
+				write <= 0;
+				analog_wr_en <= 0;
+			end
+			wr_analog_reg: begin
+				analog_wr_en <= 1;
+				analog_data_in <= config_data_jtag_out;
+				analog_addr <= config_addr_jtag_out;
+				read <= 0;
+				write <= 0;	
+			end
+			rd_analog_reg: begin	
+				case(config_addr_jtag_out)
+//; 	for(my $i = 0; $i < $analog_regfile -> get_param('num_regs'); $i++) {
+					'd`$i`: config_data_jtag_in <= analog_r`$i`;
+//;	}	
+					default: config_data_jtag_in <= 0;
+				endcase
+				analog_wr_en <= 0;
 				read <= 0;
 				write <= 0;
 			end
@@ -304,8 +384,9 @@ trst_n
 				state <= ready;
 				if (state == reading) 
 					config_data_jtag_in <= config_data_in;
+					read <= 0;
 				if (state == advancing_clk)
-					cgra_stalled <= 1;
+					cgra_stalled <= stall_restore;
 			end
 		end    	
   	end

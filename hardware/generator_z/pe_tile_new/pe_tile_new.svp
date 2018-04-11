@@ -34,7 +34,9 @@
 //; my $lut_inps   = parameter(Name=>'lut_inps',
 //;                               Val=>3, Min=>0, Step=>1, Max=>16,
 //;                               Doc=>"0 - no LUT, 1-16 - uses LUTs with that number of inputs");
-//;
+//;      
+//; my $en_debug = parameter(Name=>'en_debug', val=> 1, List=>[1, 0], doc=>'Enable debuging registers?');
+
 //; my $intra_tile_addr = 0;
 
 //; my $use_sad  = $use_add > 1;
@@ -80,6 +82,8 @@ module `mname` (
 clk_in,
 config_addr,
 config_data,
+config_read,
+config_write,
 //;   for my $bus (sort keys %bus_width_hash) {
 //;     my $num_tracks = $bus_num_tracks_hash { $bus };
 //;     for(my $i=0; $i<$sides; $i++) {
@@ -94,13 +98,15 @@ gin_`${i}`,
 //;   }
 gout,
 reset,
-tile_id
+tile_id,
+read_data
 );
 //; my $config_bits_used = 0;
   input clk_in;
   input [31:0] config_addr;
   input [31:0] config_data;
-
+  input config_read;
+  input config_write;
 //;   for my $bus (sort keys %bus_num_tracks_hash) {
 //;     my $num_tracks = $bus_num_tracks_hash { $bus };
 //;     my $bus_width = $bus_width_hash { $bus };
@@ -117,9 +123,11 @@ tile_id
   output reg gout;
   input [15:0] tile_id;
   input reset;
+  output reg [31:0] read_data;
+  wire clk_en;
 
   wire ___genesis_wire_`${global_signal_count}`_`${bus_config}`_`${all_segments_for_all_tiles}`_`${sides}`_`${feedthrough_outputs}`_`${registered_outputs}`_`${is_bidi}`_`${sb_fs}`_`${cb_connections}`_`${has_constant}`_`${reg_inputs}`_`${reg_out}`_`${use_add}`_`${use_cntr}`_`${use_bool}`_`${use_shift}`_`${mult_mode}`_`${use_div}`_`${is_msb}`_`${en_double}`_`${lut_inps}`;
-  wire clk;
+//; # wire clk;
 //; #############################################################
 //; # Generate PE enables
 //; #############################################################
@@ -130,28 +138,24 @@ tile_id
      if (reset) begin
         config_en_pe = 1'b0;
      end else begin
-        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
           config_en_pe = 1'b1;
         end else begin
           config_en_pe = 1'b0;
         end
      end
    end
-//; }
-//; $tile_info_hash->{ 'pe' } = {
-//;   address => $intra_tile_addr
-//; };
-
-//;$intra_tile_addr+=1;
-
-  // Note: verilator complains because some bits (opcode[31:16]) go unused...
-  // For now, I will fix it with a verilator directive
-  // FIXME owner please verify that unused bits are correct behavior and
-  // FIXME maybe add a comment to that effect...?
-
-  /* verilator lint_off UNUSED */
+   //; } 
+   //; $tile_info_hash->{ 'pe' } = {
+   //;   address => $intra_tile_addr
+   //; };
+     logic [31:0] read_data_pe;
+   
+   
+   //;$intra_tile_addr+=1;
+   
+   //; if(!($use_lut || $reg_inputs)) {
   reg [31:0] opcode;
-  /* verilator lint_on UNUSED */
 
   always @(posedge clk_in or posedge reset) begin
     if (reset) begin
@@ -165,6 +169,9 @@ tile_id
 //; $tile_info_hash->{ 'opcode' } = {
 //;   address => $intra_tile_addr
 //; };
+//;}
+
+  
 //; #############################################################
 //; # Generate CBs and corresponding config enables
 //; #############################################################
@@ -196,7 +203,7 @@ tile_id
 //; my $num_tracks_1b = $bus_num_tracks_hash{'BUS1'};
 //; my $cb_wide = generate('cb', 'cbwide_base', width=>$wide_bus_width, num_tracks=>($num_tracks_wide*2), has_constant=>$has_constant, feedthrough_outputs=>$cb_connections);
 //; my $cb_1b = generate('cb', 'cb1b_base', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>$has_constant, feedthrough_outputs=>$cb_connections);
-//; my $cb_cg = generate('cb', 'cb1b_cg', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>1, feedthrough_outputs=>$cb_connections, default_value=>'1');
+//; my $cb_cg = generate('cb', 'cb1b_cg', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>0, feedthrough_outputs=>$cb_connections);
 //; my @cb_connections_arr = split('',$cb_connections);
 //; my $input_count=0;
 //; my $num_tracks;
@@ -217,13 +224,14 @@ tile_id
     if (reset) begin
        config_en_cb_`$pe_input_name` = 1'b0;
     end else begin
-       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
          config_en_cb_`$pe_input_name` = 1'b1;
        end else begin
          config_en_cb_`$pe_input_name` = 1'b0;
        end
     end
   end
+  logic [31:0] read_data_cb_`$pe_input_name`;
 //; $tile_info_hash->{ 'cb_'.$pe_input_name } = {
 //;   address => $intra_tile_addr
 //; };
@@ -253,7 +261,7 @@ tile_id
 //;   }
   `$cb->instantiate()`
   (
-    .clk(clk),
+    .clk(clk_in),
     .reset(reset),
     .out(`$pe_input_name`),
 //; my $k=0;
@@ -283,7 +291,8 @@ tile_id
 //;   }
     .config_addr(config_addr),
     .config_data(config_data),
-    .config_en(config_en_cb_`$pe_input_name`)
+    .config_en(config_en_cb_`$pe_input_name`),
+    .read_data(read_data_cb_`$pe_input_name`)
   );
 //; $tile_info_hash->{ 'cb_'.$pe_input_name }{'bus'} = $pe_input_bus;
 //; $tile_info_hash->{ 'cb_'.$pe_input_name }{'mname'} = $cb->mname();
@@ -291,6 +300,10 @@ tile_id
 //; $input_count = $input_count+1;
 //; };
 
+//; if($en_debug) {
+    wire pe_out_irq;
+//; }
+  assign clk_en = ~cg_en;
 //; #############################################################
 //; # Generate SB and corresponding config enables
 //; #############################################################
@@ -303,13 +316,14 @@ tile_id
     if (reset) begin
        config_en_sb_wide = 1'b0;
     end else begin
-       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
          config_en_sb_wide = 1'b1;
        end else begin
          config_en_sb_wide = 1'b0;
        end
     end
   end
+  logic [31:0] read_data_sb_wide;
 //; $tile_info_hash->{ 'sb_wide' } = {
 //;   address => $intra_tile_addr
 //; };
@@ -342,7 +356,8 @@ tile_id
 //;   my $sb_wide = generate('sb', 'sb_wide', width => $wide_bus_width, num_tracks => $bus_num_tracks_hash{'BUS16'}, sides => $sides, feedthrough_outputs=>$bus_feedthrough_outputs, registered_outputs=>$bus_registered_outputs, pe_output_count=>(scalar @wide_outputs), is_bidi=>$is_bidi, sb_fs=>$sb_fs);
   `$sb_wide->instantiate()`
   (
-    .clk(clk),
+    .clk(clk_in),
+    .clk_en(clk_en),
     .reset(reset),
 //;  foreach my $pe_output (@wide_outputs) {
     .pe_output_`$output_count`(pe_out_`$pe_output`),
@@ -359,7 +374,8 @@ tile_id
 //; }
     .config_addr(config_addr),
     .config_data(config_data),
-    .config_en(config_en_sb_wide)
+    .config_en(config_en_sb_wide),
+    .read_data(read_data_sb_wide)
   );
 //; $tile_info_hash->{ 'sb_wide' }{'bus'} = 'BUS16';
 //; $tile_info_hash->{ 'sb_wide' }{'mname'} = $sb_wide->mname();
@@ -379,13 +395,14 @@ tile_id
     if (reset) begin
        config_en_sb_1bit = 1'b0;
     end else begin
-       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
+       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)&&config_write) begin
          config_en_sb_1bit = 1'b1;
        end else begin
          config_en_sb_1bit = 1'b0;
        end
     end
   end
+  logic [31:0] read_data_sb_1bit;
 //; $tile_info_hash->{ 'sb_1bit' } = {
 //;   address => $intra_tile_addr
 //; };
@@ -404,7 +421,8 @@ tile_id
 //;   my $sb_1b = generate('sb', 'sb_1b', width => 1, num_tracks => $bus_num_tracks_hash{'BUS1'}, sides => $sides, feedthrough_outputs=>$bus_feedthrough_outputs, registered_outputs=>$bus_registered_outputs, pe_output_count=>(scalar @bit1_outputs), is_bidi=>$is_bidi, sb_fs=>$sb_fs);
   `$sb_1b->instantiate()`
   (
-    .clk(clk),
+    .clk(clk_in),
+    .clk_en(clk_en),
     .reset(reset),
 //;  foreach my $pe_output (@bit1_outputs) {
     .pe_output_`$output_count`(pe_out_`$pe_output`),
@@ -421,7 +439,8 @@ tile_id
 //; }
     .config_addr(config_addr),
     .config_data(config_data),
-    .config_en(config_en_sb_1bit)
+    .config_en(config_en_sb_1bit),
+    .read_data(read_data_sb_1bit)
   );
 //; $tile_info_hash->{ 'sb_1bit' }{'bus'} = 'BUS1';
 //; $tile_info_hash->{ 'sb_1bit' }{'mname'} = $sb_1b->mname();
@@ -431,7 +450,10 @@ tile_id
 //; #####################################
 //;
 //;  $intra_tile_addr+=1;
-//;  my $gout_output_count = $output_count + 1;
+//;  my $gout_output_count = 1;
+//;  if($en_debug) {
+//;    $gout_output_count += 1;
+//;  }
 //;  my $number_of_gout_select_bits_needed = int(ceil(log($gout_output_count)/log(2)));
 //;
 //;   $tile_info_hash->{ 'gout' } = {
@@ -442,10 +464,10 @@ tile_id
   reg [`$number_of_gout_select_bits_needed - 1`:0] gout_sel;
   always @(posedge clk_in or posedge reset) begin
     if (reset==1'b1) begin
-       gout_sel = `$number_of_gout_select_bits_needed`'d0;
+       gout_sel <= `$number_of_gout_select_bits_needed`'d0;
     end else begin
        if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd`$intra_tile_addr`)) begin
-         gout_sel  = config_data[`$number_of_gout_select_bits_needed - 1`:0];
+         gout_sel  <= config_data[`$number_of_gout_select_bits_needed - 1`:0];
        end
     end
   end
@@ -455,9 +477,7 @@ tile_id
     case (gout_sel)
 //;    my @output_arr = ();
 //;    push @output_arr, "1'b0";
-//;    foreach my $pe_output (@bit1_outputs) {
-//;      push @output_arr, "pe_out_${pe_output}";
-//;    }
+//;    if ($en_debug) {push @output_arr, "pe_out_irq";}
 //;    foreach my $pe_output (@output_arr) {
 //;      if ($count==0) {
       default: gout = 1'b0;
@@ -478,9 +498,11 @@ tile_id
 
 
 
-
-  assign clk = clk_in & cg_en;
-
+/****************************************
+ * Clock gating should go inside each unit in order to unstall certain register
+ * assign clk = clk_in & cg_en;
+ *
+ ****************************************/
 
 
 
@@ -494,14 +516,14 @@ tile_id
 //;                   reg_out => $reg_out, use_add => $use_add,
 //;                   use_cntr => $use_cntr, use_bool => $use_bool, use_shift => $use_shift,
 //;                   mult_mode => $mult_mode, use_div => $use_div, is_msb => $is_msb,
-//;                   en_double => $en_double, lut_inps => $lut_inps);
+//;                   en_double => $en_double, lut_inps => $lut_inps, en_debug => $en_debug);
 
 `$pe->instantiate()`
  (
 //;if($use_lut || $reg_inputs || $reg_out) {
-  .clk(clk),
+  .clk(clk_in),
   .rst_n(~reset),
-  .clk_en(1'b1),
+  .clk_en(clk_en),
 //;}
 //; if($use_lut || $reg_inputs) {
   .cfg_d(config_data[31:0]),
@@ -525,16 +547,42 @@ tile_id
 //; foreach my $port (@bit1_outputs) {
 //;   $count = $count + 1;
 //;   if ($count==(scalar @bit1_outputs)) {
-  .`$port`(pe_out_`$port`)
+  .`$port`(pe_out_`$port`),
 //;  } else {
   .`$port`(pe_out_`$port`),
 //;  }
 //; }
+//; if($en_debug) {
+      .irq(pe_out_irq),
+//; }
+  .read_data(read_data_pe)
 );
 //; $tile_info_hash->{ 'pe' }{'mname'} = $pe->mname();
 //;
 //;
-//;
+//;#######################################################################
+//;## MUX for read_data output 
+//;##
+//;#######################################################################
+
+always_comb begin
+    if (config_read && (config_addr[15:0]==tile_id)) begin
+        case (config_addr[23:16])
+    //; foreach my $key (sort { $tile_info_hash->{$a}{'address'} cmp $tile_info_hash->{$b}{'address'} } keys(%$tile_info_hash))  {
+    //;   if($key ne 'gout') {
+          8'd`$tile_info_hash->{$key}->{'address'}` : read_data = read_data_`$key`;
+    //;   } else {
+               8'd`$tile_info_hash->{$key}->{'address'}` : read_data = gout_sel;
+    //;   }
+    //; }
+          default : read_data = 'd0;
+        endcase
+    end 
+    else
+        read_data = 'd0;
+end
+
+
 //;#######################################################################
 //;## Generate tile connectivity, and pe info
 //;##

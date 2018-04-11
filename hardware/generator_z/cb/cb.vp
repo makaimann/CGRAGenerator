@@ -16,7 +16,8 @@ in_`$i`,
 out,
 config_addr,
 config_data,
-config_en
+config_en,
+read_data
 );
 
   input  clk;
@@ -41,6 +42,7 @@ config_en
   input [`$width-1`:0] in_`$i`;
 //;   }
 //; }
+  output reg [31:0] read_data;
 
 //; # ############################################
 //; # Setup register for CB mux configuration
@@ -73,6 +75,15 @@ config_en
          endcase
       end
     end
+  end
+
+  always @(*) begin
+    case (config_addr[31:24])
+  //; for (my $j=0; $j<$config_addrs_needed; $j=$j+1) {
+      8'd`$j`: read_data = config_cb[`($j+1)*32-1`:`$j*32`];
+  //; }
+      default: read_data = 'h0;
+    endcase
   end
 
 //; # ###############################################

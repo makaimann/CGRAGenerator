@@ -148,7 +148,13 @@
 //; # Done Generator Configuration
 //; #####################################################
 //; 
-//; 
+//; #####################################################
+//; # OR every read_data output from tile
+//; #####################################################
+//;my $read_data_pe = '';
+//;my $read_data_global = '';
+//;my $read_data_memory = '';
+//;my $read_data_io1bit = '';
 //; #####################################################
 //; #Populate bus track hash
 //; #####################################################
@@ -344,11 +350,10 @@ trst_n
 
 //;open(INFO, ">cgra_info.txt") or die "Couldn't open file cgra_info.txt, $!";
 //;print INFO "<CGRA>\n";
-
-  input clk_in;
-  input reset_in;
   input [31:0] config_addr_in;
   input [31:0] config_data_in;
+  input clk_in;
+  input reset_in;
   input tdi;
   input tms;
   input tck;
@@ -384,34 +389,42 @@ wire [31:0] config_addr;
 wire [31:0] config_data;
 wire clk;
 wire reset;
-wire stall;
 wire config_read;
 wire config_write;
-//CONFIG_HACK. ONCE GC IS DONE SEND ADDR AND DATA IN THROUGH JTAG
-assign config_addr = config_addr_in;
-assign config_data = config_data_in;
-//; my $global_controller_obj = generate("global_controller", "global_controller", dummy_value => 0);
+wire [31:0] read_data;
+wire [31:0] read_data_pe;
+wire [31:0] read_data_global;
+wire [31:0] read_data_memory;
+wire [3:0] stall;
+//; my $global_controller_obj = generate("global_controller", "global_controller");
+//; my $jtag_ifc_path = parameter(NAME => 'IFC', VAL => $global_controller_obj -> get_param('IFC'), DOC => "Path to JTAG interface for JTAGDriver");
     `$global_controller_obj->instantiate()` 
     (
       .clk_in(clk_in),
-      .clk_out(), //clk),
+      .clk_out(),//clk),
       .reset_in(reset_in),
-      .reset_out(), //reset),
+      .reset_out(),//reset),
       .config_addr_out(),//config_addr),
-      .config_data_in(),//config_data_in),
+      .config_data_in(read_data),
       .config_data_out(),//config_data),
       .tdi(tdi),
       .tdo(tdo),
       .tms(tms),
       .tck(tck),
       .trst_n(trst_n),
+//; for (my $i = 0; $i < $global_controller_obj->get_param('num_analog_regs'); $i++){
+      .analog_r`$i`(),
+//; }
       .cgra_stalled(stall),
       .read(config_read),
-      .write(config_write)
+      .write()//config_write)
     );
     //UNTIL WE FIX TESTS TO INPUT CFG ADDR AND DATA THROUGH JTAG, DON'T RUN CLK SIGNALS THROUGH GC
+    assign config_addr = config_addr_in;
+    assign config_data = config_data_in;
     assign clk = clk_in;
     assign reset = reset_in;
+    assign config_write = 1;
 
 // FIXME Note there are LOTS of unused wires being created below!
 // FIXME I assume they will be hooked up to something eventually
@@ -555,12 +568,15 @@ assign config_data = config_data_in;
 //;       }
 //;     }
 //;    if ($tile_type eq "mem") {
+    wire [31:0] read_data_`$tile_addr_hex`;
     `$inst_obj->instantiate()` 
     (
       .clk_in(clk),
       .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
+      .config_write(config_write),
+      .config_read(config_read),
 //;   for (my $row=0; $row < $tile_config->{ $tile_type }{ 'tile_height' }; $row++) {
 //;     for my $bus (sort keys %bus_num_tracks_hash) {
 //;       my $num_tracks = $bus_num_tracks_hash { $bus };
@@ -619,15 +635,24 @@ assign config_data = config_data_in;
       .gin_`${i}`(global_wire_h2l_1_`${i}`_`(int(floor((${w}-2)/2))+2)`_`(int(floor((${h}-2)/2))+2)`),
 //;   }
       .gout(global_wire_l2h_0_`${w}`_`${h}`),
-      .tile_id(16'h`$tile_addr_hex`)
+      .tile_id(16'h`$tile_addr_hex`),
+      .read_data(read_data_`$tile_addr_hex`)
     );
+    //;  if ($read_data_memory eq '') {
+        //;    $read_data_memory = "read_data_$tile_addr_hex";
+        //;  } else {
+            //;    $read_data_memory = $read_data_memory . " | read_data_$tile_addr_hex";
+            //;  }
 //;    } elsif ($tile_type eq "pe") {
+    wire [31:0] read_data_`$tile_addr_hex`;
     `$inst_obj->instantiate()` 
     (
       .clk_in(clk),
       .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
+      .config_read(config_read),
+      .config_write(config_write),
 //;     for my $bus (sort keys %bus_num_tracks_hash) {
 //;       my $num_tracks = $bus_num_tracks_hash { $bus };
 //;       my $bus_width = $bus_width_hash { $bus };
@@ -655,8 +680,14 @@ assign config_data = config_data_in;
       .gin_`${i}`(global_wire_h2l_1_`${i}`_`(int(floor((${w}-2)/2))+2)`_`(int(floor((${h}-2)/2))+2)`),
 //;   }
       .gout(global_wire_l2h_0_`${w}`_`${h}`),
-      .tile_id(16'h`$tile_addr_hex`)
+      .tile_id(16'h`$tile_addr_hex`),
+      .read_data(read_data_`$tile_addr_hex`)
     );
+//;  if ($read_data_pe eq '') {
+//;    $read_data_pe = "read_data_$tile_addr_hex";
+//;  } else {
+//;    $read_data_pe = $read_data_pe . " | read_data_$tile_addr_hex";
+//;  }
 //; #
 //; #
 //;    } elsif ($tile_type eq "empty") {
@@ -664,12 +695,15 @@ assign config_data = config_data_in;
 //; #
 //;    } elsif ($tile_type eq "io1") {
 
+    wire [31:0] read_data_`$tile_addr_hex`;
     `$inst_obj->instantiate()` 
     (
       .clk(clk),
       .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
+      .config_read(config_read),
+      .config_write(config_write),
 //;       my $s = $io_side; 
 //;       my $opposite_side = $s + int($sides*0.5);
 //;       if ($opposite_side > ($sides-1)) {$opposite_side -= $sides;}
@@ -693,8 +727,14 @@ assign config_data = config_data_in;
       .f2p_16(wire_`$h_new`_`$w_new`_BUS1_S`$opposite_side`_T`$io1_track`),
       .f2p_1(wire_`$h_new+$h_delta`_`$w_new+$w_delta`_BUS1_S`$opposite_side`_T`$io1_track`),
       .pad(pad_S`$opposite_side`_T`$io_count`),
-      .tile_id(16'h`$tile_addr_hex`)
+      .tile_id(16'h`$tile_addr_hex`),
+      .read_data(read_data_`$tile_addr_hex`)
     );
+//;  if ($read_data_io1bit eq '') {
+//;    $read_data_io1bit = "read_data_$tile_addr_hex";
+//;  } else {
+//;    $read_data_io1bit = $read_data_io1bit . " | read_data_$tile_addr_hex";
+//;  }
     // Fanout for p2f
 //;      for(my $track = 1; $track < $io1bit_num_tracks; $track++) { 
     assign wire_`$h`_`$w`_BUS1_S`$s`_T`$track` = wire_`$h`_`$w`_BUS1_S`$s`_T0;
@@ -885,12 +925,15 @@ assign config_data = config_data_in;
 //;         print INFO "  <tile type='gst' tile_addr='0x$new_tile_addr_hex'>\n";
 //;         print INFO "    <controlled_tiles>\n";
 //;         my $inst_obj = clone($obj, "gst_0x${new_tile_addr_hex}");
+    wire [31:0] read_data_`$new_tile_addr_hex`;
     `$inst_obj->instantiate()` 
     (
       .clk(clk),
       .reset(reset),
       .config_addr(config_addr),
       .config_data(config_data),
+      .config_write(config_write),
+      .config_read(config_read),
       .tile_id(16'h`$new_tile_addr_hex`),
 //;         for (my $i=0; $i<4; $i++) {
 //;           my $child_key = $keys[$i];
@@ -899,7 +942,12 @@ assign config_data = config_data_in;
 //;           my $child_addr_hex = sprintf("%X",$child_addr);
 //;           if ($child_type eq "mem" || $child_type eq "pe" || $child_type eq "gst") {
       .gout_l_`$i`(global_wire_h2l_`$incr`_`$i`_`$new_key`), 
+//;   if($incr*2 == $cgra_grid_width-4) {
+      .gin_u_`$i`(stall[`$i`]),
+//;   }
+//;   else {
       .gin_u_`$i`(global_wire_h2l_`($incr*2)`_`$i`_`(int(floor((${next_w}-2)/2))+2)`_`(int(floor((${next_h}-2)/2))+2)`), 
+//;   }     
       .gin_l_`$i`(global_wire_l2h_`(floor($incr/2))`_`$child_key`), 
 //;             print INFO "      <tile>0x${child_addr_hex}</tile>\n";
 //;           } else {
@@ -908,11 +956,18 @@ assign config_data = config_data_in;
       .gin_l_`$i`(1'b0), 
 //;           }
 //;         }
-      .gout_u(global_wire_l2h_`$incr`_`$new_key`)
+      .gout_u(global_wire_l2h_`$incr`_`$new_key`),
+      .read_data(read_data_`$new_tile_addr_hex`)
+      
 //;         $new_tile_addr++;
 //;         print INFO "    </controlled_tiles>\n";
 //;         print INFO "  </tile>\n";
     );
+//;  if ($read_data_global eq '') {
+//;    $read_data_global = "read_data_$new_tile_addr_hex";
+//;  } else {
+//;    $read_data_global = $read_data_global . " | read_data_$new_tile_addr_hex";
+//;  }
 //;       }
 //;       $next_w++;
 //;     }
@@ -928,4 +983,10 @@ assign config_data = config_data_in;
 //; }
 //; print INFO "</CGRA>\n";
 //; close INFO;
+    assign read_data_pe = `$read_data_pe`;
+    assign read_data_memory = `$read_data_memory`;
+    assign read_data_global = `$read_data_global`;
+    assign read_data_io1bit = `$read_data_io1bit`;
+    assign read_data = read_data_pe | read_data_memory | read_data_global | read_data_io1bit;
+
 endmodule

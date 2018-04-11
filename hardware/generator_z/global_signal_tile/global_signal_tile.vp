@@ -12,7 +12,10 @@ clk,
 reset,
 config_addr,
 config_data,
-tile_id
+config_read,
+config_write,
+tile_id,
+read_data
 );
 //;   for (my $i=0; $i<$global_signal_count; $i++) {
   input gin_l_`${i}`;
@@ -26,8 +29,10 @@ tile_id
   input  reset;
   input [31:0] config_addr;
   input [31:0] config_data;
+  input config_read;
+  input config_write;
   input [15:0] tile_id;
-
+  output reg [31:0] read_data;
 wire ___genesis_wire_`${global_signal_count}`;
 
 //; my $config_bit_count = $global_signal_count;
@@ -36,12 +41,19 @@ wire ___genesis_wire_`${global_signal_count}`;
    if (reset==1'b1) begin
      config_reg <= {`$global_signal_count`'d0};
    end else begin
-       if ((config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd0)&&(config_addr[31:24]==8'd0)) begin
+       if (config_write && (config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd0)&&(config_addr[31:24]==8'd0)) begin
          config_reg <= config_data[`$config_bit_count-1`:0];
        end
    end
  end
-
+  always @(*) begin
+    if (config_read && (config_addr[15:0]==tile_id)&&(config_addr[23:16]==8'd0)&&(config_addr[31:24]==8'd0)) begin
+      read_data = config_reg;
+    end
+    else begin
+      read_data = 'h0;
+    end
+  end
   always @(*) begin
 //; my $str = "";
 //; for (my $j=0;$j<$global_signal_count;$j++) {

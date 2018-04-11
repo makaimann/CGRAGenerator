@@ -134,7 +134,7 @@ module   `mname`  #(
   output logic                   irq,
 //;}
   output logic                   res_p,
-  output logic [DataWidth-1:0]  read_data
+  output logic [31:0]  read_data
 );
 
 logic  [DataWidth-1:0]        op_a;
@@ -700,6 +700,7 @@ logic res_lut;
 //;    $lut_c_inp     = "op_c".$c_in_slice;
 //; }
 
+    logic [`2**$lut_inps-1`:0] read_data_lut;
 `$lut->mname()` #(.DataWidth(1)) `$lut->iname()`
 (
   .cfg_clk  (clk),
@@ -714,7 +715,8 @@ logic res_lut;
   .op_c_in  (`$lut_c_inp`),
 //;}
 
-  .res      (res_lut)
+  .res      (res_lut),
+  .read_data (read_data_lut)
 );
 
 //; 	 if(!$get_carry) {
@@ -777,6 +779,7 @@ end
 logic irq_data;
 logic irq_bit;
 
+logic [31:0] read_data_debug_data;
 //; my $debug_d = generate_base('test_debug_reg', 'test_debug_data');
 `$debug_d->mname()` #(.DataWidth(DataWidth)) `$debug_d->iname()`
 (
@@ -787,9 +790,11 @@ logic irq_bit;
 
   .data_in   (res),
 
-  .debug_irq (irq_data)
+  .debug_irq (irq_data),
+  .read_data (read_data_debug_data)
 );
 
+logic [31:0] read_data_debug_bit;
 //; my $debug_b = clone($debug_d, 'test_debug_bit');
 `$debug_b->mname()` #(.DataWidth(1)) `$debug_b->iname()`
 (
@@ -800,7 +805,8 @@ logic irq_bit;
 
   .data_in   (res_p),
 
-  .debug_irq (irq_bit)
+  .debug_irq (irq_bit),
+  .read_data (read_data_debug_bit)
 );
 
 logic [1:0] irq_en;
@@ -830,29 +836,24 @@ assign irq = |({irq_data,irq_bit} & irq_en);
 
 //; if($reg_inputs) {
 //; $read_data_hash->{'op_code'} = {
-//;   src => 'CF',
-//;   data => 'op_code',
+//;   src => 'FF',
+//;   data => '{inp_code, op_code}',
 //;   name => 'op_code'
 //; };
-//; $read_data_hash->{'inp_code'} = {
-//;   src => 'CE',
-//;   data => 'inp_code',
-//;   name => 'inp_code'
-//; };
 //; $read_data_hash->{'op_a'} = {
-//;   src => 'A0',
+//;   src => 'F0',
 //;   data => 'op_a_reg',
 //;   name => 'reg_a'
 //; };
 //; $read_data_hash->{'op_b'} = {
-//;   src => 'A1',
+//;   src => 'F1',
 //;   data => 'op_b_reg',
 //;   name => 'reg_b'
 //; };
 //; if($use_reg_file) {
 //; for (my $i = 1, my $j=0; $i < $reg_cnt; $i++, $j++) {
 //; $read_data_hash->{"op_regfile${i}"} = {
-//;   src => "B${j}",
+//;   src => "D${j}",
 //;   data => 'op_b_reg',
 //;   name => "regfile[${i}]"
 //; };
@@ -860,28 +861,35 @@ assign irq = |({irq_data,irq_bit} & irq_en);
 //; }
 //; if($use_c_input) {
 //; $read_data_hash->{'op_c'} = {
-//;   src => 'A2',
+//;   src => 'F2',
 //;   data => 'op_c_reg',
 //;   name => 'reg_c'
 //; };
 //; }
 //; $read_data_hash->{'op_d'} = {
-//;   src => 'A3',
+//;   src => 'F3',
 //;   data => 'op_d_p_reg',
 //;   name => 'reg_d'
 //; };
 //; if($use_lut && ($lut_inps == 3)) {
 //; $read_data_hash->{'op_e'} = {
-//;   src => 'A4',
+//;   src => 'F4',
 //;   data => 'op_e_p_reg',
 //;   name => 'reg_e'
 //; };
 //; $read_data_hash->{'op_f'} = {
-//;   src => 'A5',
+//;   src => 'F5',
 //;   data => 'op_f_p_reg',
 //;   name => 'reg_f'
 //; };
 //; }
+//; }
+//; if($use_lut) {
+//; $read_data_hash->{'lut'} = {
+//;   src => '00',
+//;   data => 'read_data_lut',
+//;   name => 'lut'
+//; };
 //; }
 //; if($reg_out) {
 //; $read_data_hash->{'res'} = {
@@ -893,6 +901,18 @@ assign irq = |({irq_data,irq_bit} & irq_en);
 //;   src => 'C1',
 //;   data => 'res_p',
 //;   name => 'pe_out_res_p'
+//; };
+//; }
+//; if($en_debug) {
+//; $read_data_hash->{'debug_data'} = {
+//;   src => 'E0',
+//;   data => 'read_data_debug_data',
+//;   name => 'debug_data'
+//; };
+//; $read_data_hash->{'debug_bit'} = {
+//;   src => 'E1',
+//;   data => 'read_data_debug_bit',
+//;   name => 'debug_bit'
 //; };
 //; }
 always_comb begin
