@@ -27,6 +27,13 @@
 //; # for layout 
 //; my $mem_tile_height = parameter(Name=>'mem_tile_height', val=> 2, doc=>'multiple of cgra row height to use as mem_tile height');
 
+//; ###########################################################################
+//; #ankitan - Virtualization sel
+//; my $SHIFT_REG_LEN  = parameter(Name=>'SHIFT_REG_LEN',
+//;                               Val=> 0, Min=>0, Step=>1, Max=>16,
+//;                               Doc=>"Total number of shift registers");
+//; my $USE_SHIFT_REG = ($SHIFT_REG_LEN > 0);
+//; ############################################################################
 //; my @cb_connections_arr = split('',$cb_connections);
 
 //; my %bus_width_hash = ();
@@ -216,7 +223,11 @@ read_data
     end
   end
 //;   my $bus_width = $bus_width_hash { $gen_mem_for_busname };
-  wire [`$bus_width-1`:0] rdata;
+//;  #ankitan
+//;  # wire [`$bus_width-1`:0] rdata;
+//;  if($USE_SHIFT_REG) {
+       wire [`$bus_width-1`:0] rdata_core;
+//;}
   wire valid;
   wire almost_full;
   wire almost_empty;
@@ -251,6 +262,21 @@ read_data
 //; my $num_tracks_1b = $bus_num_tracks_hash{ $control_busname };
 //; my $cb_1b = generate('cb', 'cb_ctl', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>0, feedthrough_outputs=>$cb_connections);
 //; my $cb_cg = generate('cb', 'cb1b_cg', width=>1, num_tracks=>(($num_tracks_1b*2)+$global_signal_count), has_constant=>0, feedthrough_outputs=>$cb_connections);
+//; ##############################################
+//; #ankitan - START
+//; my @mem_inputs;
+//; if ($USE_SHIFT_REG==0) {
+//;  @mem_inputs = ("BUS16#wdata","BUS16#waddr","BUS16#raddr","BUS1#ren","BUS1#wen");
+//; }
+
+//; if ($USE_SHIFT_REG) {
+//;  @mem_inputs = ("BUS16#wdata","BUS16#waddr","BUS16#raddr","BUS1#ren","BUS1#wen", "BUS16#sel");
+//; }
+
+//; # my @mem_inputs = ("BUS16#wdata","BUS16#waddr","BUS16#raddr","BUS1#ren","BUS1#wen");
+//; # ankitan - END
+//; ##############################################
+
 //; my @mem_inputs = ("BUS16#wdata","BUS16#addr","BUS1#ren","BUS1#wen","BUS1#flush");
 //; my @non_mem_inputs = ("BUS1#cg_en");
 //; my $input_count=0;
@@ -515,7 +541,12 @@ wire [31:0] read_data_sram;
       .config_en(config_en_mem),
       .config_en_sram(config_en_sram),
       .data_in(wdata),
-      .data_out(rdata),
+       //; if($USE_SHIFT_REG==0) {
+      .data_out(rdata), 
+      //;}
+      //; if($USE_SHIFT_REG) {
+      .data_out(rdata_core), //ankitan
+      //;}
       .addr_in(addr),
       .wen_in(wen),
       .ren_in(ren),
@@ -529,6 +560,39 @@ wire [31:0] read_data_sram;
       .read_data(read_data_mem),
       .read_data_sram(read_data_sram)
    );
+
+
+//; ##############################################
+//; # ankitan - START
+
+//; ##############################################
+//; #
+//; # Instantiate shift register
+//; #
+//; ##############################################
+
+//; if($USE_SHIFT_REG) {
+//;   my $DataWidth       = parameter(Name=>'DataWidth', val=> 16, doc=>'Data Width');
+//;   my $u_mem_shift_reg = generate('mem_shift_reg', 'mem_shift_reg', SHIFT_REG_LEN=>$SHIFT_REG_LEN, DataWidth=>$width);
+//;#  $tile_info_hash->{'mem_sr'}{'mname'} = $u_mem_shift_reg->mname();
+//;#  $tile_info_hash->{'mem_sr'}{'SHIFT_REG_LEN'} = $SHIFT_REG_LEN;
+//;#  $tile_info_hash->{'mem_sr'}{'DataWidth'} = $width;
+
+  `$u_mem_shift_reg->instantiate()`
+  (   
+      .clk(clk),
+      //.clk_en(clk_en),
+      .rst_n(reset),
+      .data_in(rdata_core),
+      .data_out_sel(sel),
+      .shift(ren),
+      .data_out(rdata)
+   );
+
+//; }
+//; # ankitan - END
+//; ############################################
+
    always @(*) begin
            if (config_read && (config_addr[15:0]==tile_id)) begin
                    case (config_addr[23:16])
