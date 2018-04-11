@@ -76,15 +76,8 @@ read_data
       read_data = 'h0;
     end
   end
-  //assign pad = (io_bit==1'b1)?((out_bus==1'b0)?f2p_16:f2p_1):1'bz;
-  //assign p2f = pad;
-
-// mname = `mname` = `$self->mname()`
-//; if (mname eq "io1bit_unq1" || mname eq "io1bit_unq2") {
+  assign pad = (io_bit==1'b1)?((out_bus==1'b0)?f2p_16:f2p_1):1'bz;
   assign p2f = pad;
-//; } else {
-  assign pad = (out_bus==1'b0) ? f2p_16 : f2p_1;
-//; }
 
 
 endmodule
@@ -99,5 +92,6 @@ endmodule
 //;print TILEINFO "        <src sel='1'>1</src>  <!--  1 bit mode -->\n";
 //;print TILEINFO "    </mux>\n";
 //;close TILEINFO;
+
 
 

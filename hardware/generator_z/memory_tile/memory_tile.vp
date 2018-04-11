@@ -187,11 +187,9 @@ read_data
        end
     end
   end
-//; ### HOW DO I ADD THIS TO CGRA INFO???       
+//; # 4 feature addresses for SRAM
 //;     $tile_info_hash->{ "sram_$i" } = {
-//;       address => $intra_tile_addr,
-//;       data_bus => $gen_mem_for_busname,
-//;       control_bus => $control_busname
+//;       address => $intra_tile_addr
 //;     };
 //; }
 
@@ -619,6 +617,17 @@ endmodule
 //;      }
 //;    }
 //;    print TILEINFO "    </gout>\n"
+//;  }
+//;################### SRAMs
+//;  if ($feature=~m/sram/) {
+//;    print TILEINFO "    <sram feature_address='$value->{'address'}'>\n";
+//;    foreach my $param_name (sort keys %$value) {
+//;      my $param_value = $value->{$param_name};
+//;      if ($param_name!~m/address/) {
+//;        print TILEINFO "$param_value";
+//;      }
+//;    }
+//;    print TILEINFO "    </sram>\n"
 //;  }
 //;
 //; #End of TILEINFO loop

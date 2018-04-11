@@ -4,7 +4,7 @@
 set path = (. $path)
 
 # Can use this to extend time on travis
-# ./my_travis_wait.csh 60 &
+./my_travis_wait.csh 15 &
 
 set VERBOSE
 
@@ -767,3 +767,6 @@ NOTE: If you want to clean up after yourself you'll want to do this:
 
 eof
 endif
+echo "killing background printing"
+kill -9 %1
+
