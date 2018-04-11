@@ -88,6 +88,7 @@ wire output_sr_data_avail;
 `$inp_sr->instantiate()`(
 .clk(clk),
 .reset(reset),
+.flush(flush),
 .data_in(data_in),
 .wen(wen),
 .data_out(data_to_mem),
@@ -101,6 +102,7 @@ wire output_sr_data_avail;
 `$out_sr->instantiate()`(
 .clk(clk),
 .reset(reset),
+.flush(flush),
 .data_in(output_sr_data_in),
 .wen_w1(output_sr_wen_w1),
 .wen_w2(output_sr_wen_w2),
