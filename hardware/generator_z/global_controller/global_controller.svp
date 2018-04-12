@@ -311,12 +311,6 @@ reg [`$cfg_addr_width-1`:0] analog_addr;
 				write <= 0;
 				analog_wr_en <= 0;
 			end
-			/*resume_clk: begin //REMOVE THIS
-				cgra_stalled <= 0;
-				read <= 0;
-				write <= 0;
-				analog_wr_en <= 0;
-			end */
 			sys_clk_on: begin
 				clk_switch_request <= 1;
 				read <= 0;
@@ -324,6 +318,7 @@ reg [`$cfg_addr_width-1`:0] analog_addr;
 				analog_wr_en <= 0;
 			end
 			wr_rd_delay_reg: begin
+				//Prevent underflow by setting this to 1 if the input data is 0.
 				rd_delay_reg <= (config_data_jtag_out > 0) ? config_data_jtag_out : 1;
 				read <= 0;
 				write <= 0;
