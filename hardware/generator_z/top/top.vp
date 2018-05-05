@@ -12,7 +12,8 @@
 //; # the IO_count and basic_block_repeat_* variables below.
 //; # my $grid_size = "8x8";
 //; # my $grid_size = "64x64";
-//; my $grid_size = "16x16";
+//; # my $grid_size = "16x16";
+//; my $grid_size = "4x4";  
 //; #
 //; # for IOs
 //; # <number of bits> <number of bits> <number of bits> <number of bits>
@@ -28,6 +29,7 @@
 //; # right side, rightmost on the bottom side and so on.
 //; #
 //; my @IO_count = ();
+//; if ($grid_size == "4x4")   { @IO_count = qw(4 4 4 4); }
 //; if ($grid_size == "8x8")   { @IO_count = qw(8 8 8 8); }
 //; if ($grid_size == "64x64") { @IO_count = qw(64 64 64 64); }
 //; if ($grid_size == "16x16") { @IO_count = qw(16 16 16 16); }
@@ -52,6 +54,7 @@
 //; #
 //; my $basic_block_repeat_y = 16;
 //; #
+//; if ($grid_size == "4x4")   { $basic_block_repeat_x =  1; $basic_block_repeat_y =  2;}
 //; if ($grid_size == "8x8")   { $basic_block_repeat_x =  2; $basic_block_repeat_y =  4; }
 //; if ($grid_size == "64x64") { $basic_block_repeat_x = 16; $basic_block_repeat_y = 32; }
 //; if ($grid_size == "16x16") { $basic_block_repeat_x =  4; $basic_block_repeat_y = 8; }
